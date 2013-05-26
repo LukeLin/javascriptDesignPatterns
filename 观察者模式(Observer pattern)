@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>观察者模式</title>
+    <meta charset="utf-8">
+</head>
+<body>
+
+<script>
+/**
+ * 观察者模式
+ *
+ * 定义：
+ * 定义对象间的一种一对多的依赖关系。当一个对象的状态发生改变时，所有依赖于它的对象都得到通知并被自动更新。
+ *
+ * 本质：
+ * 触发联动
+ *
+ * 在事件驱动的环境中。比如浏览器这种持续寻求用户关注的环境中，观察者模式（又名发布者-订阅者（publisher-subscriber）模式）是一种管理人与其人物之间的关系（确却的讲，是对象及其行为和状态之间的关系）的得力工具。这种模式的实质就是你可以对程序中某个对象的状态进行观察，并且在其发生改变时能够得到通知。
+ * 观察者模式中存在两个角色：观察者和被观察者，又叫发布者和订阅者。
+ */
+
+/*
+ 示例：报纸的投送
+
+ 在报纸行业中，发行和订阅的顺序进行有赖于一些关键性的角色和行为。首先是读者，他们都是订阅者（subscriber），他们消费数据并且根据读到的消息做出反应。。另一个角色是发行方（publisher），他们负责出版报纸。
+ 确定了各方的身份之后，我们就可以分析每一方的职责所在。作为报纸的订阅者，，数据到来的时候我们收到通知，我们消费数据，然后我们根据数据做出反应，只要报纸到了订阅者手中，他们就可以自行处理。总而言之，订阅者要从发行方接收数据。
+
+ 发行方则要发送数据。发行方也是投送房（deliver）。一般来说，一个发行方很可能有许多订阅者，同样，一个订阅者也很可能会订阅多家报社的报纸。问题的关键在于，这是一种多对多的关系，需要一种高级的抽象策略，以便订阅者能够彼此独立地发生变化，而发行方能够接受任何有消费意向的订阅者。
+
+ 对于报社来说，只为给几个订阅者投送报纸就满世界跑是不划算的。而纽约市民也不可能特意飞到旧金山去拿自己订的报纸，要知道这份报纸可以直接投送到他们家门口。
+ 订阅者要想拿到报纸的话有两种投送方式可选：推或拉。在推环境中，发行方很可能会雇佣投送人员四处送报。换句话说，他们把自己的报纸推出去，让订阅者收取。在拉环境中，规模较小的本地报社可能会在订阅者家附近的街角提供自己的数据，供订阅者“拉”。那么成长型发行方没有足够的资源进行大规模投送，因此采用拉方案，对于他们来说往往是个优化投送环节的好办法。
+ */
+
+/*
+ 模式的实践
+
+ （1）订阅者可以订阅和退订，它们还要接受。它们可以在”由人投送（being delivered to）“和“自己收取（receiving ）”之间进行选择（即推拉）。
+ （2）发布者负责投送，它们可以在“送出（giving）”和“由人取（being taken from）”之间进行选择
+
+ 下面是一个展示发布者和订阅者之间的互动过程的高层示例。它是Sells方法的一个示例。这种技术类似于测试驱动的开发（TDD），不过它要求先写实现代码。
+ */
+/*
+ Publishers are in charge of "publishing" i.e. createing the event
+ They;re alse in charge of "notifying" (firing the event)
+ */
+var Publisher = new Observable();
+
+/*
+ Subscribers basically ,,, "subscribe" (or listen).
+ Once they've been "notified" their callback functions are invoked.
+ */
+var Subscriber = function (news) {
+    // new delivered directly to my front porch
+};
+Publisher.subscribeCustomer(Subscriber);
+
+/*
+ Deliver a paper
+ sends out the new to all subscribers
+ */
+Publisher.deliver('extre, extre, read all about it');
+
+/*
+ That customer forget to pay his bill
+ */
+Publisher.unSubscribeCustomer(Subscriber);
+/*
+ 在这个模型中，可以看出发布者处于明显的主导地位。它们负责登记其顾客，而且有权停止为其投送。最后，新的报纸出版后它们会将其投送给顾客。
+ */
+
+// 下面的例子处理的事同一类问题，但发布者和订阅者之间的互动方式有所不同
+/*
+ Newspaper vendors
+ setup as new Publisher obejcts
+ */
+var NewYorkTimes = new Publisher();
+var AustinHerald = new Publisher();
+var SfChronicle = new Publisher();
+
+/*
+ People who like to read
+ (Subscribers)
+
+ Each subscriber is set up as a callback method.
+ They all inherit from the Function prototype Object
+ */
+var Joe = function (from) {
+    console.log('Delivery from ' + from + ' to Joe');
+};
+var Lindsay = function (from) {
+    console.log('Delivery from ' + from + ' to Lindsay');
+};
+
+/*
+ Here we allow them to subscribe to newspaper which are the Publisher object.
+ */
+Joe.
+        subscribe(NewYorkTimes).
+        subscribe(SfChronicle);
+Lindsay.
+        subscribe(AustinHerald).
+        subscribe(SfChronicle).
+        subscribe(NewYorkTimes);
+
+/*
+ Then at any giving time in our application, our publishers can send off data for the subscribers to consume and react to.
+ */
+NewYorkTimes.
+        deliver('Here is your paper!direct from the Big apple');
+AustinHerald.
+        deliver('News').
+        deliver('Reviews').
+        deliver('Coupons');
+/*
+ 在这个例子中，发布者的创建方式和订阅者接收数据的方式没有多少改变，但拥有订阅和退订的一方变成了订阅者。当然，负责发送数据的还是发布者一方。
+ */
+
+// 扩展链式调用方法
+Function.prototype.method = function (name, fn) {
+    this.prototype[name] = fn;
+    return this;
+};
+
+// 扩展数组方法
+if (!Array.prototype.forEach) {
+    Array.method('forEach', function (fn, thisObj) {
+        var scope = thisObj || window;
+        for (var i = 0, len = this.length; i < len; i++) {
+            fn.call(scope, this[i], i, this);
+        }
+    });
+}
+
+if (!Array.prototype.filter) {
+    Array.method('filter', function (fn, thisObj) {
+        var scope = thisObj || window;
+        var a = [];
+        for (var i = 0, len = this.length; i < len; i++) {
+            if (!fn.call(scope, this[i], i, this)) {
+                continue;
+            }
+            a.push(this[i]);
+        }
+        return a;
+    });
+}
+
+Array.prototype.some = Array.prototype.some || function (fn, context) {
+    for (var i = this, len = this.length; i < len; i++) {
+        if (fn.call(context)) {
+            return true;
+        }
+    }
+    return false;
+};
+
+// demo:
+function isBigEnough(element, index, array) {
+    return (element >= 10);
+}
+var filtered = [12, 5, 8, 130, 44].filter(isBigEnough);
+// 12, 130, 44
+
+
+// 添加观察者系统
+window.DED = window.DED || {};
+DED.util = DED.util || {};
+DED.util.Observer = function () {
+    this.fns = [];
+};
+DED.util.Observer.prototype = {
+    subscribe: function (fn) {
+        this.fns.push(fn);
+    },
+    unsubscribe: function (fn) {
+        // 取消订阅当前函数
+        this.fns = this.fns.filter(function (el) {
+            if (el !== fn) {
+                return el;
+            }
+        });
+    },
+    fire: function (o) {
+        // 触发（运行）所有保存的函数
+        this.fns.forEach(function (el) {
+            el(o);
+        });
+    }
+};
+
+// 构建观察者API
+function Publisher() {
+    this.subscribers = [];
+}
+// 投送方法
+Publisher.prototype.deliver = function (data) {
+    this.subscribers.forEach(function (fn) {
+        fn(data);
+    });
+    return this;
+};
+// 订阅方法
+Function.prototype.subscribe = function (publisher) {
+    var that = this;
+    var alreadyExists = publisher.subscribers.some(function (el) {
+        return el === that;
+    });
+    if (!alreadyExists) {
+        publisher.subscribers.push(this);
+    }
+    return this;
+};
+// 退订方法
+Function.prototype.unsubscribe = function (publisher) {
+    var that = this;
+    publisher.subscribers = publisher.subscribers.filter(function (el) {
+        return el !== that;
+    });
+    return this;
+};
+
+// 有些订阅者在监听到某种一次性的事件之后会在回调阶段立即退订事件：
+var publisherObject = new Publisher();
+var observerObject = function (data) {
+    // process data
+    console.log(data);
+    // unsubscribe from this publisher
+    arguments.callee.unsubscribe(publisherObject);
+};
+observerObject.subscribe(publisherObject);
+publisherObject.deliver('This is news');
+
+
+// 示例：动画
+// Publisher API
+var Animation = function (o) {
+    this.onStart = new Publisher();
+    this.onComplete = new Publisher();
+    this.onTween = new Publisher();
+};
+Animation.prototype = {
+    fly: function () {
+        // begin animation
+        this.onStart.deliver();
+        /*
+         for(...) { // loop through frames
+         //deliver frame number
+         this.onTween.deliver(i);
+         }
+         */
+        // end animation
+        this.onComplete.deliver();
+    }
+};
+
+// setup an account with the animation manager
+var superman = new Animation({
+    // config properties
+});
+
+// Begin implementing subscribers
+var putOnCape = function (i) {
+};
+var takeOffCape = function (i) {
+};
+
+putOnCape.subscribe(superman.onStart);
+takeOffCape.subscribe(superman.onComplete);
+
+// fly can be called anywhere
+superman.fly();
+// for instance
+addEvent(element, 'click', function () {
+    superman.fly();
+});
+
+/*
+ 观察者模式的适用场合
+
+ 如果希望把用户行为和应用程序的行为分开，那么观察者模式正是用于这种场合。
+ 举个例子，用户点击导航系统的一个标签时，会打开一个包含着更多相关信息的菜单。当然你可以直接监听这个click事件，不过这需要知道监听的是哪个元素。这样做的另一个弊端是你的实现与click事件直接绑在了一起。比监听click时间更好的做法是：创建一个可观察的onTabChange对象，并且在特定事件发生时通知所有观察者。如果菜单改为在鼠标指向标签时或者标签处于焦点之下时打开，那么这个onTabChange对象会替你处理这种改变。
+
+
+ 观察者模式之利
+
+ 观察者模式是开发基于行为的大型应用程序的有力手段。再一次浏览器会话期间，应用程序中可能会断断续续地发生几十次，几百次甚至几千次各种事件。你可以削减事件注册监听器的次数，让可观察对象借助一个事件监听器替你处理各种行为并将信息委托给它的所有订阅者。从而降低内存消耗和提高互动性能。这样一来，就不用没完没了地为同样的元素增添新的事件监听器，这有利于减少系统开销并提高程序的可维护性。
+
+ 观察者模式之弊
+
+ 使用这种观察者接口的一个不利之处在于创建可观察对象所带来的加载时间开销。这可以通过使用惰性加载技术加以化解，具体而言就是把新的可观察对象的实例化推迟到需要发送时间通知的时候。这样一来，订阅者在时间尚未创建的时候就能订阅它，应用程序的初始加载时间也就不会受到影响。
+ */
+
+// Javscript Patterns example:
+/* Title: Observer
+ Description: is a publish/subscribe pattern which allows a number of observer objects to see an event
+ */
+var Observer = {
+    addSubscriber: function (callback) {
+        this.subscribers[this.subscribers.length] = callback;
+    },
+    removeSubscriber: function (callback) {
+        for (var i = 0; i < this.subscribers.length; i++) {
+            if (this.subscribers[i] === callback) {
+                delete this.subscribers[i];
+            }
+        }
+    },
+    publish: function () {
+        for (var i = 0; i < this.subscribers.length; i++) {
+            if (typeof this.subscribers[i] === 'function') {
+                this.subscribers[i].apply(this, arguments);
+            }
+        }
+    },
+    make: function (o) {
+        for (var i in this) {
+            o[i] = this[i];
+            o.subscribers = [];
+        }
+    }
+};
+
+var blogger = {
+    writeBlogPost: function () {
+        var content = 'Today is ' + new Date();
+        this.publish(content);
+    }
+};
+
+var la_times = {
+    newIssue: function () {
+        var paper = 'Martians have landed on Earth.';
+        this.publish(paper);
+    }
+};
+
+Observer.make(blogger);
+Observer.make(la_times);
+
+var jack = {
+    read: function (what) {
+        console.log('I just read that ' + what);
+    }
+};
+
+var jill = {
+    gossip: function (what) {
+        console.log('You didn\'t hear it from me, but' + what);
+    }
+};
+
+blogger.addSubscriber(jack.read);
+blogger.addSubscriber(jill.gossip);
+blogger.writeBlogPost();
+
+blogger.removeSubscriber(jill.gossip);
+blogger.writeBlogPost();
+
+la_times.addSubscriber(jill.gossip);
+la_times.newIssue();
+
+
+// http://www.joezimjs.com/javascript/javascript-design-patterns-observer/
+// Now we’ll implement the pull method of the observer pattern.
+// When you’re using the pull method,
+// it makes more sense to swap things around a bit:
+Observable = function() {
+    this.status = "constructed";
+}
+Observable.prototype.getStatus = function() {
+    return this.status;
+}
+
+Observer = function() {
+    this.subscriptions = [];
+}
+Observer.prototype = {
+    subscribeTo: function(observable) {
+        this.subscriptions.push(observable);
+    },
+    unsubscribeFrom: function(observable) {
+        var i = 0,
+                len = this.subscriptions.length;
+
+        // Iterate through the array and if the observable is
+        // found, remove it.
+        for (; i < len; i++) {
+            if (this.subscriptions[i] === observable) {
+                this.subscriptions.splice(i, 1);
+                // Once we've found it and removed it, we
+                // don't need to continue, so just return.
+                return;
+            }
+        }
+    },
+    doSomethingIfOk: function() {
+        var i = 0,
+                len = this.subscriptions.length;
+
+        // Iterate through the subscriptions and determine
+        // whether the status has changed to ok on each of them,
+        // and do something for each subscription that has
+        for (; i < len; i++) {
+            if (this.subscriptions[i].getStatus() === "ok") {
+                // Do something because the status of the
+                // observable is what we want it to be
+            }
+        }
+    }
+}
+
+var observer = new Observer(),
+        observable = new Observable();
+observer.subscribeTo(observable);
+
+// Nothing will happen because the status hasn't changed
+observer.doSomethingIfOk();
+
+// Change the status to "ok" so now something will happen
+observable.status = "ok";
+observer.doSomethingIfOk();
+
+
+
+</script>
+</body>
+</html>
