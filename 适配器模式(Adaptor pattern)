@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <meta charset="utf-8">
+</head>
+<body>
+
+<script>
+/**
+ * 适配器模式
+ *
+ * 定义：
+ * 将一个类的接口转换成客户希望的另外一个接口。适配器模式使得原本由于接口不兼容而不能一起工作的那些类可以一起工作。
+ *
+ * 本质：
+ * 转换匹配，复用功能
+ *
+ * 适配器模式可用来在现有接口和不兼容的类之间进行适配。使用这种模式的对象又叫包装器，因为它们是在用一个新的接口包装另一个对象。许多时候创建适配器对程序员和接口的设计人员都有好处。在设计类的时候往往会遇到有些接口不能与现有API一同使用的情况。借助于适配器，你不用直接修改这些类也能使用它们。在设计大型系统和遗留框架的情况下，他的优点往往比缺点更突出。
+ *
+ * 适配器的特点
+ *
+ * 适配器可以被添加到现有代码中以协调两个不同的接口。如果现有代码的接口能很好地满足需要，那就可能没有必要使用适配器。但要是现有接口对于手头的工作来说不够直观或实用，那么可以使用适配器来提供一个更简洁或更丰富的接口。
+ * 从表面上看，适配器模式很像门面模式。它们都要对别的对象进行包装并改变其呈现的接口。二者的差别在于它们如何改变接口。门面元素展现的是一个简化的接口，它并不提供额外的选择，而且有时为了方便完成常见任务它还会做出一些假定。而适配器则要把一个接口转换为另一个接口，它并不会滤除某些能力，也不会简化接口。如果客户系统期待的API不可用，那就需要用到适配器。
+ */
+
+/*
+ 如果你有一个具有3个字符串参数的函数，但客户系统拥有的却是一个包含三个字符串元素的对象或数组，此时就可以用一个是配起来衔接二者。
+ */
+var clientObject = {
+    string1: 'foo',
+    string2: 'bar',
+    string3: 'baz'
+};
+function interfaceMethod(str1, str2, str3) {
+    //...
+}
+// 适配器
+function clientToInterfaceAdapter(o) {
+    interfaceMethod(o.string1, o.string2, o.string3);
+}
+clientToInterfaceAdapter(clientObject);
+
+
+/*
+ 适配原有实现
+
+ 在某些情况下，从客户一方对代码进行修改是不可能的。有些程序员因此索性避免创建API。如果现有接口发生了改变，那么客户代码也必须进行相应的修改后才能使用这个新接口，否则整个应用系统就有失灵的危险。在引入新接口之后，一般说来最好向客户方提供一些可为其实现新接口的适配器。
+ */
+
+// 示例：适配两个库
+// 下面的例子要实现的是从Prototype库的$函数到YUI的get方法的转换
+// 先看看他们在接口方面的差异
+
+// Prototype $ function
+function $() {
+    var elements = [];
+    for (var i = 0; i < arguments.length; i++) {
+        var element = arguments[i];
+        if (typeof element === 'string') {
+            element = document.getElementById(element);
+        }
+        if (arguments.length === 1) {
+            return element;
+        }
+        elements.push(element);
+    }
+    return elements;
+}
+
+// YUI get method
+YAHOO.util.Dom.get = function (el) {
+    if (YAHOO.lang.isString(el)) {
+        return document.getElementById(el);
+    }
+    if (YAHOO.lang.isArray(el)) {
+        var c = [];
+        for (var i = 0, len = el.length; i < len; ++i) {
+            c[c.length] = YAHOO.util.Dom.get(el[i]);
+        }
+        return c;
+    }
+    if (el) {
+        return el;
+    }
+    return null;
+};
+
+// Adapter
+function PrototypeToYUIAdapter() {
+    return YAHOO.util.Dom.get(arguments);
+}
+function YUIToPrototypeAdapter(el) {
+    return $.apply(window, el instanceof Array ? el : [el]);
+}
+
+// 有了这些适配器，现有的客户系统就可以继续使用其熟悉的API。
+$ = PrototypeToYUIAdapter;
+// or
+YAHOO.util.Dom.get = YUIToPrototypeAdapter;
+
+
+// 示例：适配电子邮件API
+/*
+ 本例研究的是一个web邮件API，它可以用来接收，发送邮件并执行一些别的任务。我们将采用类Ajax技术从服务器或取消息，然后将消息详情载入DOM。
+ */
+/*
+ <!DOCTYPE html>
+ <html>
+ <head>
+ <title>Mail API Demonstration</title>
+ <meta charset="utf-8">
+ <style>
+ body {
+ font: 62.5% georgia, times, serif;
+ }
+ #doc {
+ margin: 0 auto;
+ width: 500px;
+ font-size: 1.3em;
+ }
+ </style>
+ </head>
+ <body>
+ <div id="doc">
+ <h1>Email Application Interface</h1>
+ <ul>
+ <li><a class="thread" id="msg-1" href="#">load message Sister Sonya</a></li>
+ <li><a class="thread" id="msg-2" href="#">load message Lindsey Simon</a></li>
+ <li><a class="thread" id="msg-3" href="#">load message Margaret Stoooart</a></li>
+ </ul>
+ <div id="message-pane"></div>
+ </div>
+
+ <script src="Library.js"></ script>
+ < script>
+ */
+// application utilities
+var DED = {};
+DED.util = {
+    substitute: function (s, o) {
+        return s.replace(/\{([^\{\}]*)\}/g, function (a, b) {
+            var r = o[b];
+            return typeof r === 'string' || typeof r === 'number' ? r : a;
+        });
+    },
+    asyncRequest: (function () {
+        function handleReadyState(o, callback) {
+            o.onreadystatechange = function () {
+                if (o && o.readyState === 4) {
+                    if ((o.status >= 200 && o.status < 300) || o.status === 304) {
+                        if (callback) {
+                            callback(o);
+                        }
+                    }
+                }
+            };
+        }
+
+        var getXHR = function () {
+            var http;
+            try {
+                http = new XMLHttpRequest();
+                getXHR = function () {
+                    return new XMLHttpRequest();
+                };
+            } catch (ex) {
+                var msxml = [
+                    'MSXML2.XMLHTTP.3.0',
+                    'MSXML2.XMLHTTP',
+                    'Microsoft.XMLHTTP'
+                ];
+                for (var i = 0, len = msxml.length; i < len; i++) {
+                    try {
+                        http = new ActiveXObject(msxml[i]);
+                        getXHR = function () {
+                            return new ActiveXObject(getXHR.str);
+                        };
+                        getXHR.str = msxml[i];
+                    } catch (ex) {
+                    }
+                }
+            }
+            return http;
+        };
+
+        return function (method, url, callback, postData) {
+            var http = getXHR();
+            http.open(method, url, true);
+            handleReadyState(http, callback);
+            http.send(postData || null);
+            return http;
+        };
+    })()
+};
+
+// dedMail application interface
+var dedMail = (function () {
+    function request(id, type, callback) {
+        DED.util.asyncRequest(
+                'GET',
+                'mail-api.php?ajax=true&id=' + id + '&type=' + type,
+                function (o) {
+                    callback(o.responseText);
+                }
+        );
+    }
+
+    return {
+        getMail: function (id, callback) {
+            request(id, 'all', callback);
+        },
+        sendMail: function (body, recipient) {
+            // Send mail with body text to the supplied recipient
+        },
+        save: function (id) {
+            // Save a draft copy with the supplied email ID.
+        },
+        move: function (id, destination) {
+            // Move the email to the supplied destination folder.
+        },
+        archive: function (id) {
+            // Archive the email.This can be a basic facade method that uses
+            // the move method, hard-coding the destination.
+        },
+        trash: function (id) {
+            // This can also be a facade method which moves the message to
+            // the trash folder.
+        },
+        reportSpam: function (id) {
+            // Move message to spam folder and add sender to the blacklist.
+        },
+        formatMessage: function (e) {
+            var e = e || window.event;
+            if (e.preventDefault) {
+                e.preventDefault();
+            } else {
+                e.returnValue = false;
+            }
+            var targetEl = e.target || e.srcElement;
+            var id = targetEl.id.toString().split('-')[1];
+            dedMail.getMail(id, function (msgObject) {
+                var resp = eval('(' + msgObject + ')');
+                var details = '<p><strong>From:</strong> {from}<br>';
+                details += '<strong>Sent:</strong> {date}</p>';
+                details += '<p><strong>Message:</strong><br>';
+                details += '{message}</p>';
+                $('message-pane').innerHTML = DED.util.substitute(details, resp);
+            });
+        }
+    };
+})();
+
+// Set up mail implementation
+addEvent(window, 'load', function () {
+    var threads = getElementsByClass('thread', document, 'a');
+    for (var i = 0, len = threads.length; i < len; i++) {
+        addEvent(threads[i], 'click', dedMail.formatMessage);
+    }
+});
+/*
+ </ script>
+ </body>
+ </html>
+ */
+/**
+ * 从fooMail转向dedMail
+ */
+// 先来看一段使用fooMail这个API的代码，该方法以一个回调方法为参数
+fooMail.getMail(function (text) {
+    $('message-oane').innerHTML = text;
+});
+
+// 适配器
+var dedMailtoFooMailAdapter = {};
+dedMailtoFooMailAdapter.getMail = function (id, callback) {
+    dedMail.getMail(id, function (resp) {
+        resp = eval('(' + resp + ')');
+        var details = '<p><strong>From:</strong> {from}<br>';
+        details += '<strong>Sent:</strong> {data}</p>';
+        callback(DED.util.substitute(details, resp));
+    });
+};
+// Other methods needed to adapter dedMail to the fooMail interface.
+//...
+
+// Assign the adapter to the fooMail variable.
+fooMail = dedMailtoFooMailAdapter;
+
+
+/*
+ 适配器模式的适用场合
+
+ 适配器适用于客户系统期待的接口与现有API提供的接口不兼容这种场合。它只能用来协调语法上的差异问题。适配器所适配的两个方法执行的应该是类似的任务，否则的话它就解决不了问题。就像桥接元素和门面元素一样，通过创建适配器，可以把抽象与其实现隔离开来，以便二者独立变化。
+ */
+
+/*
+ 适配器之利
+
+ 适配器有助于避免大规模改写现有客户的代码。其工作机制是，用一个新的接口对现有类的接口进行包装。
+
+ 适配器之弊
+
+ 可能有些工程师不想使用适配器，其原因主要在于他们实际上需要彻底重写代码。有人认为适配器是一种不必要的开销，完全可以通过重写现有代码避免。此外适配器模式也会引入一批需要支持的新工具。如果现有API还未定形，捉着新接口还未定形，那么适配器可能不会一直管用。
+ */
+
+// http://www.joezimjs.com/javascript/javascript-design-patterns-adapter/
+var AjaxLogger = {
+    sendLog: function() {
+        var data = this.urlEncode(arguments);
+
+        jQuery.ajax({
+            url: "http://example.com/log",
+            data: data
+        });
+    },
+
+    urlEncode: function(arg) {
+        //…
+        return encodedData;
+    }
+    //…
+};
+
+var AjaxLoggerAdapter = {
+    log: function(arg) {
+        AjaxLogger.sendLog(arg);
+    }
+};
+
+/* Adjust the LoggerFactory */
+
+var LoggerFactory = {
+    getLogger: function() {
+        // just gotta change what's returned here
+        return AjaxLoggerAdapter;
+    }
+    //…
+};
+</script>
+</body>
+</html>
