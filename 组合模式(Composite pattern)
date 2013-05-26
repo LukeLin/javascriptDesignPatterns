@@ -1,0 +1,428 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <title></title>
+</head>
+<body>
+<script>
+/**
+ * 组合模式
+ *
+ * 定义：
+ * 将对象组合成树型结构以表示“部分-整体”的层次结构。组合模式使得用户对单个对象和组合对象的使用具有一致性。
+ *
+ * 本质：
+ * 统一叶对象和组合对象
+ *
+ * 组合模式是一种专为创建web上的动态用户界面而量身定制的模式。使用这种模式，可以用一条命命令在多个对象上激发复杂的或递归行为。这可以简化粘合性代码，使其更容易维护，而那些复杂行为则被委托给各个对象。
+ * 组合模式带来的好处
+ * （1），你可以用同样的方法处理对象的集合与其中的特定子对象。组合对象（composite）与组成它的对象实现了同一批操作。对组合对象执行的这些操作将向下传递到所有的组成对象（constituent object），这样一来所有的组成对象都会执行同样的操作。在存在大批对象的情况下，这是一种非常有效的技术。藉此可以不着痕迹地用一组对象替换一个对象，反之亦然，这有助于弱化各个对象之间的耦合。
+ * （2），它可以用来把一批子对象组织成树形结构，并且使整棵树都可被遍历。所有组合对象都实现了一个用来获取其子对象的方法。借助这个方法，你可以隐藏实现的细节并随心所欲地组织子对象，任何使用这个对象的代码都不会对其内部实现形成依赖。
+ */
+
+/*
+ 组合对象的结构
+ 在组合对象的层次体系中有两种类型的对象叶对象和组合对象。这是一个递归定义，但这正是组合模式如此有用的原因所在。一个组合对象由一些别的组合对象和叶对象组成。其中只有叶对象不再包含子对象。叶对象是组合对象中最基本的元素，也是各个操作的落实地点。
+ */
+
+/*
+ 使用组合模式
+ 只有同时具备吐下两个条件时才适合使用组合模式：
+ 1.存在一批组织成某种层次体系的对象（具体的结构在开发期间可能无法得知）。
+ 2.希望对这批对象和其中的一部分对象实施一个操作。
+
+ 组合模式擅长于对大批对象进行操作。它专为组织这类对象并把操作从一个层次向下一层次传递而设计。藉此可以弱化对相见的耦合并可互换地使用一些类或示例。按这种模式编写的代码模块化程度更高，也更容易维护。
+ */
+
+// 创建那些组合对象和叶对象需要实现的两个接口
+var Composite = new Interface('Composite', ['add', 'remove', 'getChild']);
+var FormItem = new Interface('FormItem', ['save', 'restore']);
+
+// CompositeForm类
+var CompositeForm = function (id, method, action) {
+    // implements Composite, FormItem
+    this.formComponents = [];
+
+    this.element = document.createElement('form');
+    this.element.id = id;
+    this.element.method = method || 'POST';
+    this.element.action = action || '#';
+};
+
+CompositeForm.prototype.add = function (child) {
+    Interface.ensureImplements(child, Composite, FormItem);
+    this.formComponents.push(child);
+    this.element.appendChild(child.getElement());
+};
+CompositeForm.prototype.remove = function (child) {
+    for (var i = 0, len = this.formComponents.length; i < len; i++) {
+        if (this.formComponents[i] === child) {
+            this.formComponents.splice(i, 1);
+            break;
+        }
+    }
+};
+CompositeForm.prototype.getChild = function (i) {
+    return this.formComponents[i];
+};
+CompositeForm.prototype.save = function () {
+    for (var i = 0, len = this.formComponents.length; i < len; i++) {
+        this.formComponents[i].save();
+    }
+};
+CompositeForm.prototype.getElement = function () {
+    return this.element;
+};
+CompositeForm.prototype.restore = function () {
+    for (var i = 0, len = this.formComponents.length; i < len; i++) {
+        this.formComponents[i].restore();
+    }
+};
+
+
+// Field叶对象类
+var Field = function (id) {
+    // implements Composite, FormItem
+    this.id = id;
+    this.element = document.getElementById(id);
+};
+Field.prototype.add = function () {
+};
+Field.prototype.remove = function () {
+};
+Field.prototype.getChild = function () {
+};
+Field.prototype.save = function () {
+    setCookie(this.id, this.getValue());
+};
+Field.prototype.getElement = function () {
+    return this.element;
+};
+Field.prototype.getValue = function () {
+    throw new Error('Unsupported operation on the class Field');
+};
+Field.prototype.restore = function () {
+    this.element.value = getCookie(this.id);
+};
+
+
+// InputField叶对象类
+var InputField = function (id, label) {
+    // implements Composite, FormItem
+    Field.call(this, id);
+
+    this.input = document.createElement('input');
+    this.input.id = id;
+    this.input.type = "text";
+    this.label = document.createElement('label');
+    this.label.setAttribute('for', id);
+    var labelTextNode = document.createTextNode(label);
+    this.label.appendChild(labelTextNode);
+
+    this.element = document.createElement('div');
+    this.element.className = 'input-field';
+    this.element.appendChild(this.label);
+    this.element.appendChild(this.input);
+};
+
+// Inherit from Field
+extend(InputField, Field);
+
+InputField.prototype.getValue = function () {
+    return this.input.value;
+};
+
+
+var TextareaField = function (id, label) {
+    // implements Composite, FormItem
+    Field.call(this, id);
+
+    this.textarea = document.createElement('textarea');
+    this.textarea.id = id;
+
+    this.label = document.createElement('label');
+    this.label.setAttribute('for', id);
+    var labelTextNode = document.createTextNode(label);
+    this.label.appendChild(labelTextNode);
+
+    this.element = document.createElement('div');
+    this.element.className = 'input-field';
+    this.element.appendChild(this.label);
+    this.element.appendChild(this.textarea);
+};
+
+extend(TextareaField, Field);
+
+TextareaField.prototype.getValue = function () {
+    return this.textarea.value;
+};
+
+
+var SelectField = function (id, label, options) {
+    Field.call(this, id);
+
+    this.select = document.createElement('select');
+    this.select.id = id;
+    if (typeof options === 'object') {
+        for (var prop in options) {
+            if (!options.hasOwnProperty(prop)) {
+                continue;
+            }
+            var newOption = new Option(prop, options[prop]);
+            this.select.add(newOption, undefined);
+        }
+    }
+
+    this.label = document.createElement('label');
+    this.label.setAttribute('for', id);
+    var labelTextNode = document.createTextNode(label);
+    this.label.appendChild(labelTextNode);
+
+    this.element = document.createElement('div');
+    this.element.className = 'input-field';
+    this.element.appendChild(this.label);
+    this.element.appendChild(this.select);
+};
+extend(SelectField, Field);
+SelectField.prototype.getValue = function () {
+    return this.select.options[this.select.selectedIndex].value;
+};
+
+
+// 汇合起来
+var contactForm = new CompositeForm('contact-form', 'POST', 'contact.php');
+contactForm.add(new InputField('first-name', 'First Name:'));
+contactForm.add(new InputField('last-name', 'Last Name:'));
+contactForm.add(new InputField('address', 'Address:'));
+contactForm.add(new InputField('city', 'City:'));
+stateArray = {
+    'GD': 'guangdong',
+    'HN': 'hunan',
+    'BJ': 'beijing'
+};
+contactForm.add(new SelectField('state', 'State:', stateArray));
+contactForm.add(new InputField('zip', 'Zip:'));
+contactForm.add(new TextareaField('comments', 'Comments:'));
+
+document.body.appendChild(contactForm.getElement());
+addEvent(window, 'unload', function () {
+    contactForm.save();
+});
+
+addEvent(window, 'load', function () {
+    contactForm.restore();
+});
+
+
+// 向层次体系中添加类
+var CompositeFieldset = function (id, legendText) {
+    this.components = {};
+
+    this.element = document.createElement('fieldset');
+    this.element.id = id;
+
+    if (legendText) {
+        this.legend = document.createElement('legend');
+        this.legend.appendChild(document.createTextNode(legendText));
+        this.element.appendChild(this.legend);
+    }
+};
+
+CompositeFieldset.prototype.add = function (child) {
+    Interface.ensureImplements(child, Composite, FormItem);
+    this.components[child.getElement().id] = child;
+    this.element.appendChild(child.getElement());
+};
+
+CompositeFieldset.prototype.remove = function (child) {
+    delete this.components[child.getElement().id];
+};
+
+CompositeFieldset.prototype.getChild = function (id) {
+    if (this.components[id] !== undefined) {
+        return this.components[id];
+    } else {
+        return null;
+    }
+};
+
+CompositeFieldset.prototype.save = function () {
+    for (var id in this.components) {
+        if (!this.components.hasOwnProperty(id)) {
+            continue;
+        }
+        this.components[id].save();
+    }
+};
+
+CompositeFieldset.prototype.restore = function () {
+    for (var id in this.components) {
+        if (!this.components.hasOwnProperty(id)) {
+            continue;
+        }
+        this.components[id].restore();
+    }
+};
+
+CompositeFieldset.prototype.getElement = function () {
+    return this.element;
+};
+
+var contactForm2 = new CompositeForm('contact-form2', 'POST', '#');
+
+var nameFieldset = new CompositeFieldset('name-fieldset');
+nameFieldset.add(new InputField('first-name2', 'First Name:'));
+nameFieldset.add(new InputField('last-name2', 'Last Name'));
+contactForm2.add(nameFieldset);
+
+var addressFieldset = new CompositeFieldset('address-fieldset');
+addressFieldset.add(new InputField('address2', 'Address:'));
+addressFieldset.add(new InputField('city2', 'City:'));
+addressFieldset.add(new SelectField('state2', 'State:', stateArray));
+addressFieldset.add(new InputField('zip2', 'Zip:'));
+contactForm2.add(addressFieldset);
+contactForm2.add(new TextareaField('comments2', 'Comments:'));
+document.body.appendChild(contactForm2.getElement());
+
+addEvent(window, 'unload', function () {
+    contactForm2.save();
+});
+addEvent(window, 'load', function () {
+    contactForm2.restore();
+});
+
+
+/*
+ 添加更多操作
+
+ 可以为Field的构造函数增加一个参数，用以表明该域是否必须填写，然后基于这个属性实现一个验证方法。可以修改restore方法，以便在没有保存难过数据的情况下将其值设置为默认值。甚至还可以添加一个submit方法，用Ajax请求把所有的值发送到服务器端。由于使用了组合模式，添加这些操作并不需要知道表单具体是什么样子。
+ */
+
+// 图片库
+var Composite = new Interface('Composite', ['add', 'remove', 'getChild']);
+var GalleryItem = new Interface('GalleryItem', ['hide', 'show']);
+
+// DynamicGallery class.
+var DynamicGallery = function (id) {
+    // implements Composite, GalleryItem
+    this.children = [];
+
+    this.element = document.createElement('div');
+    this.element.id = id;
+    this.element.className = 'dynamic-gallery';
+};
+
+DynamicGallery.prototype = {
+    // implement the Composite interface
+    add: function (child) {
+        Interface.ensureImplements(child, Composite, GalleryItem);
+        this.children.push(child);
+        this.element.appendChild(child.getElement());
+    },
+    remove: function (child) {
+        for (var node, i = 0; node = this.getChild(i); i++) {
+            if (node === child) {
+                this.children.splice(i, 1);
+                break;
+            }
+        }
+        this.element.removeChild(child.getElement());
+    },
+    getChild: function (i) {
+        return this.children[i];
+    },
+    // implement the GalleryItem interface
+    hide: function () {
+        for (var node, i = 0; node = this.getChild(i); i++) {
+            node.hide();
+        }
+        this.element.style.display = 'none';
+    },
+    show: function () {
+        this.element.style.display = 'block';
+        for (var node, i = 0; node = this.getChild(i); i++) {
+            node.show();
+        }
+    },
+    // Helper methods
+    getElement: function () {
+        return this.element;
+    }
+};
+
+/*
+ 你也许很想用DOM自身作为保存子元素的数据结构。它已经拥有appendChild和removeChild方法，还有childNodes属性面对与存储和获取组合对象的子对象来说这原本非常理想。问题在于这种做法要求每个相关DOM节点都要具有一个反指其包装对象的引用，以便实现所要求的操作。而在某些浏览器中这会导致内存泄漏。一般来说，最好避免让DOM对象反过来引用JS对象。
+ */
+
+// GalleryImage class.
+var GalleryImage = function (src) {
+    // implements Composite, GalleryItem
+    this.element = document.createElement('img');
+    this.element.className = 'gallery-image';
+    this.element.src = src;
+};
+
+GalleryImage.prototype = {
+    // implements the Composite interface
+    /*
+     this is a leaf node, so we don't
+     implements these methods,we just
+     define them
+     */
+    add: function () {
+    },
+    remove: function () {
+    },
+    getChild: function () {
+    },
+    // implements the GalleryItem interface
+    hide: function () {
+        this.element.style.display = 'none';
+    },
+    show: function () {
+        // restore the display attribute to
+        // its previus setting.
+        this.element.style.display = '';
+    },
+    // Helper methods
+    getElement: function () {
+        return this.element;
+    }
+};
+
+var topGallery = new DynamicGallery('top-gallery');
+
+topGallery.add(new GalleryImage('img/image-1.jpg'));
+topGallery.add(new GalleryImage('img/image-2.jpg'));
+topGallery.add(new GalleryImage('img/image-3.jpg'));
+
+var vacationPhotos = new DynamicGallery('vacation=photos');
+
+for (var i = 0; i < 30; i++) {
+    vacationPhotos.add(new GalleryImage('img/image-' + i + '.jpg'));
+}
+
+topGallery.add(vacationPhotos);
+topGallery.show();
+vacationPhotos.hide();
+document.body.appendChild(topGallery.getElement());
+
+
+
+/*
+ 组合模式之利
+
+ 使用组合模式，简单的操作也能产生复杂的结果。你不必编写大量手工遍历数组或其他数据结构的粘合代码，只需对最顶层的对象执行操作，让每一个子对象自己传递这个操作即可。这对于那些再三执行的操作尤其有用。
+ 在组合模式中，各个对象之间的耦合非常松散。只要他们实现了同样的借口，那么改变它们的位置或互换它们只是举手之劳。这促进了代码的重用，也有利于代码重构。
+ 用组合模式组织起来的对象形成了一个出色的层次体系。每当对顶层组合对象执行一个操作时，实际上是在对整个结构进行深度优化的搜索以查找节点。在这个层次体系中添加，删除和查找节点都非常简单。
+
+
+ 组合模式之弊
+
+ 组合对象的易用性可能掩盖了它所支持的每一种操作的代价。由于对组合对象调用的任何操作都会被传递到他的所有子对象，如果这个层次体系很大的话，系统性能将会受到影响。
+ 组合对象类和节点类都被用作HTML元素的包装工具，这是一种常见的用法，在此情况下，组合对象也必须遵守HTML的使用规则，而表格就很难转化为一个组合对象。同时组合模式的正常运作需要用到某种形式的接口。
+ */
+</script>
+</body>
+</html>
