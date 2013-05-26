@@ -1,0 +1,533 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <title></title>
+</head>
+<body>
+<script>
+/**
+ * 桥接模式
+ *
+ * 定义：
+ * 将抽象部分与它的实现部分分离，使它们都可以独立地变化。
+ *
+ * 本质：
+ * 分离抽象与实现
+ *
+ *在实现APi的时候，桥接模式非常有用。实际上，这也许是被用的最不够充分的模式之一。在所有模式中，这种模式最容易付诸实施。在设计一个JS API的时候，可以用这个模式来弱化它与使用它的的类和对象之间的耦合。按GoF的定义，桥接模式的作用在于将抽象与其实现隔离开来，以便二者独立变化。这种模式对于JS中常见的事件驱动的编程大有裨益。
+ *
+ * 无论是用来创建Web服务API还是普通的取值器（accessor）方法和赋值器（mutator）方法，在实现过程中桥接模式都有助于保持API代码的简洁。
+ */
+
+// 示例：事件监听器
+/*
+ 桥接模式最常见和实际的应用场合之一是事件监听器回调函数。
+ 假设有一个名为getBeerById的API函数，它根据一个标示符返回有关某种啤酒的信息。那个被电击的元素很可能具有啤酒的标示符信息，它可能是作为元素自身的ID保存，也可能使作为别的自定义属性保存。
+ */
+// 下面是一种做法：
+addEvent(element, 'click', getBeearById);
+function getBeearById(e) {
+    var id = this.id;
+    asyncRequest('GET', 'beer.uri?id=' + id, function (resp) {
+        // callback response
+        console.log('Requested Beer: ' + resp.responseText);
+    });
+}
+
+// 这个API函数不方便做单元测试，或者在命令行环境中执行。
+// 作为一个优良的API，不要把它与任何特定的实现搅在一起。毕竟，我们希望所有人都能获取到啤酒的信息，
+function getBeearById(id, callback) {
+    // make request for beer by ID, then return the beer data
+    asyncRequest('GET', 'beer.uri?id=' + id, function (resp) {
+        // callback response
+        callback(resp.responseText);
+    });
+}
+
+addEvent(element, 'click', getBeerByIdBridge);
+function getBeerByIdBridge(e) {
+    getBeerById(this.id, function (beer) {
+        console.log('Requested Beer: ' + beer);
+    });
+}
+
+/*
+ 有了这层桥接元素，这个API的使用范围大大拓宽了，这给类更大的设计自由。getBeerById并没有和事件对象捆绑在一起，你也可以在单元测试中运行这个API。
+ */
+
+// 桥接模式的其他例子
+/*
+ 除了在事件回调函数与接口之间进行桥接外，桥接模式也可以用来连接公开的API代码和私用的实现代码。此外，它还可以用来把多个类连结在一起。从类的角度来看，这意味着把接口作为公开的代码编写，而把类的实现作为私用代码编写。
+
+ 如果一个公用的接口抽象了一些也许应该属于私用性的（尽管在此情况下它不一定非得是私用的）较复杂的任务，那么可以使用桥接模式来收集某些私用性的信息。可以用一些具有特殊权利的方法作为桥梁以便访问私用变量空间，而不必冒险下到具体实现的浑水中。这一特例中的桥接性函数又称特权函数
+ */
+var Public = function () {
+    var secret = 3;
+    this.privilegedGetter = function () {
+        return secret;
+    };
+};
+var o = new Public();
+var data = o.privilegedGetter();
+
+// 用桥接模式联结多个类
+var Class1 = function (a, b, c) {
+    this.a = a;
+    this.b = b;
+    this.c = c;
+};
+var Class2 = function (d) {
+    this.d = d;
+};
+var BridgeClass = function (a, b, c, d) {
+    this.one = new Class1(a, b, c);
+    this.two = new Class2(d);
+};
+
+/*
+ 本例中实际上没有客户系统要求提供数据。它只不过是用来接纳大量数据并将其发送给责任方的一种辅助性手段。此外，BridgeClass并不是一个客户系统已经实现的现有接口。引入这个类的目的只不过是要桥接一些类而已。这里使用桥接模式是为了让Class1和Class2能够独立于BridgeClass而发生改变。与门面类不同。
+ */
+
+
+// 示例：构建XHR连接队列
+/*
+ 这个对象把请求存储在浏览器内存中的一个队列化数组中。刷新队列时每个请求都会按“先入先出”的顺序被发送给一个后端的web服务。如果次序事关重要，那么在web应用程序中使用队列化系统是有好处的。另外队列还有一个好处，任何涉及因用户输入引起的频繁动作的系统都是适用的例子。最后，连接队列可以帮助用户克服网络连接带来的不便，甚至可以允许他们离线工作。
+ */
+// 添加核心工具
+var asyncRequest = (function () {
+    function handleReadyState(o, callback) {
+        o.onreadystatechange = function () {
+            if (o && o.readyState === 4) {
+                if ((o.status >= 200 && o.status < 300) || o.status === 304) {
+                    if (callback) {
+                        callback.call(o, o.responseText, o.responseXML);
+                    }
+                }
+            }
+        };
+    }
+
+    var getXHR = function () {
+        var http;
+        try {
+            http = new XMLHttpRequest();
+            getXHR = function () {
+                return new XMLHttpRequest();
+            };
+        } catch (e) {
+            var msxml = [
+                'MSXML2.XMLHTTP.3.0',
+                'MSXML2,XMLHTTP',
+                'Microsoft.XMLHTTP'
+            ];
+            for (var i = 0, len = msxml.length; i < len; i++) {
+                try {
+                    http = new ActiveXObject(msxml[i]);
+                    getXHR = function () {
+                        return new ActiveXObject(getXHR.str);
+                    };
+                    getXHR.str = msxml[i];
+                    break;
+                } catch (e) {
+                }
+            }
+
+        }
+        return http;
+    };
+
+    return function (method, url, callback, postVars) {
+        var http = getXHR();
+        handleReadyState(http, callback);
+        http.open(method, url, true);
+        http.send(postVars || null);
+        return http;
+    }
+})();
+
+// 扩展链式调用方法
+Function.prototype.method = function (name, fn) {
+    this.prototype[name] = fn;
+    return this;
+};
+
+// 扩展数组方法
+if (!Array.prototype.forEach) {
+    Array.method('forEach', function (fn, thisObj) {
+        var scope = thisObj || window;
+        for (var i = 0, len = this.length; i < len; i++) {
+            fn.call(scope, this[i], i, this);
+        }
+    });
+}
+
+if (!Array.prototype.filter) {
+    Array.method('filter', function (fn, thisObj) {
+        var scope = thisObj || window;
+        var a = [];
+        for (var i = 0, len = this.length; i < len; i++) {
+            if (!fn.call(scope, this[i], i, this)) {
+                continue;
+            }
+            a.push(this[i]);
+        }
+        return a;
+    });
+}
+
+// demo:
+function isBigEnough(element, index, array) {
+    return (element >= 10);
+}
+var filtered = [12, 5, 8, 130, 44].filter(isBigEnough);
+// 12, 130, 44
+
+
+// 添加观察者系统
+window.DED = window.DED || {};
+DED.util = DED.util || {};
+DED.util.Observer = function () {
+    this.fns = [];
+};
+DED.util.Observer.prototype = {
+    subscribe: function (fn) {
+        this.fns.push(fn);
+    },
+    unsubscribe: function (fn) {
+        // 过滤掉当前函数名
+        this.fns = this.fns.filter(function (el) {
+            if (el !== fn) {
+                return el;
+            }
+        });
+    },
+    fire: function (o) {
+        // 触发（运行）当前函数
+        this.fns.forEach(function (el) {
+            el(o);
+        });
+    }
+};
+
+// 开发队列的基本框架
+/*
+ 首先该队列是一个真正的队列，遵从先入先出的基本规则。
+ 因为这是一个用于存储待发请求的连接队列，所以你可能希望设置“重试”的次数限制。此外，根据每个队列的请求的大小，你可能也希望能设置“超时”限制。
+ 最后，我们应该能够向队列添加新请求和清空队列，当然，还要能够刷新队列。此外还应该可以从队列中删除请求，这种操作称为出列（dequeue）。
+ */
+DED.Queue = function () {
+    // Queued requests.
+    this.queue = [];
+
+    // Observable Objects that can notify the client of interesting
+    // moments on each DED.Queue instance.
+    this.onComplete = new DED.util.Observer();
+    this.onFailure = new DED.util.Observer();
+    this.onFlush = new DED.util.Observer();
+
+    // Core properties that set up a frontend queueing system.
+    this.retryCount = 3;
+    this.currentRetry = 0;
+    this.paused = false;
+    this.timeout = 5000;
+    this.conn = {};
+    this.timer = {};
+};
+
+DED.Queue.method('flush',function () {
+    if (!this.queue.length) {
+        return;
+    }
+    if (this.paused) {
+        this.paused = false;
+        return;
+    }
+    var that = this;
+    this.currentRetry++;
+    // 撤销请求
+    var abort = function () {
+        that.conn.abort();
+        // 如果达到重试次数，触发错误方法
+        // 否则重新请求当前队列
+        if (that.currentRetry === that.retryCount) {
+            that.onFailure.fire();
+            that.currentRetry = 0;
+        } else {
+            that.flush();
+        }
+    };
+    // 达到时间段时终止请求，再重新发送
+    this.timer = window.setTimeout(abort, that.timeout);
+    // 请求成功后的回调函数，停止重试时间器
+    // 移除队列的第一个元素
+    // 继续下一个请求，直到完成
+    var callback = function (o) {
+        window.clearTimeout(that.timer);
+        that.currentRetry = 0;
+        that.queue.shift();
+        that.onFlush.fire(o.responseText);
+        if (that.queue.length === 0) {
+            that.onComplete.fire();
+            return;
+        }
+        // recursive call to flush
+        that.flush();
+    };
+    // 发送请求
+    this.conn = asyncRequest(
+            this.queue[0]['method'],
+            this.queue[0]['url'],
+            callback,
+            this.queue[0]['param']
+    );
+}).
+        method('setRetryCount',function (count) {
+            this.retryCount = count;
+        }).
+        method('setTimeout',function (time) {
+            this.timeout = time;
+        }).
+        method('add',function (o) {
+            this.queue.push(o);
+        }).
+        method('pause',function () {
+            this.paused = true;
+        }).
+        method('dequeue',function () {
+            this.queue.pop();
+        }).
+        method('clear', function () {
+            this.queue = [];
+        });
+
+/*
+ queue属性是一个数组字面量，用于保存对每一个请求的引用。add和dequeue这类方法所做的只是对这个数组进行push和pop操作。flush方法则会把请求发送出去并将它们移出数组。
+ */
+
+// 实现队列
+var q = new DED.Queue();
+// Reset our retry count to be higher for slow connections.
+q.setRetryCount(5);
+// Decrease timeout limit because we still want fast connections
+q.setTimeout(1000);
+q.add({
+    method: 'GET',
+    url: '/path/to/file.php?ajax=true'
+});
+q.add({
+    method: 'GET',
+    url: '/path/to/file.php?ajax=true&woe=me'
+});
+// Flush the queue
+q.flush();
+// Pause the queue, retaining the requests
+q.pause();
+// Clear our queue and start fresh
+q.clear();
+// Add two requests
+q.add({
+    method: 'GET',
+    url: '/path/to/file.php?ajax=true'
+});
+q.add({
+    method: 'GET',
+    url: '/path/to/file.php?ajax=true&woe=me'
+});
+// Remove the last request from the queue
+q.dequeue();
+// Flush the queue again
+q.flush();
+
+
+// 示例：
+addEvent(window, 'load', function () {
+    var q = new DED.Queue();
+    q.setRetryCount(5);
+    q.setTimeout(3000);
+    var items = $('items'),
+            results = $('results'),
+            queue = $('queue-items'),
+            requests = [];
+    q.onFlush.subscribe(function (data) {
+        results.innerHTML = data;
+        requests.shift();
+        queue.innerHTML = requests.toString();
+    });
+    q.onFailure.subscribe(function () {
+        results.innerHTML += '<span style="color:red;">Connection Error.</span>';
+    });
+    q.onComplete.subscribe(function () {
+        results.innerHTML += '<span style="green;">Completed</span>';
+    });
+    var actionDispatcher = function (element) {
+        switch (element) {
+            case 'flush':
+                q.flush();
+                break;
+            case 'dequeue':
+                q.dequeue();
+                requests.pop();
+                queue.innerHTML = requests.toString();
+                break;
+            case 'pause':
+                q.pause();
+                break;
+            case 'clear':
+                q.clear();
+                requests = [];
+                queue.innerHTML = '';
+                break;
+            default:
+                break;
+        }
+    };
+    var addRequest = function (data) {
+        q.add({
+            method: 'GET',
+            url: 'bridge-connection-queue.phph?ajax=true&s=' + data,
+            params: null
+        });
+        requests.push(data);
+        queue.innerHTML = requests.toString();
+    };
+
+    addEvent(items, 'click', function (e) {
+        e = e || window.event;
+        var src = e.target || e.srcElement;
+        try {
+            e.preventDefault();
+        } catch (e) {
+            e.returnValue = false;
+        }
+        actionDispatcher(src.id);
+    });
+
+    var adders = $('adders');
+    addEvent(adders, 'click', function (e) {
+        e = e || window.event;
+        var src = e.target || e.srcElement;
+        try {
+            e.preventDefault();
+        } catch (e) {
+            e.returnValue = false;
+        }
+        addRequest(src.id.split('-')[1]);
+    });
+});
+
+/*
+ 在供用户执行刷新和暂停操作的部分，我们提供了一个动作调度函数，其作用就是桥接用户操作所包含的输入信息并将其委托给恰当的处理代码。在DOM脚本变成中这种技术也称为事件委托（event delegation）。
+
+ 判断什么地方应该使用桥接模式通常很简单。假如有下面的代码：
+ $('example').onclick=function(){
+ new RichTextEditor();
+ };
+ 从中你无法看出那个编辑器要显示在什么地方，它有些什么配置选项以及应该怎样修改它。这里的要诀是要让接口“可桥接(bridgeable)”，实际上也就是可适配(adaptable)
+ */
+/*
+ 桥接模式之利
+ 掌握如何在软件开发中实现桥接模式，收益的不只是你，还有那些负责维护你的作品的人。把抽象与其实现隔离开，有助于独立地管理软件的各组成部分。Bug也因此更容易查找，而软件发生严重故障的可能性也减小了。说大地，桥接元素应该是粘合每一个抽象的粘合因子。
+
+ 桥接模式之弊
+ 没使用一个桥接元素都要增加一次函数调用，这对应用程序的性能会有一些负面影响。此外，他们也提高了系统的复杂程度，在出现问题时这会导致代码更难调用。大多情况下桥接模式都非常有用，但注意不要滥用。举个例来说，如果一个桥接函数被用于连接两个函数，而其中某个函数根本不会在桥接函数之外被调用，那么此时这个桥接函数就不是非要不可。
+ */
+
+// http://www.joezimjs.com/javascript/javascript-design-patterns-bridge/
+var RemoteControl = function (tv) {
+    this.tv = tv;
+
+    this.on = function () {
+        this.tv.on();
+    };
+
+    this.off = function () {
+        this.tv.off();
+    };
+
+    this.setChannel = function (ch) {
+        this.tv.tuneChannel(ch);
+    };
+};
+
+/* Newer, Better Remote Control */
+var PowerRemote = function (tv) {
+    this.tv = tv;
+    this.currChannel = 0;
+
+    this.setChannel = function (ch) {
+        this.currChannel = ch;
+        this.tv.tuneChannel(ch);
+    };
+
+    this.nextChannel = function () {
+        this.setChannel(this.currChannel + 1);
+    };
+
+    this.prevChannel = function () {
+        this.setChannel(this.currChannel - 1);
+    };
+};
+PowerRemote.prototype = new RemoteControl();
+
+
+/** TV Interface
+ Since there are no Interfaces in JavaScript I'm just
+ going to use comments to define what the implementors
+ should implement
+
+ function on
+ function off
+ function tuneChannel(channel)
+ */
+
+/* Sony TV */
+var SonyTV = function () {
+    this.on = function () {
+        console.log('Sony TV is on');
+    };
+
+    this.off = function () {
+        console.log('Sony TV is off');
+    };
+
+    this.tuneChannel = function (ch) {
+        console.log('Sony TV tuned to channel ' + ch);
+    };
+}
+
+/* Toshiba TV */
+var ToshibaTV = function () {
+    this.on = function () {
+        console.log('Welcome to Toshiba entertainment');
+    };
+
+    this.off = function () {
+        console.log('Goodbye Toshiba user');
+    };
+
+    this.tuneChannel = function (ch) {
+        console.log('Channel ' + ch + ' is set on your Toshiba television');
+    };
+};
+
+/* Let's see it in action */
+var sony = new SonyTV(),
+        toshiba = new ToshibaTV(),
+        std_remote = new RemoteControl(sony),
+        pwr_remote = new PowerRemote(toshiba);
+
+std_remote.on();            // prints "Sony TV is on"
+std_remote.setChannel(55);  // prints "Sony TV tuned to channel 55"
+std_remote.setChannel(20);  // prints "Sony TV tuned to channel 20"
+std_remote.off();           // prints "Sony TV is off"
+
+pwr_remote.on();            // prints "Welcome to Toshiba entertainment"
+pwr_remote.setChannel(55);  // prints "Channel 55 is set on your Toshiba television"
+pwr_remote.nextChannel();   // prints "Channel 56 is set on your Toshiba television"
+pwr_remote.prevChannel();   // prints "Channel 55 is set on your Toshiba television"
+pwr_remote.off();           // prints "Goodbye Toshiba user"
+
+</script>
+</body>
+</html>
