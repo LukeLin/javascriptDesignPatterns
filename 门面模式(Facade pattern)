@@ -1,0 +1,165 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <title></title>
+</head>
+<body>
+
+<script>
+    /**
+     * 门面模式
+     *
+     * 定义：
+     * 为子系统中的一组接口提供一个一致的界面，Facade模式定义了一个高层接口，这个接口使得这一子系统更加容易使用。
+     *
+     * 本质：
+     * 封装交互，简化调用
+     *
+     * 门面模式有两个作用：一是简化类的接口；二是消除类与使用它的客户代码之间的耦合。在js中，门面模式常常是开发人员最亲密的朋友。它是几乎所有js库的核心原则。通过创建一些便利方法让复杂系统变得更加简单易用，门面模式可以使库提供的工具更容易理解。使用这种模式，程序员可以间接地与一个子系统打交道，与直接访问子系统相比，这样做更不容易出错。
+     * 门面模式简化了诸如错误记录或跟踪页面视图统计数据这类常用的或重复性的任务。通过添加一些便利方法（这种方法是对原有的一些方法的组合利用），它还可以让对象的功能显得更加完善。
+     * 门面模式可用于简化复杂接口。它可以在幕后为你进行错误检查，清除不再需要的大对象，以及用一种更加易用的方式展现对象的功能。
+     * 门面模式并非必不可少，同样的任务不用它也能完成。这是一种组织性的模式，它可以用来修改类和对象的接口，使其更便于使用。它可以让程序员过的更轻松，使代码变得更容易管理。
+     * 这个模式在DOM脚本编程这种需要面对各种不一致的浏览器接口的环境中很常用。
+     */
+
+    /*
+     基于GUI的操作系统就是计算机上的数据和功能的一个门面。每次点击，拖动和移动某个东西时，实际上是在跟一个门面打交道，间接地执行了一些幕后命令。
+     */
+
+    // 跨浏览器事件侦听器
+    function addEvent(el, type, fn) {
+        if (window.addEventListener) {
+            el.addEventListener(type, fn, false);
+        } else if (window.attachEvent) {
+            el.attachEvent('on' + type, fn);
+        } else {
+            el['on' + type] = fn;
+        }
+    }
+    /*
+     addEvent函数是一个基本的门面，有了它，就有了一种为DOM节点添加事件侦听器的简便方法。
+     */
+
+    // 用作便利方法的门面元素
+    /* 门面模式给予开发人员的另一个好处表现在对函数的组合上。这些组合而得的函数又叫便利函数(convenience function).
+     */
+    function a(x) {
+        // do stuff here...
+    }
+    function b(y) {
+        // do stuff here...
+    }
+    function ab(x,y) {
+        a(x);
+        b(y);
+    }
+
+    // DOM中的例子
+    var DED=window.DED || {};
+    DED.util={
+        stopPropagation:function(e){
+            if(e.stopPropagation) {
+                // w3 interface
+                e.stopPropagation();
+            } else {
+                // IE's interface
+                e.cancelBubble=true;
+            }
+        },
+        preventDefault:function(e){
+            if(e.preventDefault) {
+                e.preventDefault();
+            } else {
+                e.returnValue=false;
+            }
+        },
+        // our convenience method
+        stopEvent:function(e){
+            DED.util.stopPropagation(e);
+            DED.util.preventDefault(e);
+        }
+    };
+
+
+    // 示例： 设置HTML元素的样式
+    function setStyle(elements,prop,val) {
+        for(var i= 0,len=elements.length;i<len;i++) {
+            document.getELementById(elements[i]).style[prop]=val;
+        }
+    }
+    setStyle(['foo'], 'position', 'absolute');
+
+    function setCSS(el,styles){
+        for(var prop in styls) {
+            if(!styls.hasOwnProperty(prop)) {
+                continue;
+            }
+            setStyle(el,prop,styls[prop]);
+        }
+    }
+    setCSS(['foo', 'bar'], {
+        position:'absolute',
+        top:'50px',
+        left:'300px'
+    });
+
+
+    // 示例： 设计一个事件工具
+    DED.util.Event={
+        getEvent:function(e){
+            return e || window.event;
+        },
+        getTarget:function(e){
+            e = this.getEvent(e);
+            return e.target || e.srcElement;
+        },
+        stopPropagation:function(e){
+            e = this.getEvent(e);
+            if(e.stopPropagation) {
+                e.stopPropagation();
+            } else {
+                e.cancelBubble=true;
+            }
+        },
+        preventDefault:function(e){
+            e = this.getEvent(e);
+            if(e.preventDefault) {
+                e.preventDefault();
+            } else {
+                e.returnValue=false;
+            }
+        },
+        stopEvent:function(e){
+            this.stopPropagation(e);
+            this.preventDefault(e);
+        }
+    };
+
+    addEvent($('example'), 'click', function(e){
+        console.log(DED.util.Event.getTarget(e));
+        DED.util.Event.stopEvent(e);
+    });
+
+    /*
+     实现门面模式的一般步骤
+     找准自己的应用程序中感觉适合使用门面方法的地方后，就可以着手加入便利方法了。这些函数的名称应该仔细考虑，与它们的用途要相称。对于有几种函数组合而成的函数，一个简单的办法就是把相关函数的名称串连成一个函数名，并采用camel大写规范。
+     处理浏览器API的不一致性属于另一种情况，此时要做的就是把分支代码放在新创建的门面函数中，辅以对象检查或浏览器嗅探等技术。命名方式应该以易识别为主。
+
+     门面模式的适用场合
+     判断是否应该应用门面模式的关键在于辨认那些反复成组出现的代码。如果函数b出现在函数a之后这种情况经常出现，那么也许你应该考虑添加一个把这两个函数组合起来的门面函数。
+     在自己的核心工具代码中加入门面函数的另一个可能目的是应对js内置函数在不同浏览器中的不同表现。
+     */
+
+    /*
+     门面模式之利
+     使用门面模式的目的就是要让程序员过的更轻松一些。编写一次组合代码，然后就可以反复使用它，这有助于节省时间和精力，他们提供了一个处理常见问题和任务的简化接口。
+     门面方法方便了开发人员，并且提供了较高层的功能，他们还能降低对外部代码的依赖程度。为应用系统的开发增加了一些额外的灵活性。通过使用门面模式，可以避免与下层子系统紧密耦合。这样就可以对这个系统进行修改该而不会影响到客户代码。
+
+     门面模式之弊
+     有时候门面元素也会带来一些不必要的额外负担。门面模式时常常会被滥用，导致小题大做。在实施一些套路之前应该认真掂量一下其实用性，因为它们不易察觉的破坏性和昂贵代价可能会是应用程序步履蹒跚。
+     对于简单的个人网站或少量营销网页来说，仅为工具提示和弹出式窗口这样一点增强行为就导入整个js库可能并不明智。
+     */
+</script>
+</body>
+</html>
