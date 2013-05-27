@@ -1,6 +1,6 @@
-javascriptDesignPatterns
+JavascriptDesignPatterns
 ========================
 
-javascript design patterns
+Javascript design patterns
 
 some collected JS design patterns learning.
