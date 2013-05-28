@@ -290,7 +290,7 @@ SimpleHandler.prototype = {
                 continue;
             }
             // if we reach this point,method[i] worked
-            this.createXhrObject = methods[i]();    // Memoize the method
+            this.createXhrObject = methods[i];    // Memoize the method
             return methods[i]();
         }
 
@@ -534,7 +534,7 @@ SimpleHandler.prototype = {
                 continue;
             }
             // if we reach this point,method[i] worked
-            this.createXhrObject = methods[i]();    // Memoize the method
+            this.createXhrObject = methods[i];    // Memoize the method
             return methods[i]();
         }
 
