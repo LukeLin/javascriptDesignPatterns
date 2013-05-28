@@ -4,26 +4,28 @@
  */
 (function () {
         /*
-        fnTest是用来检测是否有_super方法名字符串
-        */
+         fnTest是用来检测是否有_super方法名字符串
+         */
         var initializing = false, fnTest = /xyz/.test(function () {
             xyz;
         }) ? /\b_super\b/ : /.*/;
         /*
-        先定义全局Class构造函数
+         先定义全局Class构造函数
          */
         // The base Class implementation (does nothing)
         this.Class = function () {
         };
 
         /*
-        Class构造函数的静态方法,从这个Class extend的构造函数将会继承前者，并且带有extend静态方法，这样就可以不断继承
+         Class构造函数的静态方法,从这个Class extend的构造函数将会继承前者，并且带有extend静态方法，这样就可以不断继承
          */
         // Create a new Class that inherits from this class
         Class.extend = function (prop) {
-            // 第一次的this是Class构造函数的实例，
-            // 当有继承发生了，this就是父类的实例了.
-            // 所以_super指向父类的原型对象
+            // this是指的对象，不是实例，
+            // 第一次用Class.extend扩展时，
+            // this === window.Class,
+            // 当继承了这个的其它构造函数的extend方法中的this
+            // 也就指向该构造函数对象了，与实例化无关
             var _super = this.prototype;
 
             // Instantiate a base class (but only create the instance,
@@ -31,6 +33,8 @@
             // 初始化中，因为设置了true，不会运行init方法
             initializing = true;
             // 实例化基础Class或者父类
+            // 这里this就是个构造函数，因此可以实例化,
+            // 此时prototype就是个对象了
             var prototype = new this();
             initializing = false;
 
