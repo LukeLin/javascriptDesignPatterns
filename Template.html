@@ -1,0 +1,247 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8">
+    <title></title>
+</head>
+<body>
+<img src="Template.jpg" alt=""/>
+<script>
+    function extend(subclass, superclass) {
+        var F = function () {
+        };
+        F.prototype = superclass.prototype;
+        subclass.prototype = new F();
+        subclass.prototype.constructor = subclass;
+        subclass.super = superclass.prototype;
+
+
+        if (superclass.prototype.constructor === Object.prototype.constructor) {
+            superclass.prototype.constructor = superclass;
+        }
+    }
+
+    function rewrite(targetObj, obj, deep) {
+        if (Object.prototype.toString.call(obj) !== '[object Object]') {
+            return;
+        }
+        for (var i in obj) {
+            if (obj.hasOwnProperty(i)) {
+                if (deep === true) {
+                    targetObj[i] = targetObj[i] || {};
+                    rewrite(targetObj[i], obj[i], deep);
+                } else {
+                    targetObj[i] = obj[i];
+                }
+            }
+        }
+    }
+</script>
+
+<script>
+    /**
+     * 模板模式
+     *
+     * 模板方法定义了一个算法的步骤，并允许子类为一个或多个步骤提供实现。
+     *
+     * 本质
+     * 固定算法骨架
+     *
+     * 在一个方法中定义一个算法的骨架，而将一些步骤延迟到子类中。模板方法使得子类可以在不改变算法结构的情况下，重新定义算法中的某些步骤。
+     */
+
+    // 咖啡因饮料是一个抽象类
+    var CaffeineBeverage = function () {
+    };
+    CaffeineBeverage.prototype = {
+        /*---模板方法 ----*/
+        /**
+         * 它的用作一个算法的模板，在这个例子中，算法是用来制作咖啡因饮料的,
+         * 在这个模板中，算法内的每一个步骤都被一个方法代表了
+         */
+        prepareRecipe: function () {
+            this.boilWater();
+            this.brew();
+            this.pourInCup();
+            this.addConditions();
+        },
+        /*----------------*/
+        /* 因为咖啡和茶处理这些方法的做法不同，所以这两个方法必须被声明为抽象 */
+        brew: function () {
+            throw new Error('abstract brew method should be written.');
+        },
+        addConditions: function () {
+            throw new Error('abstract addConditions method should be written.');
+        },
+        /* ------------------------------- */
+        boilWater: function () {
+            console.log('boiling water');
+        },
+        pourInCup: function () {
+            console.log('pouring into cup');
+        }
+    };
+
+    var Tea = function () {
+    };
+    extend(Tea, CaffeineBeverage);
+    rewrite(Tea.prototype, {
+        brew: function () {
+            console.log('steeping the tea.');
+        },
+        addConditions: function () {
+            console.log('adding lemon');
+        }
+    });
+
+    var Coffee = function () {
+    };
+    extend(Coffee, CaffeineBeverage);
+    rewrite(Coffee.prototype, {
+        brew: function () {
+            console.log('Dripping Coffee through filter');
+        },
+        addConditions: function () {
+            console.log('adding Sugar and Milk');
+        }
+    });
+
+    var myTea = new Tea();
+    myTea.prepareRecipe();
+
+    /*
+     由CaffeineBeverage类主导一切，它拥有算法，而且保护这个算法。对子类来说，CaffeineBeverage类deep存在，可以将代码的复用最大化。算法只存在于一个地方，所以容易修改。这个模板方法提供了一个框架，可以让其他的咖啡因饮料插进去，新的咖啡因饮料只需要实现自己的方法就可以了。CaffeeineBeverage类专注在算法本身，而由子类提供完整的实现。
+     */
+
+    /*
+     对模板方法进行挂钩
+
+     钩子是一种被声明在抽象类中的方法，但只有空的或者默认的实现。钩子的存在，可以让子类有能力对算法的不同点进行挂钩。要不要挂钩，由子类自行决定。
+     */
+
+    // 高层组件，只有在需要子类实现某个方法时，方调用子类。
+    var CaffeineBeverageWithHook = function () {
+    };
+    CaffeineBeverageWithHook.prototype = {
+        prepareRecipe: function () {
+            this.boilWater();
+            this.brew();
+            this.pourInCup();
+            /*---------- 钩子 ----------*/
+            if (this.customerWantsCondiments()) {
+                this.addCondiments();
+            }
+            /*---------------------------*/
+        },
+        brew: function () {
+            throw new Error('brew method should be rewritten.');
+        },
+        addCondiments: function () {
+            throw new Error('addCondiments method should be written.');
+        },
+        boilWater: function () {
+            console.log('Boiling water');
+        },
+        pourInCup: function () {
+            console.log('pourng into cup');
+        },
+        /*------- 钩子方法 ------*/
+        customerWantsCondiments: function () {
+            return true;
+        }
+        /*----------------------*/
+    };
+
+    var CoffeeWithHook = function () {
+    };
+    extend(CoffeeWithHook, CaffeineBeverageWithHook);
+    rewrite(CoffeeWithHook.prototype, {
+        brew: function () {
+            console.log('Dripping coffee through filter');
+        },
+        customerWantsCondiments: function () {
+            var answer = this.getUSerInput();
+
+            return answer === true;
+        },
+        getUSerInput: function () {
+            return confirm('Would you like milk and sugar with your coffee (y/n)?');
+        },
+        addCondiments: function () {
+            console.log('adding sugar and milk');
+        }
+    });
+
+    var coffeeHook = new CoffeeWithHook();
+    coffeeHook.prepareRecipe();
+
+    /*
+     好莱坞原则
+
+     别调用我们，我们会调用你。
+
+     好莱坞原则可以给我们一种防止“依赖腐败”的方法。当高层组件依赖低层组件，而低层组件又依赖高层组件，而高层组件又依赖边侧组件，而边侧组件又依赖低层组件时，依赖腐败就发生了。在这种情况下，没有人可以轻易地搞懂系统是如何设计的。
+     在好莱坞原则之下，我们允许低层组件将自己挂钩到系统上，但是高层组件会决定什么时候和怎样使用这些低层组件。换句话说，高层组建对待低层组件的方式是“别调用我们，我们会调用你”。
+     */
+
+    /*
+     抽象类不一定包含抽象方法；有抽象方法的类一定是抽象类。
+     “既要约束子类的行为，又要为子类提供公共功能”的时候使用抽象类。
+     */
+
+    var Duck = function (name, weight) {
+        this.name = name;
+        this.weight = weight;
+    };
+    Duck.prototype = {
+        toString: function () {
+            return name + ' weighs ' + this.weight;
+        }
+    };
+
+    var ducks = [
+        new Duck('A', 8),
+        new Duck('B', 2),
+        new Duck('C', 7),
+        new Duck('D', 2),
+        new Duck('E', 10),
+        new Duck('E', 2)
+    ];
+    console.log('before');
+    display(ducks);
+
+    /*---------- 内置对象的模板方法 --------*/
+    ducks.sort(function (obj1, obj2) {
+        return obj1.weight - obj2.weight;
+    });
+    /*-------------------------------------*/
+
+    console.log('after');
+    display(ducks);
+
+    function display(arr) {
+        for (var i = 0, len = arr.length; i < len; i++) {
+            console.log(arr[i] + '');
+        }
+    }
+
+    /*
+     优点
+
+     实现代码复用。
+
+     缺点
+
+     算法骨架不容易升级
+     */
+
+    /*
+     何时使用
+
+     1.需要固定定义算法骨架，实现了一个算法的不变的部分，并把可变的行为留给子类来实现的情况。
+     2.各个子类中具有公共行为，应该抽取出来，集中在一个公共类去实现，从而避免代码重复。
+     3.需要控制子类扩展的情况。模板方法模式会在特定的点来调用子类的方法，这样只允许在这些点进行扩展。
+     */
+</script>
+</body>
+</html>
