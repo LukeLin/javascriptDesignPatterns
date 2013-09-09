@@ -1,725 +1,718 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>职责链模式</title>
+    <title>装饰者模式</title>
     <meta charset="utf-8">
 </head>
 <body>
 
 <script>
 /**
- * 职责链模式
+ * 装饰者模式
  *
  * 定义：
- * 使多个对象都有机会处理请求，从而避免请求的发送者和接收者之间的耦合关系。将这些对象连成一条链，并沿着这条链传递该请求，直到有一个对象处理它为止。
+ * 动态地给一个对象添加一些额外的职责。就增加功能来说，装饰者模式比生成子类更为灵活。
  *
  * 本质：
- * 分离职责，动态组合
+ * 动态组合
  *
- * 职责链模式可以用来消除请求的发送者和接收者之间的耦合。这是通过实现一个由隐式地对请求进行处理的对象组成的链而做到的。链中的每个对象可以处理请求，也可以将其传给下一个对象。如果有现成的链或层次体系可供利用，那么实现这个模式只是举手之劳。组合对象层次体系就非常适合。js内部就是用了这种模式来处理事件捕获和冒泡的问题。我们接下来将研究如何用这种模式创建耦合更松散的模块和优化事件绑定。
- *
- * 职责链的结构
- *
- * 职责链由多个不同类型的对象组成。发送者（sender）是发出请求的对象，而接收者（receiver）则是链中那些接受这种请求并且对其进行处理或传递的对象。请求本身有时也是一个对象，它封装着操作有关的所有数据。其典型的运转流程大致是：
- *     1.发送者知道链中的第一个接收者。它向这个接收者发出请求。
- *     2.每一个接收者都对请求进行分析，然后要么处理它，要么将其往下传。
- *     3.每一个接收者知道的其他对象只有一个，即它在链中的下家（successor）
- *     4.如果没有任何接收者处理请求，那么请求将从链上离开。不同的实现对此有不同的反应，既可能无声无息，也可能抛出一个错误。
+ * 装饰着模式是一种为对象增添特性的技术，它并不使用创建新子类这种手段。装饰者模式（decorator pattern）可用来透明地把对象包装在具有同样接口的另一对象之中。这样一来，你可以给一个方法添加一些行为，然后将方法调用传递给原始对象。相对于创建子类来说，使用装饰者对象是一种更灵活的选择。这种模式特别适合js，因为通常js代码并不怎么依赖对象的类型。
+ */
+/*
+ 装饰者结构
+
+ 装饰者可用于为对象增加功能，它可以用来替换大量子类。
+ 我们继续用自行车的例子。上次的例子中AcmeBicycleShop类的时候，顾客可以购买的自行车有4钟型号。
+ */
+var Bicycle = new Interface('Bicycle', ['assemble', 'wash', 'ride', 'repair']);
+/* BicycleShop class (abstract) */
+var BicycleShop = function () {
+};
+BicycleShop.prototype = {
+    sellBicycle: function (model) {
+        var bicycle = this.createBicycle(model);
+
+        bicycle.assemble();
+        bicycle.wash();
+
+        return bicycle;
+    },
+    createBicycle: function (model) {
+        throw new Error('Unsupported operation on an abstract class.');
+    }
+};
+
+function extend(subClass, superClass) {
+    function F() {
+    }
+
+    F.prototype = superClass.prototype;
+    subClass.prototype = new F();
+    subClass.prototype.constructor = subClass;
+
+    subClass.superclass = superClass.prototype;
+
+    if (superClass.prototype.constructor === Object.prototype.constructor) {
+        superClass.prototype.constructor = superClass;
+    }
+}
+/* AcmeBicycleShop class */
+var AcmeBicycleShop = function () {
+};
+extend(AcmeBicycleShop, BicycleShop);
+AcmeBicycleShop.prototype.createBicycle = function (model) {
+    var bicycle;
+
+    switch (model) {
+        case 'The Speedster':
+            bicycle = new Speedster();
+            break;
+        case 'The Lowrider':
+            bicycle = new Lowrider();
+            break;
+        case 'The Comfort Cruiser':
+        default:
+            bicycle = new ComfortCruiser();
+    }
+    Interface.ensureImplements(bicycle, Bicycle);
+    return bicycle;
+};
+
+/*
+ 后来这家商店开始为每一种自行车提供一些额外的特色配件。现在顾客再加点钱就可以买到带前灯，尾灯或铃铛的自行车。每一种可选配件都会影响到售价和车的组装方法。这个问题最基本的解决办法是为选件的每一种组合创建一个子类：
+ */
+var AcmeComfortCruiser = function () {
+}; // The superclass for all of the other comfort cruisers
+var AcmeComfortCruiserWithHeadlight = function () {
+};
+var AcmeComfortCruiserWidthTaillight = function () {
+};
+//...
+/*
+ 但是这种办法根本行不通，原因很简单，这需要实现100多个类（那4个父类每个都要派生24个子类，再加上父类本身）。而且这样做的话你不得不对工厂方法进行修改，以便能创建分别属于这100个子类的自行车来卖给顾客。
+ 装饰者模式对于实现这些选择再合适不过了。你不用为自行车和选件的每一种组合创建一个子类，而只需创建4个新类（一个类针对一种选择）即可。这些类与那4钟自行车类一样都要实现Bicycle接口，但它们只被用作这些自行车类的包装类。在这些选件类上进行的方法调用将被转到它们包装的自行车类上，有时会稍有修改。
+ 在这个例子中，选件类就是装饰者，而自行车类是它们的组件。装饰者对其组件进行了透明包装，二者可以互换使用，这是因为他们实现了同样的接口。下面我们来看应该怎样实现自行车装饰者类。首先要改一下接口，加入一个getPrice方法：
+ */
+// the Bicycle interface
+var Bicycle = new Interface('Bycycle', ['assemble', 'wash', 'ride', 'repair', 'getPrice']);
+/*
+ 所有自行车类和选件装饰者都要实现这个接口。AcmeComfortCruiser类大致是这个样子（不需要为使用装饰者而进行什么修改）
+ */
+/* the AcmeComfortCruiser class. */
+var AcmeComfortCruiser = function () {
+    // implements Bicycle
+};
+AcmeComfortCruiser.prototype = {
+    assemble: function () {
+    },
+    wash: function () {
+    },
+    ride: function () {
+    },
+    repair: function () {
+    },
+    getPrice: function () {
+        return 399.00;
+    }
+};
+/*
+ 这些选件类的作用基本上就是传递发生在它们身上的方法调用。为了简化这个任务，也为了方便以后增添更多选件，我们将创建一个抽象类BicycleDecorator，所有选件类都从此派生。它提供了Bicycle接口所要求的各个方法的默认版本：
+ */
+// the BicycleDecorator abstract decorator class
+var BicycleDecorator = function (bicycle) {
+    // implements Bicycle
+    Interface.ensureImplements(bicycle, Bicycle);
+    this.bicycle = bicycle;
+};
+BicycleDecorator.prototype = {
+    assemble: function () {
+        return this.bicycle.assemble();
+    },
+    wash: function () {
+        return this.bicycle.wash();
+    },
+    ride: function () {
+        return this.bicycle.ride();
+    },
+    repair: function () {
+        return this.bicycle.repair();
+    },
+    getPrice: function () {
+        return this.bicycle.getPrice();
+    }
+};
+
+/*
+ 它的构造函数接受一个对象参数，并将其用作该装饰者的组件。该类实现了Bicycle接口，它所实现的每一个方法所做的只是在其组件上调用同名方法。BicycleDecorator类是所有选件类的超类。这与组合模式非常类似。对于那些不需要修改的方法，选件类只要使用从BicycleDecorator继承而来的版本即可，而这些方法又会在组件上调用同样的方法，因此选件类对于任何客户代码都是透明的。
+ 有了BicycleDecorator，创建各种选件类很容易，只需要调用超类的构造函数并改写某些方法即可。
+ */
+// HeadlightDecorator class.
+var HeadlightDecorator = function (bicycle) {
+    // implements Bicycle
+    // call the superclass's constructor
+    HeadlightDecorator.superclass.constructor.call(this, bicycle);
+};
+extend(HeadlightDecorator, BicycleDecorator);
+HeadlightDecorator.prototype.assemble = function () {
+    return this.bicycle.assemble() + ' Attach headlight to handlebars';
+};
+HeadlightDecorator.prototype.getPrice = function () {
+    return this.bicycle.getPrice() + 15.00;
+};
+// 这个类冲定义了需要进行装饰的两个方法
+
+/*
+ 使用装饰者
+ 要创建一辆带前灯的自行车，首先应该创建自行车的实例，然后以该自行车对象为参数实例化前灯选件。在此之后，应该只是用这个HeadlightDecorator对象，你完全可以将其实为一辆自行车，而把它是一个装饰者对象抛之脑后
+ */
+var myBicycle = new AcmeComfortCruiser();   // Instantiate the bicycle
+console.log(myBicycle.getPrice());  // returns 399.00
+myBicycle = new HeadlightDecorator(myBicycle);  // Decorate the bicycle object
+console.log(myBicycle.getPrice());
+/*
+ 这里用来存放HeadlightDecorator实例的不是另一个变量，而是用来存放自行车实例的同一变量。这意味着此后将不能在访问原来的那个自行车对象，不过没关系，你以后不再需要这个对象。那个装饰者完全可以和自行车对象互换使用。这也意味着你可以随心所欲地嵌套使用多种装饰者。假如你创建一个TaillightDecorator类，那么可以将其与HeadlightDecorator结合使用：
+ */
+// TaillightDecorator class
+var TaillightDecorator = function (bicycle) {
+    // implements Bicycle
+    // call the superclass's constructor
+    TaillightDecorator.superclass.constructor.call(this, bicycle);
+};
+extend(TaillightDecorator, BicycleDecorator);
+TaillightDecorator.prototype.assemble = function () {
+    return this.bicycle.assemble() + ' Attach taillight to the seat post.';
+};
+TaillightDecorator.prototype.getPrice = function () {
+    return this.bicycle.getPrice() + 9.00;
+};
+
+var myBicycle = new AcmeComfortCruiser();    // Instantiate the bicycle
+console.log(myBicycle.getPrice());  // returns 399.00
+
+// Decorate the bicycle object with a taillight
+myBicycle = new TaillightDecorator(myBicycle);
+console.log(myBicycle.getPrice());  // Now returns 423.00
+/*
+ 你可以如法炮制，创建对应于前挂货篮和铃铛的装饰者。通过在运行期间动态应用装饰者，可以创建出具有所有需要的特性的对象，而不用去维护那100个不同的子类。要是前灯的价格发生变化，你只要在HeadlightDecorator类这一个地方予以更新即可。维护工作因此也更容易管理得多。
  */
 
 /*
- 为了说明职责链模式的组织方式及其作用，我们使用图书馆的示例，例中的PubicLibrary类保存着一个按图书的ISBN索引的图书目录。如果知道书的ISBN，那么查书很容易，但是按书的主题或类别查书却很困难。下面我们要实现几种目录对象，以便按不同标准对图书进行分类。
+ 接口在装饰着模式中的角色
+
+ 装饰者模式颇多得益于接口的使用。装饰者最重要的特点之一就是它们可以用来替代其组件。在本例中，这就是说任何原来使用AcmeComfortCruiser实例的地方，都可以使用HeadlightDecorator实例，为此不必对代码进行任何修改。这是通过确保所有装饰着对象都实现了Bicycle接口而达到的。
+ 接口在此发挥着两个方面的作用。首先，它说明了装饰者必须实现哪些方法，这有助于防止开发过程中的错误。通过创建一个具有一批固定方法的接口，你所面对的就不再是一个游移不定的目标。此外，它还可以在新版工厂方法中用来确保所创建的对象都实现了必须的方法。
+ 如果装饰着对象与其组件不能互换使用，它就丧失了其功能。这是装饰着模式的关键特点，要注意防止装饰者和组件出现接口方面的差异。这种模式的好处之一就是透明地用新对象装饰现有系统中的对象，而这并不会改变代码中的其他东西。只有装饰着和组件实现了同样的接口才能做到这一点。
  */
-// Interfaces
-var Publication = new Interface('Publication', ['getIsbn', 'setIsbn', 'getTitle', 'setTitle', 'getAuthor', 'setAuthor', 'getGenres', 'setGenres', 'display']);
-var Library = new Interface('Library', ['addBook', 'findBooks', 'checkoutBook', 'returnBook']);
-var Catalog = new Interface('Catalog', ['handleFillingRequest', 'findBooks', 'setSuccessor']);
 
-// Book class
-var Book = function (isbn, title, author, genres) {
+/*
+ 装饰者模式与组合模式比较
+
+ 装饰者模式和组合模式之间有许多共同点。装饰者对象和组合对象都是用来包装别的对象（那些对象在组合模式中称为子对象，而在装饰者模式中称为组件），它们都与所包装的对象实现同样的接口并且会把任何方法调用传递给这些对象。像BicycleDecorator这种及其基本的装饰者甚至可以被视为一个简单的组合对象。
+ 组合模式是一种结构型模式，用于把众多子对象组织为一个整体。藉此程序员与大批对象打交道时可以将它们当作一个对象来对待，并将他们组织为层次性的树。通常它并不修改方法调用，而只是将其沿组合对象与子对象的链向下传递，直到到达并落实在叶对象上。
+ 装饰者模式也是一种结构型模式，但它并非用于组织对象，而是用于在不修改现有对象或从其派生子类的前提下为其增添职责。在一些较简单的例子中，装饰者会透明而不加修改地传递所有方法调用，不过，创建装饰者的目的就在于对方法进行修改。HeadlightDecorator就修改了assemble和getPrice方法，其做法是先传递方法调用，然后修改其返回结果。
+ 尽管简单的组合对象可等同于简单的装饰者，这二者却有着不同的焦点。组合对象并不修改方法调用，其着眼点在于组织子对象。而装饰者存在的唯一目的就是修改方法调用而不是组织子对象，因为子对象只有一个。
+ */
+
+/*
+ 装饰者修改其组件的方式
+
+ 在方法之后添加行为
+ 具体而言就是先调用组件的方法，并在其返回后实施一些附加的行为。HeadlightDecorator的getPrice方法就是一个简单的例子：
+ HeadlightDecorator.prototype.getPrice = function(){
+ return this.bicycle.getPrice() + 35.00;
+ };
+
+ 这一过程可以多次重复：
+ */
+var myBicycle = new AcmeComfortCruiser();
+console.log(myBicycle.getPrice());     // returns 399.00
+myBicycle = new HeadlightDecorator(myBicycle);
+myBicycle = new HeadlightDecorator(myBicycle);
+console.log(myBicycle.getPrice());
+/*
+ 在方法之前添加行为
+ 如果行为修改发生在执行组件方法之前，那么要么必须把装饰者行为安排在调用组件方法之前，要么必须设法修改传递给组件方法的参数值。下面的例子实现了一个提供车架颜色选择的装饰者：
+ */
+// FrameColorDecorator class.
+var FrameColorDecorator = function (bicycle, frameColor) {
+    // implements Bicycle
+    FrameColorDecorator.superclass.constructor.call(this, bicycle);
+    this.frameColor = frameColor;
+};
+extend(FrameColorDecorator, BicycleDecorator);  // extend the superclass
+FrameColorDecorator.prototype.assemble = function () {
+    return 'Paint the frame ' + this.frameColor + ' and allow it to dry.' + this.bicycle.assemble();
+};
+FrameColorDecorator.prototype.getPrice = function () {
+    return this.bicycle.getPrice() + 30.00;
 };
 
-// PublicLibrary class
-var PublicLibrary = function (books) {
-    this.catalog = {};
-    for (var i = 0, len = books.length; i < len; i++) {
-        this.addBook(books[i]);
+// Instantiate the bicycle
+var myBicycle = new AcmeComfortCruiser();
+// Decorate the bicycle object with the frame color
+myBicycle = new FrameColorDecorator(myBicycle, 'red');
+// Decorate the bicycle object with the first headlight
+myBicycle = new HeadlightDecorator(myBicycle);
+// Decorate the bicycle object with the second headlight
+myBicycle = new HeadlightDecorator(myBicycle);
+// Decorate the bicycle object with a taillight
+myBicycle = new TaillightDecorator(myBicycle);
+console.log(myBicycle.assemble());
+/*
+ 'Paint the frame red and allow it to dry.(full instructions for assembling the bike itself go here) Attach headlight to handlebars.Attach headlight to handlebars.Attach taillight to the seat post.'
+ */
+
+/*
+ 替换方法
+ 有时为了实现新行为必须对方法进行整体替换。在此情况下，组件方法不会被调用（或虽然被调用但其返回值会被抛弃）。下面我们将创建一个用来实现自行车的终生保修的装饰者：
+ */
+// LifetimeWarrantyDecorator class.
+var LifetimeWarrantyDecorator = function (bicycle) {
+    // implements Bicycle
+    LifetimeWarrantyDecorator.superclass.constructor.call(this, bicycle);
+};
+extend(LifetimeWarrantyDecorator, BicycleDecorator);
+LifetimeWarrantyDecorator.prototype.repair = function () {
+    return 'This bicycle is covered by a lifetime warranty.Please take it to an authorized Acme Repair Center.';
+};
+LifetimeWarrantyDecorator.prototype.getPrice = function () {
+    return this.bicycle.getPrice() + 199.00;
+};
+/*
+ 这个装饰者把组件的repair方法替换为一个新方法，而组件的方法则再也不会被调用。装饰者也可以根据某种条件决定是否替换组件方法，在条件满足时替换方法，否则就使用组件的方法。
+ 下面这个例子创建的装饰者用于实现规定了保修期的保修：
+ */
+// TimedWarrantyDecorator class.
+var TimedWarrantyDecorator = function (bicycle, coverageLengthInYears) {
+    // implements Bicycle
+    TimedWarrantyDecorator.superclass.constructor.call(this, bicycle);
+    this.coverageLength = coverageLengthInYears;
+    this.expDate = new Date();
+    var coverageLengthInMs = this.coverageLength * 365 * 24 * 60 * 60 * 1000;
+    this.expDate.setTime(this.expDate.getTime() + coverageLengthInms);
+};
+extend(TimedWarrantyDecorator, BicycleDecorator);
+TimedWarrantyDecorator.prototype.repair = function () {
+    var repairInstructions;
+    var currentDate = new Date();
+    if (currentDate < this.expDate) {
+        repairInstructions = 'This bicycle is currently covered by a warranty.Please take it to an authorized Acme Repair Center.';
+    } else {
+        repairInstructions = this.bicycle.repair();
     }
+    return repairInstructions;
 };
-PublicLibrary.prototype = {
-    constructor: PublicLibrary,
-    findBooks: function (searchString) {
-        var results = [];
-        for (var isbn in this.catalog) {
-            if (this.catalog.hasOwnProperty(isbn)) {
-                if (this.catalog[isbn].getTitle().match(searchString) || this.catalog[isbn].getAuthor().match(searchString)) {
-                    results.push(this.catalog[isbn]);
-                }
+TimedWarrantyDecorator.prototype.getPrice = function () {
+    return this.bicycle.getPrice() + (40.00 * this.coverageLength);
+};
+/*
+ 这个例子中的getPrice和repair方法都会因保修期的长短而有所变化。如果尚在保修期内，你会得到“把自行车送到维修中心”这样的提示，否则被调用的将是组件的repair方法。
+ 在此之前的那些装饰者的应用顺序并不重要。但是，它们都必须放在最后应用，或至少要放在所有其它修改repair方法的装饰者之后应用。在使用替换组件方法的装饰者时，必须留意用装饰者包装自行车的顺序。使用工厂方法可以简化这一使用过程，但不管是否使用工厂方法，如果顺序至关紧要，那么装饰者就失去了部分灵活性。本节之前所讲的所有装饰者按任何顺序应用都可以正常发挥作用，因此可以根据需要透明而又动态地添加它们。而在引入替换组件方法的装饰者之后，必须设法确保正确的顺序应用装饰者。
+ */
+
+/*
+ 添加新方法
+ 前面的例子所讲的修改都发生在接口所定义的方法中（组件也具有这些方法），但这并不是一种必然的要求。装饰者也可以定义新方法，不过，要想稳妥的实现这一点并不容易。要想使用这些新方法，外围代码首先必须知道有这样一些新方法。由于这些新方法并不是在接口中定义的，而且它们是动态添加的，因此有必要进行类型检查，以验明用于包装组件对象的最外层装饰者。与用新方法装饰组件对象相比，对现有方法进行修改更容易实施，而且更不容易出错，这是因为采用后一种做法时，被装饰的对象用起来与之前没什么不同，外围代码也就不需要修改。
+
+ 在装饰者中添加新方法有时也是为类增添功能的一种强有力手段。我们可以用这种装饰者为自行车对象增添一个按铃方法。这是一个新功能，没有装饰者自行车就不可能执行这个任务：
+ */
+// BellDecorator class
+var BellDecorator = function (bicycle) {
+    // implements Bicycle
+
+    // Call the superclass
+    BellDecorator.superclass.constructor.call(this, bicycle);
+};
+// Extend the superclass
+extend(BellDecorator, BicycleDecorator);
+BellDecorator.prototype.assemble = function () {
+    return this.bicycle.assemble() + ' Attach bell to handlebars';
+};
+BellDecorator.prototype.getPrice = function () {
+    return this.bicycle.getPrice() + 6.00;
+};
+BellDecorator.prototype.ringBell = function () {
+    return 'Bell rung.';
+};
+
+/*
+ 这与先前讲过的装饰者非常相似，差别只在于它实现了ringBell这个未见于接口中的方法：
+ */
+var myBicycle = new AcmeComfortCruiser();
+myBicycle = new BellDecorator(mybicycle);
+console.log(myBicycle.ringBell());  // 'Bell rung.'
+/*
+ BellDecorator必须放在最后应用，否则这个新方法将无法访问。这是因为其它装饰者只能传递他们知道的方法，也即那些定义在接口中的方法。由于其他装饰者都不知道ringBell方法，如果你在添加了铃铛之后再添加前灯的话，那么BellDecoraotr中定义的新方法实际上会被HeadlightDecorator覆盖:
+ */
+var myBicycle = new AcmeComfortCruiser();
+myBicycle = new BellDecorator(myBicycle);
+myBicycle = new HeadlightDecorator(myBicycle);
+console.log(myBicycle.ringBell());  // Method not found.
+
+// The BicycleDecorator abstract decorator class, improved.
+var BicycleDecorator = function (bicycle) {
+    // implements Bicycle
+    this.bicycle = bicycle;
+    this.interface = Bicycle;
+
+    /*
+     Loop through all of the attributes of this.bicycle and create pass-through methods for any methods that aren't currently implemented.
+     */
+    outerloop:for (var key in this.bicycle) {
+        // Ensure that the property is a function
+        if (typeof this.bicycle[key] !== 'function') {
+            continue outerloop;
+        }
+        // Ensure that the method isn't in the interface.
+        for (var i = 0, len = this.interface.methods.length; i < len; i++) {
+            if (key === this.interface.methods[i]) {
+                continue outerloop;
             }
         }
-    },
-    checkoutBook: function (book) {
-        var isbn = book.getIsbn();
-        if (this.catalog[isbn]) {
-            if (this.catalog[isbn].available) {
-                this.catalog[isbn].available = false;
-                return this.catalog[isbn];
-            } else {
-                throw new Error('PublicLibrary: book ' + book.getTitle() + ' is not currently available');
-            }
-        } else {
-            throw new Error('PublicLibrary:book ' + book.getTitle() + ' not found');
-        }
-    },
-    returnBook: function (book) {
-        var isbn = book.getIsbn();
-        if (this.catalog[isbn]) {
-            this.catalog[isbn].available = true;
-        } else {
-            throw new Error('PublicLibrary:book ' + book.getTitle() + ' not found');
-        }
-    },
-    addBook: function (newBook) {
-        this.catalog[newBook.getIsbn()] = {
-            book: newBook,
-            available: true
-        };
-    }
-};
 
-// PublicLibrary对象把每一本书都提供给每一种分类目录进行处理
-// PublicLibrary class, with hard-coded catalogs for genre
-var PublicLibrary = function (books) {
-    this.catalog = {};
-    this.biographyCatalog = new BiograghyCatalog();
-    this.fantasyCatalog = new FantasyCatalog();
-    this.mysteryCatalog = new MysteryCatalog();
-    this.nonFictionCatalog = new NonFictionCatalog();
-    this.sciFiCatalog = new SciFiCatalog();
-
-    for (var i = 0, len = books.length; i < len; i++) {
-        this.addBook(books[i]);
-    }
-};
-PublicLibrary.prototype = {
-    findBooks: function (searchString) {
-    },
-    checkoutBook: function (book) {
-    },
-    returnBook: function () {
-    },
-    addBook: function (newBook) {
-        // Always add the book to the main catalog
-        this.catalog[newBook.getIsbn()] = {
-            book: newBook,
-            available: true
-        };
-
-        // Try to add the book to each genre catalog
-        this.biographyCatalog.handleFilingRequest(newBook);
-        this.fantasyCatalog.handleFilingRequest(newBook);
-        this.mysteryCatalog.handleFilingRequest(newBook);
-        this.nonFictionCatalog.handleFilingRequest(newBook);
-        this.sciFiCatalog.handleFilingRequest(newBook);
-    }
-};
-/*
- 前面这段代码可以奏效，不过其中固化了对5个不同类的依赖。如果想增加更多图书类别，那就需要修改构造函数和addBook方法这两处的代码。此外，把这些目录类别固化在构造函数中也没有多大意义，因为PublicLibrary的不同实例可能希望拥有完全不同的一套分类目录。而你也不可能在对象实例化之后再修改其支持的类别。这些理由都充分说明了前面的方法并不可取。下面来看职责链模式能为它带来什么改进：
- */
-// PublicLibrary class, with genre catalogs in a chain of responsibility
-var PublicLibrary = function (books, firstGenreCatalog) {
-    this.catalog = {};
-    this.firstGenreCatalog = firstGenreCatalog;
-
-    for (var i = 0, len = books.length; i < len; i++) {
-        this.addBook(books[i]);
-    }
-};
-PublicLibrary.prototype = {
-    findBooks: function (searchStrng) {
-    },
-    checkoutBook: function (book) {
-    },
-    returnBook: function (book) {
-    },
-    addBook: function (newBook) {
-        this.catalog[newBook.getIsbn()] = {
-            book: newBook,
-            available: true
-        };
-        this.firstGenreCatalog.handleFilingRequest(newBook);
-    }
-};
-/*
- 这个改进很明显。现在需要保存的只是指向分类目录链中第一个环节的引用。如果想把一本新书编入各种分类目录中，只需要将其传给链中第一个目录对象即可。第一个目录要么把它编入自己的目录（如果它符合所需标准），要么不编，然后，该目录会将该请求传递给下一个目录。因为一本图书可以属于不止一个类别，所以每个目录都会把请求往下传递。
- 现在不再有固化在代码中的依赖。所有分类目录都在外部实例化，因此不同的PublicLibrary实例能够使用不同的分类。你随时都可以在链中加入新的目录。
- */
-// Instantiate the catalogs
-var biographyCatalog = new BiograghyCatalog();
-var fantasyCatalog = new FantasyCatalog();
-var mysteryCatalog = new MysteryCatalog();
-var nonFictionCatalog = new NonFictionCatalog();
-var sciFiCatalog = new SciFiCatalog();
-
-// set he links in the chain
-biographyCatalog.setSuccessor(fantasyCatalog);
-fantasyCatalog.setSuccessor(mysteryCatalog);
-mysteryCatalog.setSuccessor(nonFictionCatalog);
-nonFictionCatalog.setSuccessor(sciFiCatalog);
-
-// Give the first link in the chain as an argument to the constructor
-var myLibrary = new PublicLibrary(books, biographyCatalog);
-
-// You can add links to the chain whenever ou like
-var historyCatalog = new HistoryCatalog();
-sciFiCatalog.setSuccessor(historyCatalog);
-
-/*
- 这个例子中，原来的链上有5个缓解，滴6个环节是后来假的。这意味着图书馆中每增加一本书都会通过调用链上第一个环节的handleFilingequest方法发起对该书的编目请求。该请求将沿着目录链逐一经过6个目录，最后从链尾离开。链上新增的任何目录都会被挂到链尾。
- 链对象都具有一些共同特征。它们都拥有一个指向链上下一个对象（被称为下家（successor））的引用。对于链上最后一个对象，这是一个空引用。链上的对象至少都要实现一个共同的方法，即负责处理请求的方法。这些对象不用像前面的例子中那样属于同一个类，但是它们必须实现同样的接口。通常它们分别属于一个类（它实现了所有方法的默认版本）的各种子类，分类目录对象就是这样实现的：
- */
-// GenreCatalog class, used as a superclass for specific catalog classes
-var GenreCatalog = function () {
-    this.successor = null;
-    this.catalog = [];
-};
-GenreCatalog.prototype = {
-    _bookMatchesCriteria: function (book) {
-        return false;
-    },
-    handleFilingRequest: function (book) {
-        // Check to see if the book belongs in this catagory
-        if (this._bookMatchesCriteria(book)) {
-            this.catalog.push(book);
-        }
-        // Pass the request on to the next link
-        if (this.successor) {
-            this.successor.handleFilingRequest(book);
-        }
-    },
-    findBooks: function (request) {
-        if (this.successor) {
-            return this.successor.findBooks(request);
-        }
-    },
-    setSuccessor: function (successor) {
-        if (Interface.ensureImplements(successor, Catalog)) {
-            this.successor = successor;
-        }
-    }
-};
-/*
- 这个超类提供了所有必需方法的默认实现，它们可以被各种子类继承。子类只需要重写findBooks和_bookMatchesCriteria这两个方法。其中后一个方法是一个伪私用方法，它负责判断一本书是否应被编入相关分类目录。GenreCatalog类提供了这两个方法的最简实现，以防子类没有重写它们。
- */
-// SciFiCatalog class
-var SciFiCatalog = function () {
-    SciFiCatalog.superclass.constructor.apply(this);
-};
-extend(SciFiCatalog, GenreCatalog);
-SciFiCatalog.prototype._bookMatchesCriteria = function (book) {
-    var genres = book.getGenres();
-    if (book.getTitle().match(/space/i)) {
-        return true;
-    }
-    for (var i = 0, len = genres.length; i < len; i++) {
-        var genre = genres[i].toLowerCase();
-        if (genre === 'sci-fi' || genre === 'scifi' || genre === 'science fiction') {
-            return true;
-        }
-    }
-    return false;
-};
-
-/*
- 传递请求
-
- 在链上传递请求有许多不同的方法可供选择。最常见的做法要么是使用一个专门的请求对象，要么是根本不使用参数，只依靠方法自身传递消息。不用参数调用方法是最简单的方法。在前面的例子中，我们使用了另一种常见技术，即把图书对象作为请求进行传递。图书对象封装了在判断链上哪些缓解应该将其编入它们的目录时需要的所有数据。这属于将现有对象作为请求对象进行重用的情况。我们将实现分类目录的findBooks方法，并将考察如何使用专门的请求对象来在链上的各个环节之间传递数据。
- */
-/*
- 首先我们需要修改一下PublicLibrary的findBiiks方法，以便可以根据类别来缩小搜索范围。如果调用该方法时提供了可选的genres参数，那么搜索将只在属于其指定类别的图书中进行：
- */
-// PublicLibrary class
-var PublicLibrary = function (books) {
-};
-PublicLibrary.prototype = {
-    findBooks: function (searchString, genres) {
-        // If the optional genres argument is given,search for books only in
-        // those genres.Use the chain of responsibility to perform the search
-        if (typeof genres === 'object' && genres.length > 0) {
-            var requestObject = {
-                searchString: searchString,
-                genres: genres,
-                results: []
+        // Add the new method.
+        var that = this;
+        (function (methodName) {
+            that[methodName] = function () {
+                return that.bicycle[methodName]();
             };
-            var responseObject = this.firstGenreCatalog.findBooks(requestObject);
-            return responseObject.results;
-        } else {
-            // Otherwise,search through all books
-            var results = [];
-            for (var isbn in this.catalog) {
-                if (this.catalog.hasOwnProperty(isbn)) {
-                    if (this.catalog[isbn].getTitle().match(searchString) || this.catalog[isbn].getAuthor().match(searchString)) {
-                        results.push(this.catalog[isbn]);
-                    }
-                }
-            }
-            return results;
-        }
-    },
-    checkoutBook: function (book) {
-    },
-    returnBook: function () {
-    },
-    addBook: function () {
-    }
-};
-/*
- findBooks方法创建了一个用来封装与请求相关的所有信息的对象，这些信息包括将要搜索的一组类别，搜索用词和一个用来保存查找结果的空数组。撞见这个对象的主要原因是，把所有数据集中在一起后管理起来方便得多，这些信息需要再通过链上各个环节的过程中保持完好无缺，把它们封装在一个对象中更有利于做到这一点。在本例中，这个对象也会作为返回值返回给客户代码，如果要一次在链上发起多个搜索，那么这样设计也有助于把搜索结果与所搜索的用词和类别保存在一起。
- */
-
-/*
- 现在我们要实现GenreCatalog这个超类中的findBooks方法。这个方法将被用在所有子类中，他不需要被重写：
- */
-// GenreCatalog class, used as a superclass for specific catalog classes
-var GenreCatalog = function () {
-    this.successor = null;
-    this.catalog = [];
-    this.genreNames = [];
-};
-GenreCatalog.prototype = {
-    constructor: GenreCatalog,
-    _bookMatchesCriteria: function (book) {
-    },
-    handleFilingRequest: function (book) {
-    },
-    findBooks: function (request) {
-        var found = false;
-        for (var i = 0, len = request.genres.length; i < len; i++) {
-            if (this.genreNames[i] === request.genres[i]) {
-                found = true;
-                break;
-            }
-        }
-
-        if (found) {
-            outerloop: for (var i = 0, len = this.catalog.length; i < len; i++) {
-                var book = this.catalog[i];
-                if (book.getTitle().match(request.searchString) ||
-                        book.getAuthor().match(request.searchString)) {
-                    for (var j = 0, requestLen = request.length; j < requestLen; j++) {
-                        if (request.results[j].getIsbn() === book.getIsbn()) {
-                            continue outerloop;
-                        }
-                    }
-                    request.results.push(book);
-                }
-            }
-        }
-
-        if (this.successor) {
-            return this.successor.findBooks(request);
-        } else {
-            return request;
-        }
-    },
-    setSuccessor: function (successor) {
-    }
-};
-/*
- 这个方法可以分为三大部分。第一部分逐一检查请求对象中的每一个类别名称，看看其是否与对象中保存的一组类别名称中的某一个匹配。如果匹配，那么代码的第二部分会逐一检查目录中的所有图书，看看其书名和作者姓名是否与搜索用词匹配。与搜索用词匹配的图书将被添加到请求对象中的results数组中，不过其前提是该数组中还没有这本书。在最后一部分，如果当前目录对象不是链上的最后一环，那么请求将被沿目录链继续下传，否则它将返回请求对象。最终请求对象将被从链尾开始沿目录链逐环向上返回，直到返回给客户代码。
- */
-
-/*
- 在超类GenreCatalog中，用于保存类别名称的属性genreNames是一个空数组，在子类中必须为其填入一些具体的类别名称。下面是SciFiCatalog类的实现代码：
- */
-// SciFiCatalog class
-var SciFiCatalog = function () {
-    SciFiCatalog.superclass.constructor.call(this);
-    this.genreName = ['sci-fi', 'scifi', 'science-fiction'];
-};
-extend(SciFiCatalog, GenreCatalog);
-SciFiCatalog.prototype._bookMatchesCriteria = function (book) {
-    //...
-};
-
-/*
- 在现有层次体系中实现指责链
-
- 在一个现有的对象层次体系中实现职责链更容易。不过要注意的是，在这种结合中方法的工作机制相对于组合模式中的一般机制有所偏离。在组合模式中，组合对象与叶对象实现了同样的接口。对组合对象进行的任何方法调用都会传递到所有子对象--包括叶对象和那些本身也是组合对象的子对象。方法调用到达叶对象后，这些对象就会实际执行操作并完成工作。
- 但在组合模式结合了职责链模式之后，方法调用就不再总是不加分辨地往下一直传递到叶对象。此时每一层都要对请求进行分析，以判断当前对象应该处理它还是应该把它往下传。组合对象实际上也会承担部分工作，而不是单纯依靠叶对象执行所有操作。
- 这两种模式的结合看似让代码增加了一些复杂度，其实通过重用现有的层次体系来实现职责链有很多好处。这样一来，就不用单独实现一些对象来作链上的环节，也不用手工设定下家对象。此外，通过规定在某些场合下一些方法调用可以在层次体系中较高的层次上得到处理，并且阻止较低层次的节点和叶节点获悉这些调用，可以让组合模式变得更加健壮。
- 由于指责链是现成的，所以设置代码的数量和用于职责链的额外对象的树木都减少了。由于在组合层次体系中某个方法可能会在高层得到处理，所以在整个树上执行该方法所需的计算量也降低了。
- */
-
-/*
- 事件委托
-
- JS使用了职责链模式来决定如何处理事件。事件被触发时（以点击事件为例）要经历两个阶段。第一个阶段是事件捕获（event capturing）阶段。在此期间，事件会沿HTML层次体系向下传播，从顶层开始，历经各个子元素，直到到达被点击的元素。从这时起将开始第二个阶段，即事件冒泡（event bubbling）。在这个阶段事件会历经同一批元素升回到顶层祖先。绑定在事件经过的这些元素上的时间侦听器既可以停止事件传播，也可以让其继续沿层次体系向上或向下传播。这里的传递的请求对象称为事件对象（event object），它包含着与事件有关的所有信息。
- 事件委托（event delegation）效率更高。
- */
-
-/*
- 职责链模式的适用场合
-
- 如果事先不知道在几个对象中有哪些能够处理请求，那么这就属于应该使用职责链的情况。如果这批处理器对象在开发期间不可知，而是需要动态指定的话，那么也应该使用这种模式。该模式还可以用在对于每个请求都不只有一个对象可以对它进行处理这种情况下。例如，在图书馆的例子中，每本图书都可以被分类到不止一个目录。该请求可以先被一个对象处理，然后继续往下传，在链上可能后面还有另一个对象会处理它。
- 使用这种模式，可以把特定的具体类与客户隔离开，并代之以一条由弱耦合的对象组成的链，它将隐式地对请求进行处理。这有助于提高代码的模块化程度和可维护性。
- */
-
-/*
- 图片库的进一步讨论
- */
-// Interface
-var Composite = new Interface('Composite', ['add', 'remove', 'getChild']);
-var GalleryItem = new Interface('GalleryItem', ['hide', 'show']);
-
-// DynamicGallery class
-var DynamicGallery = function (id) {
-    this.children = [];
-    this.element = document.createElement('div');
-    this.element.id = id;
-    this.element.className = 'dynamic-gallery';
-};
-DynamicGallery.prototype = {
-    add: function (child) {
-        Interface.ensureImplements(child, Composite, GalleryItem);
-
-        this.children.push(child);
-        this.element.appendChild(child.getElement());
-    },
-    remove: function (child) {
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            if (node == child) {
-                this.children.splice(i, 1);
-                break;
-            }
-        }
-    },
-    getChild: function (i) {
-        return this.children[i];
-    },
-    hide: function () {
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            node.hide();
-        }
-        this.element.style.display = 'none';
-    },
-    show: function () {
-        this.element.style.display = '';
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            node.show();
-        }
-    },
-    getElement: function () {
-        return this.element;
+        })(key);
     }
 };
 
-// GalleryImage class
-var GalleryImage = function (src) {
-    this.element = document.createElement('img');
-    this.element.className = 'gallert-image';
-    this.element.src = src;
-};
-GalleryImage.prototype = {
-    add: function () {
+BicycleDecorator.prototype = {
+    assemble: function () {
+        return this.bicycle.assemble();
     },
-    remove: function () {
+    wash: function () {
+        return this.bicycle.wash();
     },
-    getChild: function () {
+    ride: function () {
+        return this.bicycle.ride();
     },
-    hide: function () {
-        this.element.style.display = 'none';
+    repair: function () {
+        return this.bicycle.repair();
     },
-    show: function () {
-        this.element.style.display = '';
-    },
-    getElement: function () {
-        return this.element;
+    getPrice: function () {
+        return this.bicycle.getPrice();
     }
+};
+/*
+ 接口中的方法都如通常一样定义在BocycleDecorator的prototype中。BicycleDecorator构造函数对组件对象进行检查，并为所找到的每一个未见于接口中的方法创建一个新的通道方法。这样一来，外层的装饰者就不会掩盖内层装饰者定义的新方法，你可以自由自在地创建个中实现新方法的装饰者，而不用担心这些新方法无法访问。
+ */
+
+/**
+ 工厂的角色
+
+ 如果必须确保某种特定顺序，那么可以为此使用工厂对象。实际上，不管顺序是否要紧，工厂都很适合于创建装饰对象。本节将重写AcmeBicycleShop类的createBicycle方法，以便用户可以指定自行车要配的选件。这些选件将被转化为装饰者，并在方法返回之前被应用到新创建的自行车对象上。
+ */
+// 原来的AcmeBicycleShop factory class.
+var AcmeBicycleShop = function () {
+};
+extend(AcmeBicycleShop, BicycleShop);
+AcmeBicycleShop.prototype.createBicycle = function (model) {
+    var bicycle;
+    switch (model) {
+        case 'The Speedster':
+            bicycle = new AcmeSpeedster();
+            break;
+        case 'The Lowrider':
+            bicycle = new AcmeLowrider();
+            break;
+        case 'The Flatlander':
+            bicycle = new AcmeFlatlander();
+            break;
+        case 'The Comfort Cruiser':
+        default:
+            bicycle = new AcmeComfortCruiser();
+    }
+
+    Interface.ensureImplements(bicycle, Bicycle);
+    return bicycle;
 };
 
 /*
- 用职责链提高组合对象的效率
-
- 在组合对象中，hide和show方法先对本层次的一个样式属性进行设置，然后将调用传递给所有子对象，。这是一种缜密的做法，但是效率不高。由于元素的display样式属性会被其所有子元素继承（实际不算继承），因此没有必要把方法调用向层次体系的下层继续传递。更好的做法是将这些方法作为沿指责涟传递的请求实现。
- 这样做需要知道什么时候应该停止以及什么时候应该将它传递给子节点。这正是职责链模式的核心：懂得什么时候处理请求以及什么时候传递请求，每个组合对象节点和叶节点都有两种状态：现实和隐藏。hide请求根本不必传递，因为用CSS隐藏组合节点将自动隐藏其所有子节点。show请求则总是需要传递，因为无法预先得知组合对象节点的所有子节点的状态。我们做的第一个优化是从hide方法中删除将方法调用传递给子节点的那部分代码：
+ 这个类的改进版允许用户指定香味自行车配的选件。在这里，使用工厂模式可以统揽各种类（既包括自行车类也包括装饰者类）。把所有这些信息保存在一个地方，用户就可以把实际的类名与客户代码隔离开，这样以后添加新类或修改现有类也就更容易。
  */
-var DynamicGallery = function (id) {
-    this.children = [];
-    this.element = document.createElement('div');
-    this.element.id = id;
-    this.element.className = 'dynamic-gallery';
+// AcmeBicycleShop factory class, with decorators.
+var AcmeBicycleShop = function () {
 };
-DynamicGallery.prototype = {
-    add: function (child) {
-        Interface.ensureImplements(child, Composite, GalleryItem);
+extend(AcmeBicycleShop, BicycleShop);
+AcmeBicycleShop.prototype.createBicycle = function (model, options) {
+    // Instantiate the bicycle object.
+    var bicycle = new AcmeBicycleShop.models[model]();
 
-        this.children.push(child);
-        this.element.appendChild(child.getElement());
-    },
-    remove: function (child) {
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            if (node == child) {
-                this.children.splice(i, 1);
-                break;
-            }
+    // Iterate through the options and instantiate decorators
+    for (var i = 0, len = options.length; i < len; i++) {
+        var decorator = AcmeBicycleShop.options[options[i].name];
+        if (typeof decorator !== 'function') {
+            throw new Error('Decorator ' + options[i].name + ' not found.');
         }
-    },
-    getChild: function (i) {
-        return this.children[i];
-    },
-    hide: function () {
+        var argument = options[i].arg;
+        bicycle = new decorator(bicycle, argument);
+    }
+
+    // Check the interface and return the finished object
+    Interface.ensureImplements(bicycle, Bicycle);
+    return bicycle;
+};
+
+// Model name to class name mapping.
+AcmeBicycleShop.models = {
+    'The Speedster': AcmeSpeedster,
+    'The Lowrider': AcmeLowrider,
+    'The Flatlander': AcmeFlatlander,
+    'The Comfort Cruiser': AcmeComfortCruiser
+};
+
+// Option name to decorator class name mapping.
+AcmeBicycleShop.options = {
+    'headlight': HeadlightDecorator,
+    'taillight': TaillightDecorator,
+    'bell': BellDecorator,
+    'basket': BasketDecorator,
+    'color': FrameColorDecorator,
+    'lifetime warranty': LifetimeWarrantyDecorator,
+    'timed warranty': TimedWarrantyDecorator
+};
+/*
+ 如果顺序很重要，那么可以添加一些代码，在使用选件数组实例化装饰者之前对其进行排序。
+ 用工厂实例化自行车对象有许多好处。首先，不必了解自行车和装饰者的各种类名，所有这些信息都封装在AcmeBicycleShop类中。因此添加自行车型号和选件非常容易，只要把它们添加到AcmeBicyckeShop.models或AcmeBicycleShop.options数组中即可。
+ */
+// 不使用工厂
+var myBicycle = new AcmeSpeedster();
+myBicycle = new FrameColorDecorator(myBicycle, 'blue');
+myBicycle = new HeadlightDecorator(myBicycle);
+myBicycle = new TaillightDecorator(myBicycle);
+myBicycle = new TimedWarrantyDecorator(myBicycle, 2);
+
+/*
+ 采用这种直接实例化对象的做法，与客户端代码紧密耦合在一起的类不下5个。与此相比，使用了工厂的做法，与客户端代码耦合在一起的只有一个类，即那个工厂本身：
+ */
+var alecsCruisers = new AcmeBicycleShop();
+var myBicycle = alecsCruisers.createBicycle('The Speedter', [
+    {name: 'color', arg: 'blue'},
+    {name: 'headlight'},
+    {name: 'tailight'},
+    {name: 'timed warranty', arg: 2}
+]);
+/*
+ 如果有必要的话，工厂可以对选件进行排序。某些装饰者修改组件方法的方式决定了它们需要最先或最后被应用。在此情况下工厂的这种作用尤其有用。那种会替换组件方法而不是对其进行扩充的装饰者需要放在最后创建，以确保其成为最外层的装饰者。
+ */
+
+/**
+ * 函数装饰者
+ *
+ * 装饰者并不局限于类。你也可以创建用来包装独立的函数和方法的装饰者。
+ */
+/*
+ 下面是一个简单的函数装饰者的例子，这个装饰者包装了另一个函数，其作用在于将被包装者的返回结果改为大写形式：
+ */
+function upperCaseDecorator(func) {
+    return function () {
+        return func.apply(this, arguments).toUpperCase();
+    };
+}
+
+function getDate() {
+    return (new Date()).toString();
+}
+var getDateCaps = upperCaseDecorator(getDate);
+console.log(getDate()); // Wed Mar 06 2013 15:05:16 GMT+0800 (中国标准时间)
+console.log(getDateCaps()); // WED MAR 06 2013 15:05:49 GMT+0800 (中国标准时间)
+
+VellDecorator.prototype.ringBellLoudly = upperCaseDecorator(BellDecorator.prototype.ringBell);
+var myBicycle = new AcmeComfortCruiser();
+myBicycle = new BellDecorator(myBicycle);
+console.log(myBicycle.ringBell());  // 'Bell rung.'
+console.log(myBicycle.ringBellLoudly());    // 'BELL RUNG'
+
+
+// 函数装饰者在对另一个函数的输出应用某种格式或执行某种转换这方面很有用处。
+
+/*
+ 装饰者模式的适用场合
+
+ 如果需要为类增添特性或职责，而从该类派生子类的解决办法并不实际的话，就应该使用装饰者模式。派生子类之所以会不实际，最常见的原因是需要增添的特性的数量和组合要求使用大量子类。自行车商店的例子就说明了这一点。这个例子中涉及7钟不同的自行车选件，其中一些选件你还可以应用多次，这意味着如果不采用装饰者模式的话，要达到同样的目的需要数以千计的子类。从这个意义上讲，装饰者模式甚至可以被视为一种优化模式，因为在此场合下它节省的代码量可达几个数量级。
+
+ 如果需要为对象增添特性而又不想改变使用该对象的代码的话，也可以采用装饰者模式。因为装饰着可以动态而又透明地修改对象，所以它们很适合于修改现有系统这一任务。相比卷入创建和维护子类的麻烦，创建和应用一些装饰者往往要省事得多。
+ */
+
+/*
+ 装饰者模式之利
+
+ 装饰者是在运行期间为对象增添特性或职责的有力工具。在自行车上点那个例子中，通过使用装饰者，你可以动态地为自行车对象添加可选的特色配件。在只有部分对象需要这些特性的情况下装饰者模式的好处尤为突出。如果不采用这种模式，那么要想实现同样的效果必须使用大量子类。
+ 装饰者的运作过程是透明的，这就是说你可以用它包装其他对象，然后继续按之前使用那些对象的方法来使用它。从MethodProfiler这个示例中可以看到，这一切甚至可以动态实现，不用事先知道组件对象的接口。在为现有对象添砖加瓦这方面，装饰者模式为程序员带来了极大的灵活性。
+
+
+ 装饰者模式之弊
+
+ 装饰者模式的缺点主要表现在两个方面。首先，在遇到用装饰者包装起来的对象时，那些依赖于类型检查的代码会出问题。尽管js中很少使用严格的类型检查，但是如果你的代码中执行了这样的检查，那么装饰者是无法匹配所需要的类型的。通常装饰者对客户代码来说是完全透明的，不过，在这种情况下，客户代码就能感知装饰者与其组件的不同。
+ 第二，使用装饰者模式往往会增加架构的复杂程度。这种模式常常要引入许多小对象，它们看起来比较相似，而实际功能却大相径庭。装饰者模式往往不太容易理解，对于那些不熟悉这种模式的开发人员而言尤其如此。此外，实现具有动态接口的装饰者（如MethodProfiler）涉及的语法细节有时也会令人生畏。在设计一个使用了装饰着模式的架构时，你必须多花点心思，确保自己的代码有良好的文档说明，并且容易理解。
+ */
+
+</script>
+
+
+<script>
+    function $(id){
+        return document.getElementById(id);
+    }
+</script>
+<script>
+    // 方法性能分析器
+    // ListBuilder class.
+    var ListBuilder = function (parent, listLength) {
+        this.parent = $(parent);
+        this.listLength = listLength;
+    };
+    ListBuilder.prototype = {
+        buildList: function (container) {
+            var list = document.createElement('ul');
+            list.setAttribute('id', container);
+            this.parent.appendChild(list);
+            var len = this.listLength;
+
+            while (len) {
+                var item = document.createElement('li');
+                list.appendChild(item);
+                --len;
+            }
+        },
+        removeLists: function(id){
+            var ele = $(id);
+            ele.parentNode.removeChild(ele);
+        }
+    };
+
+    // SimpleProfiler class.
+    var SimpleProfiler = function (component) {
+        this.component = component;
+    };
+    SimpleProfiler.prototype = {
+        buildList: function () {
+            var startTime = (new Date()).getTime();
+            this.component.buildList();
+            var elapsedTime = (new Date()).getTime() - startTime;
+            console.log('buildList:' + elapsedTime + ' ms');
+        }
+    };
+    /*
+     var list = new ListBuilder('list-container', 5000);
+     list = new SimpleProfiler(list);
+     list.buildList();
+     */
+    // 通用化改造
+    // MethodProfiler class.
+    var MethodProfiler = function (component) {
+        this.component = component;
+        this.timers = {};
+
+        for (var key in this.component) {
+            // Ensure that the property is a function
+            if (typeof this.component[key] !== 'function') {
+                continue;
+            }
+
+            // Add the method
+            var that = this;
+            (function (methodName) {
+                that[methodName] = function () {
+                    that.startTimer(methodName);
+                    var returnValue = that.component[methodName].apply(that.component, arguments);
+                    that.displayTime(methodName, that.getElapsedTime(methodName));
+                    return returnValue;
+                };
+            })(key);
+        }
+    };
+    MethodProfiler.prototype = {
+        startTimer: function (methodName) {
+            this.timers[methodName] = new Date().getTime();
+        },
+        getElapsedTime: function (methodName) {
+            return new Date().getTime() - this.timers[methodName];
+        },
+        displayTime: function (methodName, time) {
+            console.log(methodName + ': ' + time + ' ms');
+        }
+    };
+
+    var list = new ListBuilder('list-container', 5000);
+    list = new MethodProfiler(list);
+    list.buildList('ol');
+    list.buildList('ul');
+    list.removeLists('ul');
+    list.removeLists('ol');
+
+
+    /* Title: Decorator
+    Description: dynamically adds/overrides behaviour in an existing method of an object
+    */
+
+    var tree = {};
+    tree.decorate = function () {
+        console.log('Make sure the tree won\'t fall');
+    };
+
+    tree.getDecorator = function (deco) {
+        tree[deco].prototype = this;
+        // console.log(tree[deco].prototype);
         /*
-         for (var node, i = 0; node = this.getChild(i); i++) {
-         node.hide();
-         }
+         tree
+         tree.BlueBalls
+         tree.Angel
          */
-        this.element.style.display = 'none';
-    },
-    show: function () {
-        this.element.style.display = '';
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            node.show();
+        return new tree[deco];
+    };
+
+    tree.RedBalls = function () {
+        this.decorate = function () {
+            this.RedBalls.prototype.decorate();
+            //console.log(this.RedBalls.prototype.decorate);
+            /*
+             function () {
+             this.Angel.prototype.decorate();
+             console.log(this.Angel.prototype.decorate);
+             console.log('An angel on the top');
+             }
+             */
+            console.log('Put on some red balls');
         }
-    },
-    getElement: function () {
-        return this.element;
-    }
-};
-/*
- 现在该组合对象层次体系中的任何一段都可以被视为一条职责链。在传递hide或show请求的时候，你并不知道或关心具体将由哪些对象执行那些实际实现隐藏或现实的操作，因为请求处理是隐式的。
- */
+    };
 
-/*
- 为图片添加标签
-
- 标签是一个描述性的标题，可以用来对图片进行分类。图片和图片库都可以添加标签。为图片库添加标签实际上相当于让其中的所有图片都使用这个标签。你可以在层次体系的任何层次上搜索具有指定标签的所有图像。这正是职责链的优化的地方。如果在搜索过程中遇到一个具有所请求的标签的组合对象节点，那就可以停止请求并将该节点的所有叶级后代节点作为搜索结果返回：
- */
-var Composite = new Interface('Composite', ['add', 'remove', 'getChild', 'getAllLeaves']);
-var GalleryItem = new Interface('GalleryItem', ['hide', 'show', 'addTag']);
-
-// DynamicGallery class
-var DynamicGallery = function (id) {
-    this.children = [];
-    this.tags = [];
-    this.element = document.createElement('div');
-    this.element.id = id;
-    this.element.className = 'dynamic-gallery';
-};
-DynamicGallery.prototype = {
-    //...
-    addTag: function (tag) {
-        this.tags.push(tag);
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            node.addTag(tag);
+    tree.BlueBalls = function () {
+        this.decorate = function () {
+            this.BlueBalls.prototype.decorate();
+            //console.log(this.BlueBalls.prototype.decorate);
+            /*
+             function () {
+             console.log('Make sure the tree won\'t fall');
+             }
+             */
+            console.log('Add blue balls');
         }
-    },
-    /*
-     用于获取特定组合对象的所有叶级后代节点并将它们组织为一个数组返回。
-     */
-    getAllLeaves: function () {
-        var leaves = [];
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            leaves = leaves.concat(node.getAllLeaves());
+    };
+
+    tree.Angel = function () {
+        this.decorate = function () {
+            this.Angel.prototype.decorate();
+            //console.log(this.Angel.prototype.decorate);
+            /*
+             this.BlueBalls.prototype.decorate();
+             console.log(this.BlueBalls.prototype.decorate);
+             console.log('Add blue balls');
+             */
+            console.log('An angel on the top');
         }
-        return leaves;
-    },
-    /*********    职责链优化    *************/
-    /*
-     首先判断当前对象是否能处理请求，其具体做法是在当前对象的tags数组中检查指定的标签。如果能找到，那就表明层次体系中当前这个组合对象的所有子对象也都将具有这个标签。此时即可停止搜索，然后在这个层次上处理请求。如果找不到指定标签，则将请求传递给每一个子对象，并返回结果
-     */
-    getPhotosWithTag: function (tag) {
-        // First srach in this object's tags, if the tag is found here,
-        // we can stop search and just return all the leaf nodes
-        for (var i = 0, len = this.tags.length; i < len; i++) {
-            if (this.tags[i] === tag) {
-                return this.getAllLeaves();
-            }
-        }
+    };
 
-        // If the tag isn;t found in this object's tags, pass the request
-        // down the hierarchy
-        for (var results = [], node, i = 0; node = this.getChild(i); i++) {
-            results = results.concat(node.getPhotosWithTag(tag));
-        }
-        return results;
-    }
-    /*********            *************/
-    //, ...
-};
+    tree = tree.getDecorator('BlueBalls');
+    tree = tree.getDecorator('Angel');
+    tree = tree.getDecorator('RedBalls');
 
-// GalleryImage class
-var GalleryImage = function (src) {
-    this.element = document.createElement('img');
-    this.element.className = 'gallery-image';
-    this.element.src = src;
-    this.tags = [];
-};
-GalleryImage.prototype = {
-    //...
-    addTag: function (tag) {
-        this.tags.push(tag);
-    },
-    getAllLeaves: function () {
-        return [this];
-    },
-    getPhotosWithTag: function (tag) {
-        for (var i = 0, len = this.tags.length; i < len; i++) {
-            if (this.tags[i] === tag) {
-                return [this];
-            }
-        }
-        return [];
-    }
-    //, ...
-};
+    tree.decorate();
 
-/*
-职责链模式之利
-
-借助职责链模式，可以动态选择由哪个对象处理请求。这意味着你可以使用只有在运行期间才能知道的条件来把任务分派给最恰当的对象。这比试图在开发期间静态指定处理请求的对象高效得多。还可以使用这个模式消除发出请求的对象与处理请求的对象之间的耦合。藉此可以在模块的组织方面获得更大的灵活性，而且在重构和修改该代码的时候不用担心会把类名固化在算法中。
-在已经有现成的链或层次体系的情况下，职责链模式更加有效。与组合模式的结合使用就属于这种情况。你可以重用组合对象的结构来传递请求。直到找到一个可以处理请求的对象。在此情况下，不用编写粘合性代码来实例化哪些对象或建立链。
-
-
-职责链模式之弊
-
-由于在职责链模式中，请求与具体的处理程序被隔离开来，因此无法保证它一定会被处理，而不是径直从链尾离开。这种模式使用的接收者是隐式的，因此无法得知如果请求能够得到处理的话具体将由哪个对象处理它。这个问题可以通过创建一个通用的接收者将其添加到所有链的尾端来解决，但是这个办法很繁琐，而且这样就失去了可以随时在链尾添加新环节的灵活性。
-职责链与组合对象类的搭配使用可能有点困惑。原本组合对象节点可以与叶节点互换使用，而且客户代码看不出其中的差别，所有方法调用都被组合对象往层次体系的下层传递。但职责链方法改变了这个约定。在引入职责链之后，有些方法会在组合对象这里进行处理，而不会继续往下传。要想让这些方法可以与叶方法互换，其代码的编写会很棘手。他们的效率很高，但为此付出的代价是代码的复杂度。
- */
-
-
-
-/* Title: Chain of responsibility
- Description: delegates commands to a chain of processing objects
- */
-
-var NO_TOPIC = -1;
-var Topic;
-
-function Handler(s, t) {
-    this.successor = s || null;
-    this.topic = t || 0;
-}
-
-Handler.prototype = {
-    handle:function () {
-        console.log(this.has());
-        if (this.successor) {
-            this.successor.handle();
-        }
-        console.log(this.topic);
-    },
-    has:function () {
-        return this.topic != NO_TOPIC;
-    }
-};
-
-var _handle = Handler.prototype.handle;
-
-var app = new Handler({
-    handle:function () {
-        console.log('app handle');
-    }
-}, 3);
-
-var dialog = new Handler(app, 1);
-//dialog.handle = function () {
-//if (this.has()) {
-//} else {
-//console.log('dialog handle');
-//_handle.call(this);
-//}
-//}
-
-var button = new Handler(dialog, 2);
-//button.handle = function () {
-//if (this.has()) {
-//} else {
-//console.log('dialog handle');
-//_handle.call(this);
-//}
-//}
-
-button.handle();
-
-// reference
-// https://gist.github.com/1174982
-
-
-
-// http://www.joezimjs.com/javascript/javascript-design-patterns-chain-of-responsibility/
-var MoneyStack = function(billSize) {
-    this.billSize = billSize;
-    this.next = null;
-}
-MoneyStack.prototype = {
-    withdraw: function(amount) {
-        var numOfBills = Math.floor(amount / this.billSize);
-
-        if (numOfBills > 0) {
-            // Eject the bills
-            this._ejectMoney(numOfBills);
-            // Shrink the amount by how much money we ejected
-            amount -= (this.billSize * numOfBills);
-        }
-
-        // If there is any money left to withdraw and if we have
-        // another stack in the line, pass the request on
-        amount > 0 && this.next && this.next.withdraw(amount);
-    },
-    // set the stack that comes next in the chain
-    setNextStack: function(stack) {
-        this.next = stack;
-    },
-    // private method that ejects the money
-    _ejectMoney: function(numOfBills) {
-        console.log(numOfBills + " $" + this.billSize
-                + " bill(s) has/have been spit out");
-    }
-};
-
-var ATM = function() {
-    // Create the stacks of money
-    // We'll show you the implementation for this next
-    var stack100 = new MoneyStack(100),
-            stack50 = new MoneyStack(50),
-            stack20 = new MoneyStack(20),
-            stack10 = new MoneyStack(10),
-            stack5 = new MoneyStack(5),
-            stack1 = new MoneyStack(1);
-
-    // Set the hierarchy for the stacks
-    stack100.setNextStack(stack50);
-    stack50.setNextStack(stack20);
-    stack20.setNextStack(stack10);
-    stack10.setNextStack(stack5);
-    stack5.setNextStack(stack1);
-
-    // Set the top stack as a property
-    this.moneyStacks = stack100;
-}
-
-ATM.prototype.withdraw = function(amount) {
-    this.moneyStacks.withdraw(amount);
-}
-
-// USAGE
-var atm = new ATM();
-atm.withdraw(186);
-/* outputs:
- 1 $100 bill(s) has/have been spit out
- 1 $50 bill(s) has/have been spit out
- 1 $20 bill(s) has/have been spit out
- 1 $10 bill(s) has/have been spit out
- 1 $5 bill(s) has/have been spit out
- 1 $1 bill(s) has/have been spit out
- */
-atm.withdraw(72);
-/* outputs:
- 1 $50 bill(s) has/have been spit out
- 1 $20 bill(s) has/have been spit out
- 2 $1 bill(s) has/have been spit out
- */
 </script>
 </body>
 </html>
