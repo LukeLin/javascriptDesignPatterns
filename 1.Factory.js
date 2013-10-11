@@ -1,12 +1,3 @@
-<!DOCTYPE HTML>
-<html lang="en-US">
-<head>
-    <meta charset="UTF-8">
-    <title></title>
-</head>
-<body>
-
-<script>
 /**
  * 工厂模式
  *
@@ -745,6 +736,3 @@ jsp.dom.factory = function (type) {
 var o = jsp.dom.factory('Link');
 o.url = 'http://google.com';
 o.insert(document.body);
-</script>
-</body>
-</html>
