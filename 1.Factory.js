@@ -1,3 +1,4 @@
+
 /**
  * 工厂模式
  *
@@ -736,3 +737,75 @@ jsp.dom.factory = function (type) {
 var o = jsp.dom.factory('Link');
 o.url = 'http://google.com';
 o.insert(document.body);
+
+
+/*
+ 工厂方法模式与IoC与DI
+
+ Ioc --- Inversion of Control， 控制反转
+ DI  --- Dependency Injection， 依赖注入
+
+ 1）.参与者有谁？
+ 一般有三方参与者，一个是某个对象（任意对象）；另一个是Ioc/DI的容器（用来实现IoC/DI功能的一个框架程序）；还有一个是某个对象的外部资源（对象需要的，但是是从对象外部获取的，都统称为资源）。
+ 2）.谁依赖于谁？
+ 某个对象依赖于IoC/DI的容器
+ 3）.为什么需要依赖？
+ 对象需要Ioc/DI的容器来提供对象需要的外部资源。
+ 4）.谁注入谁？
+ Ioc/DI的容器注入某个对象。
+ 5）.到底注入什么？
+ 注入的是某个对象所需要的外部资源。
+ 6）.谁控制谁？
+ IoC/DI的容器来控制对象。
+ 7）.控制什么？
+ 主要是控制对象实例的创建。
+ 8）.为何叫反转？
+ 反转是相对于正向而言的。
+ 在A类中主动去获取所需要的外部资源C，这种情况被称为正向的。反向就是A类不再主动去获取C，而是被动等待，等待IoC/DI的容器获取一个C的实例，然后反向地注入到A类中。
+ 9）.依赖注入和控制反转是同一个概念吗？
+ 依赖注入和控制反转是对同一件事情的不同描述。依赖注入是从应用程序的角度去描述。应用程序依赖容器创建并注入它所需要的外部资源。
+ 而控制反转是从容器的角度去描述，容器控制应用程序，由容器反向地向应用程序注入其所需要的外部资源。
+
+ 这么一个小小的改变其实是编程思想的一个大进步，有效地分离了对象和它所需要的外部资源，使它们松散耦合，有利于功能服用，更重要的是使得程序的整个体系结构变得非常灵活。
+
+
+ */
+
+// 用setter注入，使用Ioc/DI的示例
+var A = function(){
+    this.c = null;
+};
+A.prototype = {
+    setC: function(c){
+        // 注入
+        this.c = c;
+    },
+    t1: function(){
+        // 等待注入
+        this.c.tc();
+    }
+};
+
+var C = function(){};
+C.prototype.tc = function(){
+    console.log('instance C method');
+};
+
+(new A()).setC(new C()).t1();
+
+// 工厂方法实现Ioc/DI
+var A = function(){};
+A.prototype = {
+    createC1: function(){},
+    t1: function(){
+        this.createC1().tc();
+    }
+};
+// 子类实现注入
+var A2 = function(){
+    this.superclass.constructor.apply(this, arguments);
+};
+extend(A, A2);
+A2.prototype.createC1 = function(){
+    return new C();
+};
