@@ -533,6 +533,11 @@ myHandler.request('GET', 'script.php', callback);
  *简单工厂和能创建对象实例的模式
  *
  简单工厂可以跟其他任何能够具体的创建对象实例的模式配合使用，比如：单例模式，原型模式，生成器模式等。
+
+ * 工厂方法和模板方法模式
+ *
+ 这两个模式外观类似，都有一个抽象类，然后由子类来提供一些实现，但是工厂方法模式的子类专注的是创建产品对象，而模板方法模式的子类专注的是为固定算法骨架提供某些步骤的实现。
+ 这两个模式可以组合使用，通常在模板方法模式里面，使用工厂方法来创建末班方法需要的对象。
  */
 
 
@@ -809,3 +814,163 @@ extend(A, A2);
 A2.prototype.createC1 = function(){
     return new C();
 };
+
+
+/**
+ * 抽象工厂模式
+ *
+ * 定义： 提供一个创建一系列相关或相互依赖对象的接口，而无需制定它们具体的类。
+ *
+ * 本质：
+ * 选择产品簇的实现。
+ * 
+ * 功能：
+ * 为一系列相关对象或相互依赖的对象创建一个接口。这个接口内的方法不是任意堆砌的，而是一系列相关或相互依赖的方法。
+ * 从某种意义上看，抽象工厂其实是一个产品系列，或者是产品簇。
+ *
+ * 使用工厂方法来实现抽象工厂。
+ *
+ * 工厂方法是选择单个产品的实现，虽然一个类里面可以有多个工厂方法，但是这些方法之间一般是没有联系的，即使看起来像有联系。
+ * 但是抽象工厂着重的就是为一个产品簇选择实现，定义在抽象工厂里面的方法通常是由联系的，它们都是产品的某一部分或者是相互依赖的。如果抽象工厂里面只定义一个方法，直接创建产品，那么就退化成为工厂方法。
+ *
+ * 何时使用？
+ * 1.如果希望一个系统独立于它的产品的创建，组合和表示的时候。也就是一个系统只是知道产品的接口，而不关心实现的时候、
+ * 2.如果一个系统要由多个产品系列中的一个来配置的时候。也就是可以动态地切换产品簇的时候。
+ * 3.如果要强调一系列相关产品的接口，以便联合使用它们的时候。
+ *
+ * 优点：
+ * 分离接口和实现
+ * 使得切换产品簇变得容易
+ *
+ * 缺点：
+ * 不太容易扩展新产品
+ * 容易造成雷层次复杂
+ *
+ * 抽象工厂模式和单例模式
+ * 这两个模式可以组合使用。
+ * 在抽象工厂模式里面，具体的工厂实现，在整个应用中，通常一个产品系列只需要一个实例就可以了，因此可以把具体的工厂实现成为单例。
+ * 
+ */
+// 示例代码：
+/**
+ * 抽象工厂的接口，声明创建抽象产品对象的操作
+ */
+var AbstractFactory = function(){};
+AbstractFactory.prototype = {
+    /**
+     * 示例方法，创建抽象产品A的对象
+     * @return {[type]} 抽象产品A的对象
+     */
+    createProductA: function(){},
+    // 创建抽象产品B
+    createProductB: function(){}
+};
+
+/**
+ * 抽象产品A,B的接口
+ */
+var AbstractProductA = function(){};
+// ...
+var AbstractProductB = function(){};
+// ...
+
+// 产品A的实现
+var ProductA1 = function(){};
+extend(productA1, AbstractProductA);
+// ...
+
+var ProductA2 = function(){};
+extend(productA2, AbstractProductA);
+// ...
+
+// 产品B的实现
+var ProductB1 = function(){};
+extend(productA1, AbstractProductB);
+// ...
+
+var ProductB2 = function(){};
+extend(productB2, AbstractProductB);
+// ...
+
+/**
+ * 具体的工厂实现对象，实现创建具体的产品对象的操作
+ */
+var ConcretFactory1 = function(){};
+extend(ConcretFactory1, AbstractFactory);
+ConcretFactory1.prototype.createProductA = function(){
+    return new ProductA1();
+};
+ConcretFactory1.prototype.createProductB = function(){
+    return new ProductB1();
+};
+
+var ConcretFactory2 = function(){};
+extend(ConcretFactory2, AbstractFactory);
+ConcretFactory2.prototype.createProductA = function(){
+    return new ProductA2();
+};
+ConcretFactory2.prototype.createProductB = function(){
+    return new ProductB2();
+};
+
+// 客户端
+var af = new ConcretFactory1();
+af.createProductA();
+af.createProductB();
+
+
+// 示例2
+var AMDCPU = function(id){
+    this.id = id;
+};
+var MSIMainboard = function(id){
+    this.id = id;
+};
+
+var Schema1 = function(){};
+Schema1.prototype = {
+    createCPUApi: function(){
+        return new AMDCPU(939);
+    },
+    createMainboardApi: function(){
+        return new MSIMainboard(939);
+    }
+};
+
+var Schema2 = function(){};
+Schema2 = {
+    createCPUApi: function(){
+        return new AMDCPU(1000);
+    },
+    createMainboardApi: function(){
+        return new MSIMainboard(1000);
+    }
+};
+
+var ComputerEngineer = (function(){
+    var cpu;
+    var mainboard;
+
+    function prepareHardWare(schema){
+        cpu = schema.createCPUApi();
+        mainboard = schema.createMainboardApi();
+        console.log('prepared');
+    }
+
+    var ComputerEngineer = function(){
+        cpu = null;
+        mainboard = null;
+    };
+    ComputerEngineer.prototype = {
+        makeComputer: function(schema){
+            prepareHardWare(schema);
+        }
+    };
+
+    return ComputerEngineer;
+}());
+
+var engineer = new ComputerEngineer();
+var schema = new Schema1();
+engineer.makeComputer(schema);
+engineer = schema = null;
