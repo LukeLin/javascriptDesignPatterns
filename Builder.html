@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>生成器模式</title>
+</head>
+<body>
+	<script>
+	function extend(subclass, superclass) {
+        var F = function () {
+        };
+        F.prototype = superclass.prototype;
+        subclass.prototype = new F();
+        subclass.prototype.constructor = subclass;
+        subclass.super = superclass.prototype;
+
+
+        if (superclass.prototype.constructor === Object.prototype.constructor) {
+            superclass.prototype.constructor = superclass;
+        }
+    }
+
+    function mixin(targetObj, obj, deep) {
+        if (Object.prototype.toString.call(obj) !== '[object Object]') {
+            return;
+        }
+        for (var i in obj) {
+            if (obj.hasOwnProperty(i)) {
+                if (deep === true) {
+                    targetObj[i] = targetObj[i] || {};
+                    mixin(targetObj[i], obj[i], deep);
+                } else {
+                    targetObj[i] = obj[i];
+                }
+            }
+        }
+    }
+    </script>
+	
+	<script>
+/**
+ * 生成器模式
+ *
+ * 定义：
+ * 将一个复杂对象的构建与它的表示分离，使得同样的构建过程可以创建不同的表示。
+ *
+ * 要实现同样的构建过程可以创建不同的表现，那么一个自然的思路就是先把构建过程独立出来，在生成器模式中把它称为指导者，由它来指导装配过程，但是不负责每步具体的实现。当然，光有指导者是不够的，必须要有能具体实现每步的对象，在生成器模式中称这些实现对象为生成器。
+ * 这样一来，指导者就是可以重用的构建过程，而生成器是可以被切换的具体实现。
+ *
+ * 功能：
+ * 主要功能是构建复杂的产品，而且是细化的，分步骤的构建产品，也就是生成器模式中在一步一步解决构造复杂对象的问题。更为重要的是，这个构建的过程是统一的，固定不变的，变化的部分放到生成器部分了，只要配置不同的生成器，那么同样的构建过程，就能构建出不同的产品来。
+ * 生成器模式的重心在于分离构建算法和具体的构造实现，从而使得构建算法可以重用。具体的构造实现可以很方便地扩展和切换，从而可以灵活的组合来构造出不同的产品对象。
+ *
+ * 构成：
+ * 1.一个部分是Builder接口，这里是定义了如何构建各个部件，也就是知道每个部件功能如何实现，以及如何装配这些部件到产品中去。
+ * 2.另外一个部分是Director，Director是知道如何组合来构建产品，也就是说Director负责整体的构建算法，而且通常是分步骤地来执行。
+ * 不管如何变化，Builder模式都存在这么两个部分，一个部分是部件构造和产品装配，另一个部分是整体构建的算法。
+ *
+ * 使用：
+ * 应用生成器模式的时候，可以让客户端创造Director，在Director里面封装整体在、构建算法，然后让Director去调用Builder，让Builder来封装具体部件的构建功能。
+ * 还有一种退化的情况，就是让客户端和Director融合起来，让客户端直接去操作Builder，就好像是指导者自己想要给自己构建产品一样。
+ */
+
+// 示例代码
+
+// 生成器对象，创建一个产品对象所需的各个部件的操作
+var Builder = function(){
+	// 生成器最终构建的产品对象
+	var resultProduct;
+
+// 获取生成器最终构建的产品对象
+	this.getResult = function(){
+		return resultProduct;
+	};
+
+	this.buildPart = function(){
+		// 构建某个部件的功能处理
+	};
+}
+
+// 指导者，指导使用生成器的接口来构建产品的对象
+// 传入生成器对象
+var Director = function(builder){
+	this.builder = builder;
+};
+Director.prototype = {
+	// 通过使用生成器接口来构建最终的产品对象
+	construct: function(){
+		this.builder.buildPart();
+	}
+};
+
+(function(){
+
+	// 生成器接口，定义创建一个输出文件对象所需的各个部件的操作
+	var Builder = function(){};
+	Builder.prototype = {
+		// 构建输出文件的Header部分
+		buildHeader: function(ehm){},
+		// 构建输出文件的Body部分
+		buildBody: function(mapData){},
+		// 构建输出文件的Footer部分
+		buildFooter: function(efm){}
+	};
+
+	// 实现到处数据到文本文件的生成器对象	
+	var TxtBuilder = function(){
+		this.buffer = new StringBuffer();
+	};
+	extend(TxtBuilder, Builder);
+	mixin(TxtBuilder.prototype, {
+		buildBody: function(mapData){
+			var tblName, edm;
+			for(tblName in mapData) {
+				this.buffer.append(tblName + "\n");
+
+				for(edm in mapData[tblName]) {
+					this.buffer.append(edm.getProductId() + ',' +
+						edm.getPrice() + ',' + edm.getAmount() + '\n')
+				}
+			}
+		},
+		buildFooter: function(efm){
+			this.buffer.append(efm.getExportUser());
+		},
+		buildHeader: function(ehm){
+			this.buffer.append(ehm.getDepId() + ',' +
+				ehm.getExportDate() | '\n');
+		},
+		getResult: function(){
+			return this.buffer;
+		}
+	});
+
+	// 实现导出数据到XML文件的生成器对象
+	var XmlBuilder = function(){
+		this.buffer = new StringBuffer();
+	};
+	extend(XmlBuilder, Builder);
+	mixin(XmlBuilder.prototype, {
+		buildBody: function(){},
+		buildFooter: function(){},
+		buildHeader: function(){},
+		getResult: function(){}
+	});
+
+	// 指导者，指导使用生成器的接口来构建输出的文件的对象
+	var Director = function(builder){
+		// 传入生成器对象
+		this.builder = builder;
+	};
+	Director.prototype = {
+		// 指导生成器构建最终的输出的文件的对象
+		construct: function(ehm, mapData, efm){
+			this.builder.buildHeader(ehm);
+			this.builder.buildBody(mapData);
+			this.builder.buildFooter(efm);
+		}
+	};
+
+	var textBuilder = new TxtBuilder();
+	var director = new Director(textBuilder);
+	director.construct(ehm, mapData, efm);
+
+	var xmlBuilder = new XmlBuilder();
+	var director2 = new Director(director);
+	director2.construct(ehm, mapData, efm);
+
+}());
+
+/*
+生成器模式的实现
+
+1。生成器的实现
+实际上在Builder接口的实现中，每个部件构建的方法里面，除了部件装配外，也可以实现如何具体地创建各个部件对象。也就是说每个方法都可以由两部分功能，一部分是创建部件对象，另一部分是组装部件。
+在构建部件的方法里面可以实现选择并创建具体的部件对象，然后再把这个部件对象组装到产品对象中去。这样一来，Builder就可以和工厂方法配合使用了。
+再进一步，如果在实现Builder的时候，只有创建对象的功能，而没有组装的功能。那么这个时候的Builder实现跟抽象工厂的实现是类似的。
+这种情况下，Builder接口就类似抽象工厂的接口，Builder的具体实现就类似于具体的工厂，而且Builder接口里面定义的创建各个部件的方法也是有关联的，这些方法是构建一个复杂对象所需要的部件对象。
+
+2.指导者的实现
+在生成器模式里面，指导者承担的是整体构建算法部分，是相对不变的部分。因此在实现指导者的时候，把变化的部分分离出去很重要。
+其实指导者分离出去的变化部分，就到了生成器那里，指导者知道整体的构建算法，却不知道如何具体的创建和装配部件对象。
+因此真正的指导者实现，并不仅仅是简单地按照一定的顺序调用生成器的方法来生成对象。应该是有较为复杂的算法和运算过程，在运算过程中根据需要，才会调用生成器的方法来生成部件对象。
+
+3.指导者和生成器的交互
+在生成器模式里面，指导者和生成器的交互是通过生成器的buildPart方法来完成的。
+指导者通常会实现比较复杂的算法或者是运算过程，在实际开发中很可能会有以下的情况：
+1） 在运行指导者的时候，会按照整体构建算法的步骤进行运算，可能先运行前几步运算，到了某一步骤，需要具体创建某个部件对象了，然后就调用Builder中创建相应部件的方法来创建具体的部件。同时，把前面运算得到的数据传递给Builder，因为在Builder内部实现创建和组装部件的时候，可能会需要这些数据。
+2） Builder创建完具体的部件对象后，会把创建好的部件对象返回给指导者，指导者继续后续的算法运算，可能会用到已经创建好的对象。
+3）如此反复下去，知道整个构建算法运行完成，那么最终的产品对象也就创建好了。
+
+可以看出指导者和生成器是需要交互的，方式就是用过生成器方法的参数和返回值，来回地传递数据。事实上，指导者使用过委托的方式把功能交给生成器去完成。
+
+4.返回装配好的产品的方法
+标准的生成器模式中，在Builder实现里面会提供一个返回装配好的产品的方法，在Builder接口上是没有的。它考虑的是最终的对象一定要通过部件构建和装配，才算真正创建了，而具体干活的就是Builder实现，虽然指导者也参与了，但是指导者是不负责具体的部件创建和组装的，因此客户端是从Builder实现里面获取最终装配好的产品。
+
+5.关于被构建的产品的接口
+在使用生成器模式的时候，大多数情况下是不知道最终构建出来的产品是什么，所以一般不需要对产品定义抽象接口，因为最终构建的产品千差万别，给这些产品定义公共接口几乎是没有意义的。
+ */
+
+// 使用生成器模式构建复杂对象
+
+	</script>
+</body>
+</html>
