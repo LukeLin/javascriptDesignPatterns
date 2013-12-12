@@ -44,6 +44,10 @@
  * 定义：
  * 将一个复杂对象的构建与它的表示分离，使得同样的构建过程可以创建不同的表示。
  *
+ * 本质：
+ * 分离整体构建算法和部件构造。
+ * 生成器模式的重心在于分离整体构建算法和部件构造，而分步骤构建对象不过是整体构建算法的一个简单实现，或者说是一个附带产物。
+ *
  * 要实现同样的构建过程可以创建不同的表现，那么一个自然的思路就是先把构建过程独立出来，在生成器模式中把它称为指导者，由它来指导装配过程，但是不负责每步具体的实现。当然，光有指导者是不够的，必须要有能具体实现每步的对象，在生成器模式中称这些实现对象为生成器。
  * 这样一来，指导者就是可以重用的构建过程，而生成器是可以被切换的具体实现。
  *
@@ -59,6 +63,11 @@
  * 使用：
  * 应用生成器模式的时候，可以让客户端创造Director，在Director里面封装整体在、构建算法，然后让Director去调用Builder，让Builder来封装具体部件的构建功能。
  * 还有一种退化的情况，就是让客户端和Director融合起来，让客户端直接去操作Builder，就好像是指导者自己想要给自己构建产品一样。
+ *
+ * 何时使用：
+ * 1.如果创建对象的算法，应该独立于该对象的组成部分以及它们的装配方式时。
+ * 2.如果同时一个构建过程有着不同的表示时。
+ * 
  */
 
 // 示例代码
@@ -200,6 +209,134 @@ Director.prototype = {
 
 // 使用生成器模式构建复杂对象
 
+var InsuranceContract = (function(){
+	// 保险合同对象
+var InsuranceContract = function(builder){
+	this.contractId = builder.getContractId();
+	this.personName = builder.getPersonName();
+	this.companyName = builder.getCompanyName();
+	this.beginDate = builder.getBeginDate();
+	this.endDate = builder.getEndDate();
+	this.otherDate = builder.getOtherDate();
+};
+InsuranceContract.prototype = {
+	someOperation: function(){
+		console.log('Now in Insurance Contract someOperation = ' + this.contractId);
+	}
+};
+
+// 构造保险合同对象的构造器
+var ConcreteBuilder = function(contractId, beginDate, endDate){
+	this.contractId = contractId;
+	this.beginDate = beginDate;
+	this.endDate = endDate;
+};
+ConcreteBuilder.prototype = {
+	setPersonName: function(personName){
+		this.personName = personName;
+		return this;
+	},
+	setCompanyName: function(companyName){
+		this.companyName = companyName;
+		return this;
+	},
+	setOtherDate: function(otherData){
+		this.otherData = otherData;
+		return this;
+	},
+	getContractId: function(){
+		return this.contractId;
+	},
+	getPersonName: function(){
+		return this.personName;
+	},
+	getCompanyName: function(){
+		return this.companyName;
+	},
+	getBiginDate: function(){
+		return this.beginDate;
+	},
+	getEndDate: function(){
+		return this.endDate;
+	},
+	getOtherData: function(){
+		return this.otherData;
+	},
+
+	// 构建真正的对象并返回
+	// 添加一些约束规则
+	build: function(){
+		if(!this.contractId || this.contractId.trim().length === 0) {
+			throw new Error('合同编号不能为空');
+		}
+		var signPerson = this.personName && this.personName.trim().length > 0;
+		var signCompany = this.companyName && this.companyName.trim().length > 0;
+
+		if(signPerson && signCompany) {
+			throw new Error('一份合同不能同时与人和公司签订');
+		}
+
+		if(!signPerson && !signCompany) {
+			throw new Error('一份合同不能没有签订对象');
+		}
+
+		if(this.beginDate <= 0) {
+			throw new Error('合同必须有保险开始生效的日期');
+		}
+
+		if(this.endDate <= 0) {
+			throw new Error('合同必须有保险失效的日期');
+		}
+
+		if(this.endDate <= this.beginDate) {
+			throw new Error('保险失效的日期必须大于生效日期');
+		}
+
+		return new InsuranceContract(this);
+	}
+};
+
+// 把构建对象和被构建对象合并
+InsuranceContract.ConcreteBuilder = ConcreteBuilder;
+
+return InsuranceContract;
+}());
+
+
+var builder = new InsuranceContract.ConcreteBuilder('001', 123456, 6789);
+var contract = builder.setPersonName('luke').setOtherData('test').build();
+contract.someOperation();
+
+
+/*
+相关模式
+
+1.生成器模式与工厂方法模式
+
+这两个模式可以组合使用。
+生成器模式的Builder实现中，通常需要选择具体的部件实现。一个可行的方案就是实现成为工厂方法，通过工厂方法来获取具体的部件对象，然后再进行部件的装配。
+
+2.生成器模式与抽象工厂模式
+
+这两个模式既相似又有区别，也可以组合使用。
+区别：抽象工厂模式的主要目的是创建产品簇，这个产品簇里面的单个产品就相当于是构成一个复杂对象的部件对象，抽象工厂对象创建完成后就立即返回整个产品簇；而生成器模式的主要目的是按照构造算法，一步一步来构建一个复杂的产品对象，桐城要等到整个构建过程结束以后没才会得到最终的产品对象。
+组合使用：在生成器模式的Builder实现中，需要创建各个部件对象，而这些部件对象是有关联的，通常是构成一个复杂对象的部件对象。也就是说，Builder实现中，需要获取构成一个复杂对象的产品簇，就可以使用抽象工厂模式来实现。有抽象工厂模式负责部件对象创建，Builder实现里面则主要负责产品对象整体的构建了。
+
+3.生成器模式和模板方法模式
+
+这也是两个非常相似的模式。
+模板方法模式主要是用来定义算法的骨架，把算法中某些步骤延迟到子类中实现。生成器模式Director用来定义整体的构建算法，把算法中某些涉及到具体部件对象的创建和装配功能，委托给具体的Builder来实现。
+从实质上看，都是定义一个固定的算法骨架，然后把算法中的某些具体步骤交给其他类来实现，都能实现整体算法步骤和某些具体步骤实现的分离。
+区别：
+1）.目的：生成器模式用来构建复杂对象。模板模式用来定义算法骨架，尤其是一些复杂的业务功能的处理算法的骨架；
+2）。实现：生成器模式采用委托的方法，模板模式采用继承的方法。
+3）。复杂度：生成器模式需要组合Director和Builder对象，然后才能开始构建，要等构建后才能获得最终的对象，而模板方法就没这么麻烦，直接使用子类对象即可。
+
+4.生成器模式和组合模式
+
+可以组合使用。
+对于复杂的组合结构，可以使用生成器模式来一步一步构建。
+ */
 	</script>
 </body>
 </html>
