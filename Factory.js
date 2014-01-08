@@ -816,6 +816,75 @@ A2.prototype.createC1 = function(){
 };
 
 
+// http://www.dofactory.com/javascript-factory-method-pattern.aspx
+
+(function(){
+    function Factory() {
+    this.createEmployee = function (type) {
+        var employee;
+
+        if (type === "fulltime") {
+            employee = new FullTime();
+        } else if (type === "parttime") {
+            employee = new PartTime();
+        } else if (type === "temporary") {
+            employee = new Temporary();
+        } else if (type === "contractor") {
+            employee = new Contractor();
+        }
+
+        employee.type = type;
+        employee.say = function () {
+            log.add(this.type + ": rate " + this.hourly + "/hour");
+        }
+        return employee;
+    }
+        
+}
+
+var FullTime = function () {
+    this.hourly = "$12";
+};
+var PartTime = function () {
+    this.hourly = "$11";
+};
+var Temporary = function () {
+    this.hourly = "$10";
+};
+var Contractor = function () {
+    this.hourly = "$15";
+};
+
+// log helper
+var log = (function () {
+    var log = "";
+    return {
+        add: function (msg) { log += msg + "\n"; },
+        show: function () { alert(log); log = ""; }
+    }
+})();
+
+
+function run() {
+
+    var employees = [];
+
+    var factory = new Factory();
+
+    employees.push(factory.createEmployee("fulltime"));
+    employees.push(factory.createEmployee("parttime"));
+    employees.push(factory.createEmployee("temporary"));
+    employees.push(factory.createEmployee("contractor"));
+
+    for (var i = 0, len = employees.length; i < len; i++) {
+        employees[i].say();
+    }
+
+    log.show();
+}
+}());
+
+
 /**
  * 抽象工厂模式
  *
@@ -974,3 +1043,62 @@ var engineer = new ComputerEngineer();
 var schema = new Schema1();
 engineer.makeComputer(schema);
 engineer = schema = null;
+
+
+// http://www.dofactory.com/javascript-abstract-factory-pattern.aspx
+
+function Employee(name) {
+    this.name = name;
+    this.say = function () {
+        log.add("I am employee " + name);
+    };
+}
+
+function EmployeeFactory() {
+    this.create = function(name) {
+        return new Employee(name);
+    };
+}
+
+function Vendor(name) {
+    this.name = name;
+    this.say = function () {
+        log.add("I am vendor " + name);
+    };
+}
+
+function VendorFactory() {
+    this.create = function(name) {
+        return new Vendor(name);
+    };
+}
+
+// log helper
+var log = (function () {
+    var log = "";
+    return {
+        add: function (msg) { log += msg + "\n"; },
+        show: function () { alert(log); log = ""; }
+    }
+})();
+
+
+function run() {
+
+    var persons = [];
+
+    var employeeFactory = new EmployeeFactory();
+    var vendorFactory = new VendorFactory();
+
+    persons.push(employeeFactory.create("Joan DiSilva"));
+    persons.push(employeeFactory.create("Tim O'Neill"));
+
+    persons.push(vendorFactory.create("Gerald Watson"));
+    persons.push(vendorFactory.create("Nicole McNight"));
+
+    for (var i = 0, len = persons.length; i < len; i++) {
+        persons[i].say();
+    }
+
+    log.show();
+}
