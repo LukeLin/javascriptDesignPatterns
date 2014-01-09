@@ -6,14 +6,14 @@ Javascript design patterns
 some collected JS design patterns learning.
 
 
-  <b>Creational Patterns</b> 
+  <b>Creational Patterns</b> <br>
   Abstract Factory	  Creates an instance of several families of classes<br>
   Builder	  Separates object construction from its representation<br>
   Factory Method	  Creates an instance of several derived classes<br>
   Prototype	  A fully initialized instance to be copied or cloned<br>
   Singleton	  A class of which only a single instance can exist<br>
 
-  <b>Structural Patterns</b>
+  <b>Structural Patterns</b><br>
   Adapter	  Match interfaces of different classes<br>
   Bridge	  Separates an object’s interface from its implementation<br>
   Composite	  A tree structure of simple and composite objects<br>
@@ -22,7 +22,7 @@ some collected JS design patterns learning.
   Flyweight	  A fine-grained instance used for efficient sharing<br>
   Proxy	  An object representing another object<br>
 
-  <b>Behavioral Patterns</b>
+  <b>Behavioral Patterns</b><br>
   Chain of Resp.	  A way of passing a request between a chain of objects<br>
   Command	  Encapsulate a command request as an object<br>
   Interpreter	  A way to include language elements in a program<br>
