@@ -7,30 +7,30 @@ some collected JS design patterns learning.
 
 
   <b>Creational Patterns</b> 
-  Abstract Factory	  Creates an instance of several families of classes
-  Builder	  Separates object construction from its representation
-  Factory Method	  Creates an instance of several derived classes
-  Prototype	  A fully initialized instance to be copied or cloned
-  Singleton	  A class of which only a single instance can exist
+  Abstract Factory	  Creates an instance of several families of classes<br>
+  Builder	  Separates object construction from its representation<br>
+  Factory Method	  Creates an instance of several derived classes<br>
+  Prototype	  A fully initialized instance to be copied or cloned<br>
+  Singleton	  A class of which only a single instance can exist<br>
 
   <b>Structural Patterns</b>
-  Adapter	  Match interfaces of different classes
-  Bridge	  Separates an object’s interface from its implementation
-  Composite	  A tree structure of simple and composite objects
-  Decorator	  Add responsibilities to objects dynamically
-  Facade	  A single class that represents an entire subsystem
-  Flyweight	  A fine-grained instance used for efficient sharing
-  Proxy	  An object representing another object
+  Adapter	  Match interfaces of different classes<br>
+  Bridge	  Separates an object’s interface from its implementation<br>
+  Composite	  A tree structure of simple and composite objects<br>
+  Decorator	  Add responsibilities to objects dynamically<br>
+  Facade	  A single class that represents an entire subsystem<br>
+  Flyweight	  A fine-grained instance used for efficient sharing<br>
+  Proxy	  An object representing another object<br>
 
   <b>Behavioral Patterns</b>
-  Chain of Resp.	  A way of passing a request between a chain of objects
-  Command	  Encapsulate a command request as an object
-  Interpreter	  A way to include language elements in a program
-  Iterator	  Sequentially access the elements of a collection
-  Mediator	  Defines simplified communication between classes
-  Memento	  Capture and restore an object's internal state
-  Observer	  A way of notifying change to a number of classes
-  State	  Alter an object's behavior when its state changes
-  Strategy	  Encapsulates an algorithm inside a class
-  Template Method	  Defer the exact steps of an algorithm to a subclass
-  Visitor	  Defines a new operation to a class without change
+  Chain of Resp.	  A way of passing a request between a chain of objects<br>
+  Command	  Encapsulate a command request as an object<br>
+  Interpreter	  A way to include language elements in a program<br>
+  Iterator	  Sequentially access the elements of a collection<br>
+  Mediator	  Defines simplified communication between classes<br>
+  Memento	  Capture and restore an object's internal state<br>
+  Observer	  A way of notifying change to a number of classes<br>
+  State	  Alter an object's behavior when its state changes<br>
+  Strategy	  Encapsulates an algorithm inside a class<br>
+  Template Method	  Defer the exact steps of an algorithm to a subclass<br>
+  Visitor	  Defines a new operation to a class without change<br>
