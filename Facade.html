@@ -255,6 +255,61 @@
      外观模式的外观类通常需要和系统内部的多个模块交互，每个模块一般都有自己的接口，所以在外观类的具体实现里面，需要获取这些接口，然后组合这些接口来完成客户端的功能。
      那么怎么获取这些接口呢？就可以和抽象工厂一起使用，外观类通过抽象工厂来获取所需要的接口，而抽象工厂也可以把模块内部的实例对Facade进行屏蔽，也就是说Facade也仅仅只是知道它从模块中获取它需要的功能，模块内部的细节，Facade也不知道。
       */
+     
+
+      // http://www.dofactory.com/javascript-facade-pattern.aspx
+
+    var Mortgage = function(name) {
+        this.name = name;
+    }
+
+    Mortgage.prototype = {
+        applyFor: function(amount) {
+
+            // access multiple subsystems...
+
+            var result = "approved";
+            if (!new Bank().verify(this.name, amount)) {
+                result = "denied";
+            } else if (!new Credit().get(this.name)) {
+                result = "denied";
+            } else if (!new Background().check(this.name)) {
+                result = "denied";
+            }
+
+            return this.name + " has been " + result +
+                   " for a " + amount + " mortgage";
+        }
+    }
+
+    var Bank = function() {
+        this.verify = function(name, amount) {
+            // complex logic ...
+            return true;
+        }
+    }
+    var Credit = function() {
+        this.get = function(name) {
+            // complex logic ...
+            return true;
+        }
+    }
+    var Background = function() {
+        this.check = function(name) {
+            // complex logic ...
+            return true;
+        }
+    }
+
+
+    function run() {
+
+        var mortgage = new Mortgage("Joan Templeton");
+        var result = mortgage.applyFor("$100,000");
+
+        alert(result);
+    }
+
 </script>
 </body>
 </html>
