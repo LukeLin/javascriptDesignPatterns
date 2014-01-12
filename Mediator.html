@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>中介者模式</title>
+</head>
+<body>
+<script>    
+function extend(subclass, superclass) {
+        var F = function () {
+        };
+        F.prototype = superclass.prototype;
+        subclass.prototype = new F();
+        subclass.prototype.constructor = subclass;
+        subclass.super = superclass.prototype;
+
+
+        if (superclass.prototype.constructor === Object.prototype.constructor) {
+            superclass.prototype.constructor = superclass;
+        }
+    }
+</script>
+<script>
+/**
+ * 中介者模式
+ *
+ * 定义：
+ * 用一个中介对象来封装一系列的对象交互。中介者使得各对象不需要显式地相互引用，从而使其耦合松散，而且可以独立地改变它们之间的交互。
+ *
+ * 中介者模式的解决私立很简单，它通过引入一个中介对象，让其他的对象都只和中介对象交互，而中介对象知道如何和其他所有的对象交互，这样对象之间的交互关系就没有了，从而实现了对象之间的解耦。
+ * 对于中介对象而言，所有的相互交互的对象，被视为同事类，中介者对象就是来维护各个同事之间的关系，而所有的同事类都只是和中介对象交互。
+ * 每个同事对象，当自己发生变化的时候，不需要知道这会引起其他对象有什么变化，它只需要通知中介者就可以了，然后由中介者去与其他对象交互。这样松散耦合带来的好处是，除了让同事对象之间相互没有关联外，还有利于功能的修改和扩展。
+ * 有了中介者之后，所有的交互都封装到中介者对象里面，各个对象就不再需要维护这些关系了。扩展关系的时候也只需要扩展或修改中介者对象就可以了。
+ * 
+ * 
+ */
+
+// 示例代码
+
+function Colleague(mediator){
+    this.mediator = mediator;
+}
+Colleague.prototype = {
+    getMediator: function(){
+        return this.mediator;
+    }
+};
+
+// 同事类A
+function ColleagueA(mediator){
+    this.super.constructor.call(this);
+}
+extend(ColleagueA, Colleague);
+ColleagueA.prototype = {
+    // 执行某些业务功能
+    someOperation: function(){
+        // some code..
+         
+        // 在需要跟其他同事通信的时候，通知中介者对象
+        this.getMediator().changed(this);
+    }
+};
+
+function ColleagueB(mediator){
+    this.super.constructor.call(this);
+}
+extend(ColleagueB, Colleague);
+ColleagueB.prototype = {
+    // 执行某些业务功能
+    someOperation: function(){
+        // some code..
+        
+        // 在需要跟其他同事通信的时候，通知中介者对象
+        this.getMediator().changed(this);
+    }
+};
+
+// 中介者
+function Mediator(){
+    var colleagueA, colleagueB;
+
+    // 设置中介者需要了解并维护的同事A对象
+    this.setColleagueA = function(colleague){
+        colleagueA = colleague;
+    };
+
+    // 设置中介者需要了解并维护的同事B对象
+    this.setColleagueB = function(colleague){
+        colleagueB = colleague;
+    };
+
+    this.changed = function(colleague){
+        // 某个同事类发生了变化，通常需要与其他同事交互
+        // 具体协调相应的同事对象来实现协作行为
+    };
+}
+
+
+// example
+/* Title: Mediator
+ Description: allows loose coupling between classes by being the only class that has detailed knowledge of their methods
+ */
+
+function Player(name) {
+    this.points = 0;
+    this.name = name;
+}
+Player.prototype.play = function () {
+    this.points += 1;
+    mediator.played();
+};
+var scoreboard = {
+
+    // HTML element to be updated
+    element:document.getElementById('results'),
+
+    // update the score display
+    update:function (score) {
+        var i, msg = '';
+        for (i in score) {
+            if (score.hasOwnProperty(i)) {
+                msg += '<p><strong>' + i + '<\/strong>: ';
+                msg += score[i];
+                msg += '<\/p>';
+            }
+        }
+        this.element.innerHTML = msg;
+    }
+};
+
+var mediator = {
+
+    // all the player
+    players:{},
+
+    // initialization
+    setup:function () {
+        var players = this.players;
+        players.home = new Player('Home');
+        players.guest = new Player('Guest');
+    },
+
+    // someone plays, update the score
+    played:function () {
+        var players = this.players,
+            score = {
+                Home:players.home.points,
+                Guest:players.guest.points
+            };
+
+        scoreboard.update(score);
+    },
+
+    // handle user interactions
+    keypress:function (e) {
+        e = e || window.event; // IE
+        if (e.which === 49) { // key "1"
+            mediator.players.home.play();
+            return;
+        }
+        if (e.which === 48) { // key "0"
+            mediator.players.guest.play();
+            return;
+        }
+    }
+};
+
+// go!
+mediator.setup();
+window.onkeypress = mediator.keypress;
+
+// game over in 30 seconds
+setTimeout(function () {
+    window.onkeypress = null;
+    console.log('Game over!');
+}, 30000);
+
+
+
+// http://www.dofactory.com/javascript-mediator-pattern.aspx
+
+var Participant = function(name) {
+    this.name = name;
+    this.chatroom = null;
+};
+
+Participant.prototype = {
+    send: function(message, to) {
+        this.chatroom.send(message, this, to);
+    },
+    receive: function(message, from) {
+        log.add(from.name + " to " + this.name + ": " + message);
+    }
+};
+
+var Chatroom = function() {
+    var participants = {};
+    return {
+        register: function(participant) {
+            participants[participant.name] = participant;
+            participant.chatroom = this;
+        },
+        send: function(message, from, to) {
+            if (to) {                      // single message
+                to.receive(message, from);    
+            } else {                       // broadcast message
+                for (key in participants) {   
+                    if (participants[key] !== from) {
+                        participants[key].receive(message, from);
+                    }
+                }
+            }
+        }
+    };
+};
+
+// log helper
+var log = (function() {
+    var log = "";
+    return {
+        add: function(msg) { log += msg + "\n"; },
+        show: function() { alert(log); log = ""; }
+    }
+})();
+
+
+function run() {
+
+    var yoko = new Participant("Yoko");
+    var john = new Participant("John");
+    var paul = new Participant("Paul");
+    var ringo = new Participant("Ringo");
+
+    var chatroom = new Chatroom();
+    chatroom.register(yoko);
+    chatroom.register(john);
+    chatroom.register(paul);
+    chatroom.register(ringo);
+
+    yoko.send("All you need is love.");
+    yoko.send("I love you John.");
+    john.send("Hey, no need to broadcast", yoko);
+    paul.send("Ha, I heard that!");
+    ringo.send("Paul, what do you think?", paul);
+
+    log.show();
+}
+
+</script>
+</body>
+</html>
