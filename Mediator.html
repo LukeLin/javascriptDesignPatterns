@@ -7,18 +7,33 @@
 <body>
 <script>    
 function extend(subclass, superclass) {
-        var F = function () {
-        };
-        F.prototype = superclass.prototype;
-        subclass.prototype = new F();
-        subclass.prototype.constructor = subclass;
-        subclass.super = superclass.prototype;
+    var F = function () {
+    };
+    F.prototype = superclass.prototype;
+    subclass.prototype = new F();
+    subclass.prototype.constructor = subclass;
+    subclass.super = superclass.prototype;
 
+    if (superclass.prototype.constructor === Object.prototype.constructor) {
+        superclass.prototype.constructor = superclass;
+    }
+}
 
-        if (superclass.prototype.constructor === Object.prototype.constructor) {
-            superclass.prototype.constructor = superclass;
+function override(targetObj, obj, deep) {
+    if (Object.prototype.toString.call(obj) !== '[object Object]') {
+        return;
+    }
+    for (var i in obj) {
+        if (obj.hasOwnProperty(i)) {
+            if (deep === true) {
+                targetObj[i] = targetObj[i] || {};
+                rewrite(targetObj[i], obj[i], deep);
+            } else {
+                targetObj[i] = obj[i];
+            }
         }
     }
+}
 </script>
 <script>
 /**
@@ -32,12 +47,26 @@ function extend(subclass, superclass) {
  * 每个同事对象，当自己发生变化的时候，不需要知道这会引起其他对象有什么变化，它只需要通知中介者就可以了，然后由中介者去与其他对象交互。这样松散耦合带来的好处是，除了让同事对象之间相互没有关联外，还有利于功能的修改和扩展。
  * 有了中介者之后，所有的交互都封装到中介者对象里面，各个对象就不再需要维护这些关系了。扩展关系的时候也只需要扩展或修改中介者对象就可以了。
  * 
+ *
+ * 同事关系
+ * 在标准的中介者模式中，将使用中介者对象来交互的那些对象称为同事类，在中介者模式中，要求这些类都要继承相同的类。也就是说，这些对象从某个角度讲是同一个类型，算是兄弟对象。
+ * 正是这些兄弟对象之间的交互关系很复杂，才产生了把这些交互关系分离出来，单独做成中介者对象。
+ *
+ * 同事和中介者的关系
+ * 在中介者模式中，当一个同事对象发生了改变，需要主动通知中介者，让中介者去处理与其他同事对象相关的交互。
+ * 这就导致了同事对象和中介者对象之间必须有关系，首先是同事对象需要知道中介者对象是谁；反过来，中介者对象也需要知道相关的同事对象，这样它才能与同事对象进行交互。也就是说中介者对象和同事对象之间是相互依赖的。
+ *
+ * 如何实现同事和中介者的通信
+ * 一个同事对象发生了改变，会通知中介者对象，中介者对象会处理与其他同事的交互，这就产生了同事对象和中介者对象的相互通信。
+ * 一个实现方式是在Mediator接口中定义一个特殊的通知接口，作为一个通用的方法，让各个同事类来调用这个方法，在中介者模式结构图里画的就是这种方式。例如定义了一个通用的changed方法，并且把同事对象当作参数传入，这样在中介者对象里面，就可以去获取这个同事对象的实例数据了。
+ * 另外一种实现方式是可以采用观察者模式，把Mediator实现成为观察者，而各个同事类实现成为Subject，这样同事类发生了改变，会通知Mediator。Mediator在接到通知以后，会于相应的同事对象进行交互。
  * 
  */
 
 // 示例代码
 
-function Colleague(mediator){
+(function(){
+    function Colleague(mediator){
     this.mediator = mediator;
 }
 Colleague.prototype = {
@@ -48,31 +77,25 @@ Colleague.prototype = {
 
 // 同事类A
 function ColleagueA(mediator){
-    this.super.constructor.call(this);
+    ColleagueA.super.constructor.apply(this, arguments);
 }
 extend(ColleagueA, Colleague);
-ColleagueA.prototype = {
-    // 执行某些业务功能
-    someOperation: function(){
-        // some code..
-         
-        // 在需要跟其他同事通信的时候，通知中介者对象
-        this.getMediator().changed(this);
-    }
-};
+ColleagueA.prototype.someOperation= function(){
+    // some code..
+     
+    // 在需要跟其他同事通信的时候，通知中介者对象
+    this.getMediator().changed(this);
+}
 
 function ColleagueB(mediator){
-    this.super.constructor.call(this);
+    ColleagueB.super.constructor.call(this);
 }
 extend(ColleagueB, Colleague);
-ColleagueB.prototype = {
-    // 执行某些业务功能
-    someOperation: function(){
-        // some code..
-        
-        // 在需要跟其他同事通信的时候，通知中介者对象
-        this.getMediator().changed(this);
-    }
+ColleagueB.prototype.someOperation= function(){
+    // some code..
+    
+    // 在需要跟其他同事通信的时候，通知中介者对象
+    this.getMediator().changed(this);
 };
 
 // 中介者
@@ -94,14 +117,163 @@ function Mediator(){
         // 具体协调相应的同事对象来实现协作行为
     };
 }
+}());
 
+(function(){
+    // 抽象同事类
+    var Colleague = function(mediator){
+        this.mediator = mediator;
+    };
+    Colleague.prototype = {
+        getMediator: function(){
+            return this.mediator;
+        }
+    };
+
+    // 光驱类
+    var CDDriver = function(){
+        CDDriver.super.constructor.apply(this, arguments);
+
+        this.data = '';
+    };
+    extend(CDDriver, Colleague);
+    override(CDDriver.prototype, {
+        getData: function(){
+            return this.data;
+        },
+        readCD: function(){
+            this.data = 'CDDriver Data, SoundCard Data';
+            // 通知主板，自己的状态发生了变化
+            this.getMediator().changed(this);
+        }
+    });
+
+    // CPU类
+    var CPU = function(){
+        CPU.super.constructor.apply(this, arguments);
+
+        this.videoData = '';
+        this.soundData = '';
+    };
+    extend(CPU, Colleague);
+    override(CPU.prototype, {
+        // 获取分解出来的视频数据
+        getVideoData: function(){
+            return this.videoData;
+        },
+        // 获取分解出来的声音数据
+        getSoundData: function(){
+            return this.soundData;
+        },
+        executeData: function(data){
+            var ss = data.split(',');
+            this.videoData = ss[0];
+            this.soundData = ss[1];
+            // 通知主板，CPU的工作完成
+            this.getMediator().changed(this);
+        }
+    });
+
+    // 显卡类
+    var VideoCard = function(){
+        VideoCard.super.constructor.apply(this, arguments);
+    };
+    extend(VideoCard, Colleague);
+    override(VideoCard.prototype, {
+        showData: function(data){
+            console.log('您正在观看的是：' + data);
+        }
+    });
+
+    // 声卡类
+    var SoundCard = function(){
+        SoundCard.super.constructor.apply(this, arguments);
+    };
+    extend(SoundCard, Colleague);
+    override(SoundCard.prototype, {
+        soundData: function(data){
+            console.log('画外音：' + data);
+        }
+    });
+
+    // 中介对象接口
+    var Mediator = function(){};
+    Mediator.prototype = {
+        changed: function(colleague){}
+    };
+
+    var MotherBoard = function(){
+    };
+    extend(MotherBoard, Mediator);
+    override(MotherBoard.prototype, {
+        setCdDriver: function(cdDriver){
+            this.cdDriver = cdDriver;
+        },
+        setCpu: function(cpu){
+            this.cpu = cpu;
+        },
+        setVideoCard: function(videoCard){
+            this.videoCard = videoCard;
+        },
+        setSoundCard: function(soundCard){
+            this.soundCard = soundCard;
+        },
+
+        changed: function(colleague){
+            switch(colleague) {
+                case this.cdDriver:
+                    this.opeCDDriverReadData(colleague);
+                    break;
+                case this.cpu:
+                    this.opeCPU(colleague);
+                    break;
+                default:
+                    break;
+            }
+        },
+
+        opeCDDriverReadData: function(cd){
+            this.cpu.executeData(cd.getData());
+        },
+        opeCPU: function(cpu){
+            this.videoCard.showData(cpu.getVideoData());
+            this.soundCard.soundData(cpu.getSoundData());
+        }
+    });
+
+    void function run(){
+        var mediator = new MotherBoard();
+        var cd = new CDDriver(mediator);
+        var cpu = new CPU(mediator);
+        var vc = new VideoCard(mediator);
+        var sc = new SoundCard(mediator);
+
+        mediator.setCdDriver(cd);
+        mediator.setCpu(cpu);
+        mediator.setVideoCard(vc);
+        mediator.setSoundCard(sc);
+
+        cd.readCD();
+    }();
+
+}());
+
+/**
+ * 广义中介者
+ *
+ * 在实际开发中，经常会简化中介者模式，比如有如下简化：
+ * 1.通常会去掉同事对象的父类，这样可以让人意的对象，只要需要相互交互，就可以成为同事。
+ * 2.通常不定义Mediator接口，把具体的中介者对象实现成为单例。
+ * 3.同事对象不再持有中介者，而是在需要的时候直接获取中介者对象并调用；中介者也不再持有同事对象，而是在具体处理方法里面去创建，或者获取，或者从参数传入需要的同事对象。
+ */
 
 // example
 /* Title: Mediator
  Description: allows loose coupling between classes by being the only class that has detailed knowledge of their methods
  */
 
-function Player(name) {
+(function(){
+    function Player(name) {
     this.points = 0;
     this.name = name;
 }
@@ -174,12 +346,14 @@ setTimeout(function () {
     window.onkeypress = null;
     console.log('Game over!');
 }, 30000);
+}());
 
 
 
 // http://www.dofactory.com/javascript-mediator-pattern.aspx
 
-var Participant = function(name) {
+(function(){
+    var Participant = function(name) {
     this.name = name;
     this.chatroom = null;
 };
@@ -245,6 +419,7 @@ function run() {
 
     log.show();
 }
+}());
 
 </script>
 </body>
