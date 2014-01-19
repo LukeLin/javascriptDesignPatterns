@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>迭代器模式</title>
+</head>
+<body>
+    
+<script>
+/**
+ * 迭代器模式
+ *
+ * 定义：
+ * 提供一种方法顺序访问一个聚合对象中各个元素，而又不需要暴露该对象的内部表示。
+ *
+ * 所谓聚合是指一组对象的组合结构。
+ *
+ * 一.功能
+ * 迭代器模式的功能主要在于提供对聚合对象的迭代访问。迭代器就围绕着这个“访问”做文章，延伸出很多的功能。比如：
+ * 1.以不同的方式遍历聚合对象，比如向前，向后等。
+ * 2.对同一个聚合同时进行多个遍历。
+ * 3.以不同的遍历策略来遍历聚合，比如是否需要过滤等。
+ * 4.多态迭代，含义是：为不同的聚合结构提供统一的迭代接口，也就是说通过一个迭代接口可以访问不同的聚合结构，这就叫做多态迭代。事实上，标准的迭代模式实现基本上都是支持多态迭代的
+ *
+ * 二，关键思想
+ * 聚合对象的类型很多，如果对聚合对象的迭代访问跟聚合对象本身融合在一起的话，会严重影响到聚合对象的可扩展性和可维护性。
+ * 因此迭代器模式的关键思想就是把对聚合对象的遍历和访问从聚合对象中分离出来，放入单独的迭代器中。这样聚合对象会变得简单一些，而且迭代器和聚合对象可以独立地变化和发展，会大大加强系统的灵活性。
+ *
+ * 三，内部迭代器和外部迭代器
+ * 所谓内部迭代器，指的是由迭代器自己来控制迭代下一个元素的步骤，客户端无法干预。因此，如果想要在迭代的过程中完成工作的话，客户端就需要把操作传递给迭代器。迭代器在迭代的时候会在每个元素上执行这个操作，即回调。
+ * 所谓外部迭代，指的是客户端来控制迭代下一个元素的步骤，客户端必须显式地调用next来迭代下一个元素。
+ * 总体来说外部迭代器比内部迭代器更灵活一些。
+ */
+
+// 示例代码
+
+(function(){
+/**
+ * 迭代器实现对象，示意的是聚合对象为数组的迭代器
+ * 不同聚合对象相应的迭代器实现是不一样的
+ * @param {Array} aggregate [聚合对象]
+ */
+var Iterator = function(aggregate){
+    this.aggregate = aggregate;
+    // 当前索引位置
+    this.index = -1;
+};
+Iterator.prototype = {
+    first: function(){
+        this.index = 0;
+    },
+    next: function(){
+        if(this.index < this.aggregate.size()) {
+            this.index++;
+        }
+    },
+    isDone: function(){
+        return this.index === this.aggregate.size();
+    },
+    currentItem: function(){
+        return this.aggregate.get(this.index);
+    }
+};
+
+var Aggregate = function(ss){
+    this.ss = ss;
+};
+Aggregate.prototype = {
+    createIterator: function(){
+        return new Iterator(this);
+    },
+    get: function(index){
+        var retObj = null;
+        if(index < this.ss.length) {
+            retObj = this.ss[index];
+        }
+
+        return retObj;
+    },
+    size: function(){
+        return this.ss.length;
+    }
+};
+
+new function(){
+    var names = ['张三', '李四', '王五'];
+    var aggregate = new Aggregate(names);
+    var it = aggregate.createIterator();
+    var obj;
+
+    it.first();
+    while(!it.isDone()) {
+        obj = it.currentItem();
+        console.log('the obj === ' + obj);
+        it.next();
+    }
+}();
+
+}());
+
+(function(){
+    // 实现实例
+    
+
+}());
+
+(function(){
+    // http://www.dofactory.com/javascript-iterator-pattern.aspx
+    
+    var Iterator = function(items) {
+        this.index = 0;
+        this.items = items;
+    }
+
+    Iterator.prototype = {
+        first: function() {
+            this.reset();
+            return this.next();
+        },
+        next: function() {
+            return this.items[this.index++];
+        },
+        hasNext: function() {
+            return this.index <= this.items.length;
+        },
+        reset: function() {
+            this.index = 0;
+        },
+        each: function(callback) {
+            for (var item = this.first(); this.hasNext(); item = this.next()) {
+                callback(item);
+            }
+        }
+    }
+
+    // log helper
+    var log = (function() {
+        var log = "";
+        return {
+            add: function(msg) { log += msg + "\n"; },
+            show: function() { console.log(log); log = ""; }
+        }
+    })();
+
+
+    new function run() {
+
+        var items = ["one", 2, "circle", true, "Applepie"];
+        var iter = new Iterator(items);
+
+        // using for loop
+
+        for (var item = iter.first(); iter.hasNext(); item = iter.next()) {
+            log.add(item);
+        }
+
+        log.add("");
+
+        // using Iterator's each method
+
+        iter.each(function(item) {
+            log.add(item);
+        });
+
+        log.show();
+    }();
+}());
+
+(function(){
+    /* Title: Iterator
+     Description: implements a specialized language
+     */
+    
+    var agg = (function () {
+
+        var index = 0,
+                data = [1, 2, 3, 4, 5],
+                length = data.length;
+
+        return {
+
+            next:function () {
+                var element;
+                if (!this.hasNext()) {
+                    return null;
+                }
+                element = data[index];
+                index = index + 2;
+                return element;
+            },
+
+            hasNext:function () {
+                return index < length;
+            },
+
+            rewind:function () {
+                index = 0;
+            },
+
+            current:function () {
+                return data[index];
+            }
+
+        };
+    }());
+
+    var element;
+    while (element - agg.next()) {
+        // do something with the element
+        console.log(element);
+    }
+
+    while (agg.hasNext()) {
+        // do something with the next element...
+        console.log(agg.next());
+    }
+
+    // this loop logs 1, then 3, then 5
+    while (agg.hasNext()) {
+        console.log(agg.next());
+    }
+
+    // go back
+    agg.rewind();
+    console.log(agg.current()); // 1
+
+    // reference
+    // http://www.addyosmani.com/resources/essentialjsdesignpatterns/book/#iteratorpatternjquery
+    // http://shop.oreilly.com/product/9780596806767.do?sortby=publicationDate
+}());
+
+(function(){
+    var CafeMenu = function(){
+        Menu.apply(this);
+        this.nPosition = -1;
+        this.aMenuItems = [];
+        this.createIterator = function(){
+            return new CafeMenuIterator(this.aMenuItems);
+        };
+        this.addItem("Express", "Coffee from machine", false, 0.99);
+        this.addItem("Long with water", "Coffee with a lot of water", false, 1.20);
+        this.addItem("On the rocks", "Coffee with ice", false, 2.00);
+    };
+    CafeMenu.prototype.addItem = function(sName, sDescription, bVegetarian, nPrice){
+        var oMenuItem = new MenuItem(sName, sDescription, bVegetarian, nPrice);
+        this.aMenuItems.push(oMenuItem);
+    };
+    CafeMenu.prototype.getMenuItems = function(){
+        return this.aMenuItems;
+    };
+
+    var CafeMenuIterator = function(aMenuItems){
+        this.aMenuItems = aMenuItems;
+        Iterator.apply(this);
+        this.nPosition = -1;
+        this.nLength = this.aMenuItems.length;
+        this.hasNext = function(){
+            return (this.nPosition + 1) < this.nLength;
+        };
+        this.next = function(){
+            this.nPosition = this.nPosition + 1;
+            return this.aMenuItems[this.nPosition];
+        };
+    };
+
+    var DinnerMenu = function(){
+        Menu.apply(this);
+        this.oMenuItems = {};
+        this.createIterator = function(){
+            return new DinnerMenuIterator(this.oMenuItems);
+        };
+        this.addItem("Vegetarian BLT", "(Fakin') Bacon with lettuce and tomato on whole wheat", true, 2.99);
+        this.addItem("BLT", "Bacon with lettuce and tomato on whole wheat", false, 2.99);
+        this.addItem("Soup of the day", "Soup of the day, with a side of potato salad", false, 3.29);
+        this.addItem("Hotdog", "A hotdog with saurkraut, relish, onions, topped with cheese", false, 3.05);
+    };
+    DinnerMenu.MAX_ITEMS = 6;
+    DinnerMenu.prototype.addItem = function(sName, sDescription, bVegetarian, nPrice){
+        if(this.length === DinnerMenu.MAX_ITEMS){
+            throw new Error("Sorry menu is full! Can't add item to menu");
+        }
+        this.oMenuItems[sName] = new MenuItem(sName, sDescription, bVegetarian, nPrice);
+        this.length = this.length + 1;
+    };
+    DinnerMenu.prototype.getMenuItems = function(){
+        return this.oMenuItems;
+    };
+
+    var DinnerMenuIterator = function(oMenuItems){
+        this.oMenuItems = oMenuItems;
+        Iterator.apply(this);
+        this.nPosition = -1;
+        this.nLength = 0;
+        this.hasNext = function(){
+            return (this.nPosition + 1) < this.nLength;
+        };
+        this.next = function(){
+            this.nPosition = this.nPosition + 1;
+            return this.oMenuItems[this.aKeys[this.nPosition]];
+        };
+        this._getKeys = function(){
+            var aKeys = [];
+            var sKey = '';
+            for(sKey in this.oMenuItems){
+                if(this.oMenuItems.hasOwnProperty(sKey)){
+                    aKeys.push(sKey);
+                    this.nLength = this.nLength + 1;
+                }
+            }
+            return aKeys;
+        };
+        this.aKeys = this._getKeys();
+    };
+
+    var Iterator = function(){
+        this.hasNext = function(){
+            throw new Error("This method must be overwritten!");
+        };
+        this.next = function(){
+            throw new Error("This method must be overwritten!");
+        };
+        this.remove = function(){
+            throw new Error("This method must be overwritten!");
+        };
+    };
+
+    var Mattress = function(aMenus){
+        this.aMenus = aMenus;
+    };
+    Mattress.prototype._printMenu = function(oIterator){
+        var oMenuItem = null;
+        while(oIterator.hasNext()){
+            oMenuItem = oIterator.next();
+            console.log(oMenuItem.getName() + ": " + oMenuItem.getDescription() + ", " + oMenuItem.getPrice() + "eur.");
+        }
+    };
+    Mattress.prototype.printMenu = function(){
+        var nMenu = 0;
+        var nLenMenus = this.aMenus.length;
+        var oMenu = null;
+        var oIterator = null;
+
+        for(; nMenu < nLenMenus;)
+        {
+            oMenu = this.aMenus[nMenu];
+            oIterator = oMenu.createIterator();
+            this._printMenu(oIterator);
+            nMenu = nMenu + 1;
+        }
+    };
+
+    var Menu = function(){
+        this.createIterator = function(){
+            throw new Error("This method must be overwritten!");
+        };
+    };
+
+    var MenuItem = function(sName, sDescription, bVegetarian, nPrice){
+        this.sName = sName;
+        this.sDescription = sDescription;
+        this.bVegetarian = bVegetarian;
+        this.nPrice = nPrice;
+    };
+    MenuItem.prototype.getName = function(){
+        return this.sName;
+    };
+    MenuItem.prototype.getDescription = function(){
+        return this.sDescription;
+    };
+    MenuItem.prototype.getPrice = function(){
+        return this.nPrice;
+    };
+    MenuItem.prototype.isVegetarian = function(){
+        return this.bVegetarian;
+    };
+
+    var PancakeHouseMenu = function(){
+        Menu.apply(this);
+        this.nPosition = -1;
+        this.aMenuItems = [];
+        this.createIterator = function(){
+            return new PancakeHouseMenuIterator(this.aMenuItems);
+        };
+        this.addItem("K&B's Pancake Breakfast", "Pancakes with scrambled eggs, and toast", true, 2.99);
+        this.addItem("Regular Pancake Breakfast", "Pancakes with fried eggs, sausage", false, 2.99);
+        this.addItem("Blueberry Pancakes", "Pancakes made with fresh blueberries", true, 3.49);
+        this.addItem("Waffles", "Waffles, with your choice of blueberries or strawberries", true, 3.59);
+    };
+    PancakeHouseMenu.prototype.addItem = function(sName, sDescription, bVegetarian, nPrice){
+        var oMenuItem = new MenuItem(sName, sDescription, bVegetarian, nPrice);
+        this.aMenuItems.push(oMenuItem);
+    };
+    PancakeHouseMenu.prototype.getMenuItems = function(){
+        return this.aMenuItems;
+    };
+
+    var PancakeHouseMenuIterator = function(aMenuItems){
+        this.aMenuItems = aMenuItems;
+        Iterator.apply(this);
+        this.nPosition = -1;
+        this.nLength = this.aMenuItems.length;
+        this.hasNext = function(){
+            return (this.nPosition + 1) < this.nLength;
+        };
+        this.next = function(){
+            this.nPosition = this.nPosition + 1;
+            return this.aMenuItems[this.nPosition];
+        };
+    };
+
+    var oMattress = new Mattress([new PancakeHouseMenu(), new DinnerMenu(), new CafeMenu()]);
+    console.log("---------------------------------------------");
+    oMattress.printMenu();
+    console.log("---------------------------------------------");
+
+}());
+
+</script>
+</body>
+</html>
