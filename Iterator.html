@@ -13,6 +13,9 @@
  * 定义：
  * 提供一种方法顺序访问一个聚合对象中各个元素，而又不需要暴露该对象的内部表示。
  *
+ * 本质：
+ * 控制访问聚合对象中的元素
+ *
  * 所谓聚合是指一组对象的组合结构。
  *
  * 一.功能
@@ -101,8 +104,431 @@ new function(){
 (function(){
     // 实现实例
     
+    // 工资表数据的整合
+    
+    var Iterator = function(aggregate){
+        this.aggregate = aggregate;
+        this.index = -1;
+    };
+    Iterator.prototype = {
+        first: function(){
+            this.index = 0;
+        },
+        next: function(){
+            if(this.index < this.aggregate.size()) {
+                this.index++;
+            }
+        },
+        isDone: function(){
+            return this.index === this.aggregate.size();
+        },
+        currentItem: function(){
+            return this.aggregate.get(this.index);
+        }
+    };
+
+
+    // 工资描述模型对象
+    var PayModel = function(){
+        // 支付工资的人员
+        this.userName;
+        // 支付的工资数额
+        this.pay;
+    };
+    PayModel.prototype = {
+        getUserName: function(){
+            return this.userName;
+        },
+        setUserName: function(userName){
+            this.userName = userName;
+        },
+        getPay: function(){
+            return this.pay;
+        },
+        setPay: function(pay){
+            this.pay = pay;
+        },
+        toString: function(){
+            return 'userName = ' + this.userName + ', pay = ' + this.pay;
+        }
+    };
+
+    // 客户方已有的工资管理对象
+    var PayManager = function(){
+        this.list = [];
+    };
+    PayManager.prototype = {
+        createIterator: function(){
+            return new iterator(this);
+        },
+        get: function(index){
+            var ret = null;
+            if(index < this.list.length) {
+                ret = this.list[index];
+            }
+
+            return ret;
+        },
+        size: function(){
+            return this.list.length;
+        }.
+
+        // 计算工资，其实应该有很多参数，为了演示从简
+        calcPay: function(){
+            var pm1 = new PayModel();
+            pm1.setPay(3800);
+            pm1.setUserName('张三');
+
+            var pm2 = new PayModel();
+            pm2.setPay(5800);
+            pm2.setUserName('李四');
+
+            this.list.push(pm1);
+            this.list.push(pm2);
+        }
+    };
+
+    // 被客户方收购的那个公子的工资管理类
+    var SalaryManager = function(){
+        this.pms = [];
+    };
+    SalaryManager.prototype = {
+        // 获取工资列表
+        getPays: function(){
+            return this.pms;
+        },
+        // 计算工资
+        calcSalary: function(){
+            var pm1 = new PayModel();
+            pm1.setPay(2200);
+            pm1.setUserName('王五');
+
+            var pm2 = new PayModel();
+            pm2.setPay(3600);
+            pm2.setUserName('赵六');
+
+            this.pms[0] = pm1;
+            this.pms[1] = pm2;
+        }
+    };
+
+    new function(){
+        var payManager = new PayManager();
+        payManager.calcPay();
+        var it = payManager.createIterator();
+        console.log('集团工资列表：');
+        var pm;
+        it.first();
+        while(!it.isDone(){
+            pm = it.currentItem();
+            console.log('ths obj === ' + pm);
+            it.next();
+        }
+
+        var salaryManager = new SalaryManager();
+        salaryManager.calcSalary();
+        var pms = salaryManager.getPays();
+        console.log('新收购的公司工资列表：');
+        for(var i = 0; i < pms.length; i++) {
+            console.log(pms[i]);
+        }
+    }();
 
 }());
+
+(function(){
+    // 带迭代策略的迭代器示例
+    /*
+    在实现过滤功能的迭代器中，又有两种常见的需要过滤的情况，一种是对数据进行整条过滤，比如只能查看自己部门的数据；另外一种情况是数据进行部分过滤，比如某些人不能查看工资数据。
+    带迭代策略的迭代器实现的一个基本思路，就是先把聚合对象的聚合数据获取到，并存储到迭代器中，这样迭代器就可以按照不同的策略来迭代数据了。
+     */
+    var Iterator = function(aggregate){
+        this.pms = [];
+        this.index = 0;
+
+        // 在这里先对聚合对象的数据进行过滤
+        var tempCol = [];
+        var i;
+        for(i in aggregate) {
+            if(!aggregate.hasOwnProperty(i)) continue;
+
+            if(aggregate[i].getPay() < 3000) {
+                tempCol.push(aggregate[i]);
+            }
+        }
+
+        this.pms = [];
+        var i = 0;
+        for(i = 0; i < tempCol.length; i++) {
+            this.pms[i] = tempCol[i];
+        }
+    };
+    Iterator.prototype = {
+        hasNext: function(){
+            return this.index <= (this.pms.length - 1);
+        },
+        next: function(){
+            var ret = null;
+            if(this.hasNext()) {
+                ret = this.pms[this.index++];
+            }
+
+            // 在这里对要返回的数据进行过滤，比如不让查看工资数据
+            if(ret) ret.setPay(0.0);
+
+            return ret;
+        },
+        remove: function(){}
+    };
+
+/*
+谁定义遍历算法的问题
+
+在迭代器模式的实现中，常见的有两个地方可以来定义遍历算法，一个是聚合对象本身，另外一个就是迭代器负责遍历算法。
+
+在聚合对象本身定义遍历算法，通常会在遍历过程中，用迭代器来存储当前迭代的状态这种迭代器被称为游标，因为它仅用来指示当前的位置。
+
+在迭代器中定义遍历算法，会比在相同的聚合上使用不同的迭代器算法容易，同事也易于在不同的聚合上重用相同的算法。比如上面带策略的迭代器示例，迭代器把需要迭代的数据从聚合对象中取出并存放到自己的对象中，然后再迭代自己的数据，除了刚开始创建迭代器的时候需要访问聚合对象外，真正的迭代过程已经跟聚合对象无关了。
+
+ */
+
+/*
+双向迭代器
+
+可以同时向前和向后遍历数据的迭代器。
+ */
+
+}());
+
+/**
+ * 迭代器模式的优点
+ *
+ * 1.更好的封装性
+ * 2.迭代器模式可以让你访问一个聚合对象的内容，而无需暴露该聚合对象的内部表示，从而提高聚合对象的封装性。
+ * 3.可以以不同的遍历方式来遍历一个聚合。
+ * 4.使用迭代器模式，使得聚合对象的内容和具体的迭代算法分离开。这样就可以通过使用不同的迭代器的实例，不同的遍历方式来遍历一个聚合对象了。
+ * 5.迭代器简化了聚合的接口。
+ * 6.简化客户端调用
+ * 7.同一个聚合上可以有多个遍历。
+ * 8.每个迭代器保持它自己的遍历状态。
+ *
+ *
+ * 何时选用迭代器模式
+ *
+ * 1.如果你希望提供访问一个聚合对象的内容，但是又不想暴露它的内部表示的时候。
+ * 2.如果你希望有多种遍历方式可以访问聚合对象，可以使用迭代器模式。
+ * 3.如果你希望为遍历不同的聚合对象提供一个统一的接口。
+ *
+ *
+ * 相关模式
+ *
+ * 迭代器模式和组合模式
+ *
+ * 这两个模式可以组合使用。
+ * 组合模式是一种递归的对象结构，在枚举某个组合对象的子对象的时候，通常会使用迭代器模式。
+ *
+ * 迭代器模式和工厂方法模式
+ * 
+ * 这两个模式可以组合使用。
+ * 在聚合对象创建迭代器的时候，通常会采用工厂方法模式来实例化相应的迭代器对象。
+ */
+
+// 翻页迭代
+ (function(){
+    
+    // 顺序翻页迭代其示例
+    
+    // 工资描述模型对象
+    var PayModel = function(){
+        // 支付工资的人员
+        this.userName;
+        // 支付的工资数额
+        this.pay;
+    };
+    PayModel.prototype = {
+        getUserName: function(){
+            return this.userName;
+        },
+        setUserName: function(userName){
+            this.userName = userName;
+        },
+        getPay: function(){
+            return this.pay;
+        },
+        setPay: function(pay){
+            this.pay = pay;
+        },
+        toString: function(){
+            return 'userName = ' + this.userName + ', pay = ' + this.pay;
+        }
+    };
+
+    var SalaryManager = function(){
+        this.pms = [];
+    };
+    SalaryManager.prototype = {
+        getPays: function(){
+            return this.pms;
+        },
+        calcSalary: function(){
+            var pm1 = new PayModel();
+            pm1.setPay(2200);
+            pm1.setUserName('王五');
+
+            var pm2 = new PayModel();
+            pm2.setPay(3600);
+            pm2.setUserName('赵六');
+
+            var pm3 = new PayModel();
+            pm3.setPay(2200);
+            pm3.setUserName('王五二号');
+
+            var pm4 = new PayModel();
+            pm4.setPay(3600);
+            pm4.setUserName('赵六二号');
+
+            var pm5 = new PayModel();
+            pm5.setPay(2200);
+            pm5.setUserName('王五三号');
+
+            this.pms.push(pm1);
+            this.pms.push(pm2);
+            this.pms.push(pm3);
+            this.pms.push(pm4);
+            this.pms.push(pm5);
+        },
+        // Factory Method
+        createIterator: function(type){
+            if(type === 'random') {
+                return new RandomIterator(this);
+            } 
+            return new Iterator(this);
+        }
+    };
+
+    var Iterator = function(aggregate){
+        this.pms = aggregate.getPays();
+        this.index = 0;
+    };
+    Iterator.prototype = {
+        hasNext: function(){
+            return this.index <= (this.pms.length - 1);
+        },
+        hasPrevious: function(){
+            return this.index > 0;
+        },
+        // 返回当前索引到num的集合
+        next: function(num){
+            var col = [];
+            var count = 0;
+            while(this.hasNext() && count++ < num) {
+                col.push(this.pms[this.index++]);
+            }
+
+            return col;
+        },
+        // 把索引退回去num个，然后再取值。
+        // 事实上有可能有多退回去的数据
+        previous: function(num){
+            var col = [];
+            var count = 0;
+            this.index == num;
+            while(this.hasPrevious() && count++ < num) {
+                col.push(this.pms[this.index++]);
+            }
+
+            return col;
+        }
+    };
+
+    new function(){
+        var salaryManager = new SalaryManager();
+        salaryManager.calcSalary();
+        var it = salaryManager.createIterator();
+
+        // 获取第一页，每页显示两条
+        var col = it.next(2);
+        console.log('第一页数据：');
+        print(col);
+
+        var col2 = it.next(2);
+        console.log('第二页数据：');
+        print(col2);
+
+        var col3 = it.previous(2);
+        console.log('第三页数据：');
+        print(col3);
+
+        function print(col){
+            for(var i =0; i < col.length; i++) {
+                console.log(col[i]);
+            }
+        }
+    }();
+
+    // 随机翻页迭代器示例
+    
+    var RandomIterator = function(aggregate){
+        this.pms = aggregate.getPays();
+        this.index = 0;
+    };
+    RandomIterator.prototype = {
+        hasNext: function(){
+            return this.index <= (this.pms.length - 1);
+        },
+        hasPrevious: function(){
+            return this.index > 0;
+        },
+        getPage: function(pageNum, pageShow){
+            var col = [];
+            // 需要在这里先计算需要获取的数据的开始条数和结束条数
+            var start = (pageNum - 1) * pageShow;
+            var end = start + pageShow - 1;
+
+            if(start < 0) start = 0;
+
+            if(end > this.pms.length - 1) end = this.pms.length - 1;
+
+            this.index = 0;
+            while(this.hasNext() && this.index <= end) {
+                if(this.index >= start) col.push(this.pms[this.index]);
+                this.index++;
+            }
+
+            return col;
+        }
+    };
+
+    new function(){
+        var salaryManager = new SalaryManager();
+        salaryManager.calcSalary();
+        var it = salaryManager.createIterator('random');
+
+        // 获取第一页，每页显示两条
+        var col = it.getPage(1, 2);
+        console.log('第一页数据：');
+        print(col);
+
+        var col2 = it.getPage(2, 2);
+        console.log('第二页数据：');
+        print(col2);
+
+        var col3 = it.getPage(1, 2);
+        console.log('再次获取第一页数据：');
+        print(col3);
+
+        var col4 = it.getPage(3, 2);
+        console.log('第三页数据：');
+        print(col4);
+
+        function print(col){
+            for(var i =0; i < col.length; i++) {
+                console.log(col[i]);
+            }
+        }
+    }();
+ }());
+
 
 (function(){
     // http://www.dofactory.com/javascript-iterator-pattern.aspx
