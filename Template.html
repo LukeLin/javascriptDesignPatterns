@@ -242,6 +242,183 @@
      2.各个子类中具有公共行为，应该抽取出来，集中在一个公共类去实现，从而避免代码重复。
      3.需要控制子类扩展的情况。模板方法模式会在特定的点来调用子类的方法，这样只允许在这些点进行扩展。
      */
+    
+} 
+
+
+// http://blog.csdn.net/dead_of_winter/article/details/2159420
+    
+function parent(prototype){
+    return function(){
+        for(var p in o) this[p]=prototype[p];
+        // 模板方法
+        this.show=function(){
+             alert("show");
+        }
+};
+
+// 广度优先搜索的例子
+
+function BreadthFirstSearch(extend,beam,finish)
+{
+    return function(){
+        this.finish=finish;
+        this.extend=extend;
+        this.beam=beam; 
+        this.search=function(){
+            
+            var queue=[this];
+            while(queue.length)
+            {
+                var current=queue.shift();
+                if(!current.beam()){
+                    var extended=current.extend();
+                    for(var i=0;i<extended.length;i++)
+                    {
+                        if(extended[i].finish())return extended[i];
+                        queue.push(extended[i]);
+                    }
+                }        
+            }
+            return null;
+        }
+    }
+}
+
+
+(function(){
+    // 解决八皇后问题的例子的例子
+
+function Queen(n){
+    var ret=new Array();
+    ret.size=n;                                //皇后问题的规模
+    ret.depth=0;                                //搜索的深度
+    ret.pos=0;                                //新皇后的水平位置
+    for(var y=0;y<n;y++)
+    {
+        ret.push([]);
+        for(var x=0;x<n;x++)
+            ret[ret.length-1].push(0);
+    }
+    function objectPrototypeClone()
+    {
+        var tmp=function(){};
+        tmp.prototype=this;
+        return new tmp;
+    }
+    ret.clone=function(){
+        var r=objectPrototypeClone.call(this);
+        for(var i=0;i<n;i++)
+        {
+            r[i]=objectPrototypeClone.call(this[i])
+        }
+        return r;
+    }
+    ret.toString=function(){
+        var str="";
+        for(var y=0;y<n;y++)
+        {
+            for(var x=0;x<n;x++)
+                str+=this[y][x]==0?"○":"★";
+            str+=" ";
+        }
+        return str;
+    }
+    return ret;
+}
+
+function extendQueen()
+{
+    var ret=new Array();
+    if(this.depth==this.size)return ret;
+    for(var i=0;i<this.size;i++)
+    {
+        var current=this.clone();
+        //alert(current.depth);
+        current[current.depth][i]=1;
+        current.pos=i;
+        current.depth++;
+        ret.push(current);
+    }
+    return ret;
+}
+function beamQueen()
+{
+    var x,y;
+    if(this.depth==0)return false;
+    if(this.depth==this.size)return true;
+    x=this.pos;y=this.depth-1;
+    while(--x>=0&&--y>=0)
+        if(this[y][x]!=0)return true;
+
+    x=this.pos;y=this.depth-1;
+    while(--y>=0)
+        if(this[y][x]!=0)return true;
+
+    x=this.pos;y=this.depth-1;
+    while(--y>=0&&++x<this.size)
+    {
+        if(this[y][x]!=0)return true;
+    }
+    return false;
+}
+
+function finishQueen(){
+
+    if(this.depth<this.size)return false;
+    x=this.pos;y=this.depth-1;
+    while(--x>=0&&--y>=0)
+        if(this[y][x]!=0)return false;
+
+    x=this.pos;y=this.depth-1;
+    while(--y>=0)
+        if(this[y][x]!=0)return false;
+
+    x=this.pos;y=this.depth-1;
+    while(--y>=0&&++x<this.size)
+    {
+        if(this[y][x]!=0)return false;
+    }
+
+    document.write(++count+". "+this);
+    return false;
+}
+function BreadthFirstSearch(extend,beam,finish)
+{
+    return function(){
+        this.finish=finish;
+        this.extend=extend;
+        this.beam=beam; 
+        this.search=function(){
+            
+            var queue=[this];
+            while(queue.length)
+            {
+                var current=queue.shift();
+                if(!current.beam()){
+                    var extended=current.extend();
+                    for(var i=0;i<extended.length;i++)
+                    {
+                        if(extended[i].finish())return extended[i];
+                        queue.push(extended[i]);
+                    }
+                }        
+            }
+            return null;
+        }
+    }
+}
+function BFSQueen(n)
+{
+    var ret=new Queen(n);
+    var BFS=new BreadthFirstSearch(extendQueen,beamQueen,finishQueen);
+    BFS.apply(ret);
+    return ret;
+}
+var queen=new BFSQueen(8);
+var count=0;
+queen.search();
+}());
 </script>
 </body>
 </html>
