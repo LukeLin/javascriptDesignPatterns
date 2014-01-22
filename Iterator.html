@@ -171,7 +171,7 @@ new function(){
         },
         size: function(){
             return this.list.length;
-        }.
+        },
 
         // 计算工资，其实应该有很多参数，为了演示从简
         calcPay: function(){
@@ -219,7 +219,7 @@ new function(){
         console.log('集团工资列表：');
         var pm;
         it.first();
-        while(!it.isDone(){
+        while(!it.isDone()){
             pm = it.currentItem();
             console.log('ths obj === ' + pm);
             it.next();
@@ -432,7 +432,7 @@ new function(){
         previous: function(num){
             var col = [];
             var count = 0;
-            this.index == num;
+            this.index = num;
             while(this.hasPrevious() && count++ < num) {
                 col.push(this.pms[this.index++]);
             }
@@ -526,9 +526,219 @@ new function(){
                 console.log(col[i]);
             }
         }
+
     }();
  }());
 
+(function(){
+    /**
+     * ECMAScript 6的Iterator--------------Generators
+     *
+     * 迭代器模式是很常用的设计模式，但是实现起来，很多东西是程序化的；当迭代规则比较复杂时，维护迭代器内的状态，是比较麻烦的。 于是有了generator，何为generator，这里 说的很明确: Generators: a better way to build Iterators.就是实现迭代器的更好的方式，借助 yield 关键字,可以更优雅的实现fib数列。
+     */
+
+    // 最简单的yield用法
+    // 创建一个generatorFunction
+    function* Hello() {
+        // 我习惯用大驼峰命名因为这就好比generator的构造函数
+        yield 1;
+        yield 2;
+    }
+
+    var hello = Hello(); // hello 是一个generator
+    var a = hello.next(); // a: Object {value: 1, done: false}
+    var b = hello.next(); // b: Object {value: 2, done: false}
+    var c = hello.next(); // c: Object {value: undefined, done: true}
+    hello.next();   // Error: Generator has already finished
+
+    /*
+    以看到hello的原型链中总是有一个next函数, 每次运行都返回yield后面的值, 只是不是单纯的yield后面的值, 而是放在一个对象的value键中, 同时我们注意到对象中还有另一个键done, Hello函数中有两个yield, 因此前两个done的值为false, 表示我还没有结束呐!, 最后一个done为true, 表示我已经结束了! 如果继续运行hello.next()则会报错Uncaught Error: Generator has already finished
+
+很明显的说yield就是相当于是另一种return, return使用时函数就结束了, 而使用yield的时候, 函数会卡在那个yield的地方, 等待下一个next
+    */
+
+    // fib示例
+
+    // before
+    function fib(){
+        return {
+            state :0,
+            cur :0,
+            prev1:-1,
+            prev2:-1,
+            hasNext:function(){
+                return true;
+            },
+            //fib数列，第一个是0，第二个是1，后面就是统一的迭代公式了
+            next:function(){
+                if(this.state == 0){
+                    this.cur = 0;
+                    this.state = 1;
+                }else if(this.state == 1){
+                    this.cur = 1;
+                    this.prev2 = 0;
+                    this.state = 2;
+                }else{
+                    this.prev1 = this.prev2;
+                    this.prev2 = this.cur;
+                    this.cur = this.prev1 + this.prev2;
+                }
+                return this.cur;
+            }
+            //ignore reset funciton
+        }
+    }
+    //这是无限序列，所以改造了一下，只生成8个数
+    var fibIter = fib();
+    for(var i = 0; i < 8; i++){
+        console.log(fibIter.next());
+        if(fibIter.hasNext())
+            continue;
+    }
+
+    // after
+     function* fib2(){
+        yield 0;    // 状态0，第一次调用next，返回0，并改变状态
+        yield 1;    // 状态1，第二次调用next，返回1，并改变状态
+
+        var p1 = 0;
+        var p2 = 1;
+        var cur = p1 + p2;
+
+        while(true) {
+            yield cur;  // 状态2，后面调用next，返回相应的几个，状态不再改变
+
+            p1 = p2;
+            p2 = cur;
+            cur = p1 + p2;
+        }
+    }
+
+    var fibIter2 = fib2();
+    for(var i = 0; i < 8; i++){
+        console.log(fibIter2.next().value);
+    }
+    /*
+    0  1  1  2  3  5  8  13
+    */
+
+
+    // http://www.html-js.com/article/1716
+
+    (function(){
+        // 对从1到100的数组，先取出其中的所有偶数，然后再取出所有其中的前10个，
+        // 然后再计算其平方，然后转成数组。
+        function* wrap(arr){
+            for(var i = 0;i<arr.length;i++){
+                yield arr[i]; // ---（1）----
+            }
+        }
+
+        function iter(arr){
+            return new Iterator(arr);
+        }
+
+        function Iterator(arr){
+            this.gen = wrap(arr);
+        }
+
+        Iterator.prototype = {
+            where: function where(f){
+                var gen = whereImple(this.gen, f);
+                this.gen = gen;
+                return this;
+            },
+            map: function map(f){
+                var gen = mapImpl(this.gen, f);
+                this.gen = gen;
+                return this;
+            },
+            toArray: function toArray(){
+                var arr = [];
+                var _g;
+                var gen = this.gen;
+                while (true){
+                    _g = gen.next();
+                    if(_g.done) break;
+                    arr.push(_g.value);
+                }
+                return arr;
+            }
+        };
+
+        function* mapImpl(gen,f){
+            var _g;
+            while(true){
+                _g = gen.next();
+                if(_g.done) break;
+                yield f(_g.value);
+            }
+        }
+
+        function* whereImple(gen,f){
+            var index = 0, _g, value;
+            while(true){
+                _g = gen.next();
+                if(_g.done) break;
+                value = _g.value;
+                if(f(value,index++)){
+                    yield value;
+                }
+            }
+        }
+
+        var _1to10 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        var arr =iter(_1to10)
+                .where(function(v){return v % 2 == 0})
+                .map(function(v){return v * v})
+                .toArray();
+        console.log(arr); // [4, 16, 36, 64, 100]
+    }());
+
+    // http://bg.biedalian.com/2013/12/21/harmony-generator.html
+
+    // 代替回调金字塔
+
+    function delay(time) {
+        return function(fn) {
+            setTimeout(function() {
+                fn(null, time); // null 表示没有错误..
+            }, time)
+        }
+    }
+
+    function co(GenFunc) {
+        return function(cb) {
+            var gen = GenFunc();
+            void function next(err, args) {
+                if (err) {
+                    cb(err);
+                } else {
+                    if (gen.next) {
+                        var ret = gen.next(args);
+                        if (ret.done) {
+                            cb && cb(null, args);
+                        } else {
+                            ret.value(next);
+                        }
+                    }
+                }
+            }();
+        }
+    }
+
+    co(function* () {
+        var a;
+        a = yield delay(200); // 200
+        a = yield delay(a + 100); // 300
+        a = yield delay(a + 100); // 400
+    })(function(err, data) {
+        if (!err) {
+            console.log(data); // print 400
+        }
+    })
+
+}());
 
 (function(){
     // http://www.dofactory.com/javascript-iterator-pattern.aspx
@@ -536,7 +746,7 @@ new function(){
     var Iterator = function(items) {
         this.index = 0;
         this.items = items;
-    }
+    };
 
     Iterator.prototype = {
         first: function() {
@@ -557,7 +767,7 @@ new function(){
                 callback(item);
             }
         }
-    }
+    };
 
     // log helper
     var log = (function() {
