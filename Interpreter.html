@@ -290,7 +290,274 @@
 
     // 读取多个元素或属性的值
     // TODO
+    (function(){
+        /**
+         * 上下文，用来包含解释器需要的一些全局信息
+         * @param {String} filePathName [需要读取的xml的路径和名字]
+         */
+        function Context(filePathName){
+            // 上一个被处理的多个元素
+            this.preEles = [];
+            // xml的Document对象
+            this.document = XmlUtil.getRoot(filePathName);
+        }
+        Context.prototype = {
+            // 重新初始化上下文
+            reInit: function(){
+                this.preEles = [];
+            },
+            /**
+             *  各个Expression公共使用的方法
+             * 根据父元素和当前元素的名称来获取当前元素
+             * @param  {Element} pEle    [父元素]
+             * @param  {String} eleName [当前元素名称]
+             * @return {Element|null}         [找到的当前元素]
+             */
+            getNowEles: function(pEle, eleName){
+                var elements = [];
+                var tempNodeList = pEle.childNodes;
+                var nowEle;
 
+                for(var i = 0, len = tempNodeList.length; i < len; i++) {
+                    if((nowEle = tempNodeList[i]).nodeType === 1) {
+                        if(nowEle.nodeName === eleName) {
+                            elements.push(nowEle);
+                        }
+                    }
+                }
+
+                return elements;
+            },
+            getPreEles: function(){
+                return this.preEles;
+            },
+            setPreEles: function(nowEles){
+                this.preEles = nowEles;
+            },
+            getDocument: function(){
+                return this.document;
+            }
+        };
+
+        // 工具对象
+        // 解析xml，获取相应的Document对象
+        var XmlUtil = {
+            getRoot: function(filePathName){
+                var parser = new DOMParser();
+                var xmldom = parser.parseFromString('<root id="rootId"><a><b><c name="testC">12345</c><d id="1">d1</d><d id="2">d2</d><d id="3">d3</d><d id="4">d4</d></b></a></root>', 'text/xml');
+                
+                return xmldom;
+            }
+        };
+
+        /**
+         * 元素作为非终结符对应的解释器，解释并执行中间元素
+         * @param {String} eleName [元素的名称]
+         */
+        function ElementExpression(eleName){
+            this.eles = [];
+            this.eleName = eleName;
+        }
+        ElementExpression.prototype = {
+            addEle: function(eleName){
+                this.eles.push(eleName);
+                return true;
+            },
+            removeEle: function(ele){
+                for(var i = 0, len = this.eles.length; i < len; i++) {
+                    if(ele === this.eles[i]) {
+                        this.eles.splice(i--, 1);
+                    }
+                }
+                return true;
+            },
+            interpret: function(context){
+                // 先取出上下文中的当前元素作为父级元素
+                // 查找到当前元素名称所对应的xml元素，并设置回到上下文中
+                var pEles = context.getPreEles();
+                var ele = null;
+                var nowEles = [];
+
+                if(!pEles.length) {
+                    // 说明现在获取的是根元素
+                    ele = context.getDocument().documentElement;
+                    pEles.push(ele);
+                    context.setPreEles(pEles);
+                } else {
+                    var tempEle;
+                    for(var i = 0, len = pEles.length; i < len; i++) {
+                        tempEle = pEles[i];
+                        //nowEles.splice(nowEles.length - 1, 0, context.getNowEles(tempEle, this.eleName));
+                        nowEles = nowEles.concat(context.getNowEles(tempEle, this.eleName));
+
+                        // 找到一个就停止
+                        if(nowEles.length) break;
+                    }
+
+                    var tempList = [];
+                    tempList.push(nowEles[0]);
+                    context.setPreEles(tempList);
+                }
+
+                var ss;
+                // 循环调用子元素的interpret方法
+                for(var i = 0, len = this.eles.length; i < len; i++) {
+                    ss = this.eles[i].interpret(context);
+                }
+
+                return ss;
+            }
+        };
+
+        /**
+         * 元素作为终结符对应的解释器
+         * @param {String} name [元素的名称]
+         */
+        function ElementTerminalExpression(name){
+            this.eleName = name;
+        }
+        ElementTerminalExpression.prototype = {
+            interpret: function(context){
+                var pEles = context.getPreEles();
+                var ele = null;
+                if(!pEle.length) {
+                    ele = context.getDocument().documentElement;
+                } else {
+                    ele = context.getNowEles(pEles[0], this.eleName)[0];
+                }
+
+                // 获取元素的值
+                return ele.firstChild.nodeValue;
+            }
+        };
+
+        /**
+         * 属性作为终结符对应的解释器
+         * @param {String} propName [属性的名称]
+         */
+        function PropertyTerminalExpression(propName){
+            this.propName = propName;
+        }
+        PropertyTerminalExpression.prototype = {
+            interpret: function(context){
+                var eles = context.getPreEles();
+                var ss = [];
+
+                for(var i = 0, len = eles.length; i < len; i++) {
+                    ss.push(eles[i].getAttribute(this.propName));
+                }
+
+                return ss;
+            }
+        };
+
+        /**
+         * 以多个元素作为终结符的解释处理对象
+         * @param {[type]} name [description]
+         */
+        function ElementsTerminalExpression(name){
+            this.eleName = name;
+        }
+        ElementsTerminalExpression.prototype = {
+            interpret: function(context){
+                var pEles = context.getPreEles();
+                var nowEles = [];
+
+                for(var i = 0, len = pEles.length; i < len; i++) {
+                    //nowEles.splice(len - 1, 0, context.getNowEles(pEles[i], this.eleName));
+                    nowEles = nowEles.concat(context.getNowEles(pEles[i], this.eleName));
+                }
+
+                var ss = [];
+
+                for(i = 0, len = nowEles.length; i < len; i++) {
+                    ss.push(nowEles[i].firstChild.nodeValue);
+                }
+
+                return ss;
+            }
+        };
+
+        /**
+         * 多个元素作为非终结符的解释处理对象
+         */
+        function ElementsExpression(name){
+            this.eleName = name;
+            this.eles = [];
+        }
+        ElementsExpression.prototype = {
+            interpret: function(context){
+                var pEles = context.getPreEles();
+                var nowEles = [];
+
+                for(var i = 0, len = pEles.length; i < len; i++) {
+                    //nowEles.splice(len - 1, 0, context.getNowEles(pEles[i], this.eleName));
+                    nowEles = nowEles.concat(context.getNowEles(pEles[i], this.eleName));
+                }
+                context.setPreEles(nowEles);
+
+                var ss;
+                for(i = 0, len = this.eles.length; i < len; i++) {
+                    ss = this.eles[i].interpret(context);
+                }
+
+                return ss;
+            },
+            addEle: function(ele){
+                this.eles.push(ele);
+                return true;
+            },
+            removeEle: function(ele){
+                for(var i = 0, len = this.eles.length; i < len; i++) {
+                    if(ele === this.eles[i]) {
+                        this.eles.splice(i--, 1);
+                    }
+                }
+                return true;
+            }
+        };
+
+        new function(){
+            // "root/a/b/d$"
+            var c = new Context('Interpreter.xml');
+            var root = new ElementExpression('root');
+            var aEle = new ElementExpression('a');
+            var bEle = new ElementExpression('b');
+            var dEle = new ElementsTerminalExpression('d');
+
+            root.addEle(aEle);
+            aEle.addEle(bEle);
+            bEle.addEle(dEle);
+
+            var ss = root.interpret(c);
+
+            for(var i = 0, len = ss.length; i < len; i++) {
+                console.log('d的值是 = ' + ss[i]);
+            }
+        }();
+
+        new function(){
+            // a/b/d$.id$
+            var c = new Context('Interpreter.xml');
+            var root = new ElementExpression('root');
+            var aEle = new ElementExpression('a');
+            var bEle = new ElementExpression('b');
+            var dEle = new ElementsExpression('d');
+            var prop = new PropertyTerminalExpression('id');
+
+            root.addEle(aEle);
+            aEle.addEle(bEle);
+            bEle.addEle(dEle);
+            dEle.addEle(prop);
+
+            var ss = root.interpret(c);
+
+            for(var i = 0, len = ss.length; i < len; i++) {
+                console.log('d的属性id的值是 = ' + ss[i]);
+            }
+        }();
+
+    }());
 
     // 解析器
     // TODO
