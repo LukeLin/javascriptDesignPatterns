@@ -209,6 +209,7 @@
                 ss = this.eles[i].interpret(context);
             }
 
+            // 返回最后一个解释器的解释结果，一般最后一个解释器就是终结符解释器了
             return ss;
         }
     };
@@ -252,7 +253,7 @@
 
     new function(){
         var c = new Context('InterpreterTest.xml');
-        // 想要获取多个d元素的值，也就是如下表达式的值：“root/a/b/d”
+        // 想要获取多个d元素的值，也就是如下表达式的值：“root/a/b/c”
         // 首先要构建解释器的抽象语法树
         var root = new ElementExpression('root');
         var aEle = new ElementExpression('a');
@@ -295,7 +296,6 @@
 
 
     // 读取多个元素或属性的值
-    // TODO
     (function(){
         /**
          * 上下文，用来包含解释器需要的一些全局信息
@@ -393,16 +393,13 @@
                     var tempEle;
                     for(var i = 0, len = pEles.length; i < len; i++) {
                         tempEle = pEles[i];
-                        //nowEles.splice(nowEles.length - 1, 0, context.getNowEles(tempEle, this.eleName));
                         nowEles = nowEles.concat(context.getNowEles(tempEle, this.eleName));
 
                         // 找到一个就停止
                         if(nowEles.length) break;
                     }
 
-                    var tempList = [];
-                    tempList.push(nowEles[0]);
-                    context.setPreEles(tempList);
+                    context.setPreEles([nowEles[0]]);
                 }
 
                 var ss;
@@ -470,7 +467,6 @@
                 var nowEles = [];
 
                 for(var i = 0, len = pEles.length; i < len; i++) {
-                    //nowEles.splice(len - 1, 0, context.getNowEles(pEles[i], this.eleName));
                     nowEles = nowEles.concat(context.getNowEles(pEles[i], this.eleName));
                 }
 
@@ -497,7 +493,6 @@
                 var nowEles = [];
 
                 for(var i = 0, len = pEles.length; i < len; i++) {
-                    //nowEles.splice(len - 1, 0, context.getNowEles(pEles[i], this.eleName));
                     nowEles = nowEles.concat(context.getNowEles(pEles[i], this.eleName));
                 }
                 context.setPreEles(nowEles);
@@ -638,10 +633,10 @@
 
     function state_machine()
     {
-        this.state=_1;
-        this.resault=[];
+        this.state = _1;
+        this.resault = [];
         function _1(c){
-            if(c!='/'){
+            if(c != '/'){
                 this.resault.push(c);
                 return _1;
             } else {
@@ -649,17 +644,17 @@
             }
         }
         function _2(c){
-            this.resault.push('/'+c);
+            this.resault.push('/' + c);
             return _1;
         }
-        this.change=function(c){
-            this.state=this.state(c);
+        this.change = function(c){
+            this.state = this.state(c);
         };
     }
-    var sm=new state_machine();
-    var queue=("a//sd/jh/ds").split('');
+    var sm = new state_machine();
+    var queue = ("a//sd/jh/ds").split('');
 
-    for(var i=0;i<queue.length;i++)
+    for(var i = 0; i < queue.length; i++)
         sm.change(queue[i]);
 
     console.log(sm.resault);
@@ -700,25 +695,25 @@
             fun：可选的，处理函数，当格式字符串中有格式符%f出现时，则在fun中取相应的函数处理
     */
     function DateEx(date){
-        date=date||new Date();
-        date.format=function(formatString)
+        date = date || new Date();
+        date.format = function(formatString)
         {
             var f;
-            var j=0;
+            var j = 0;
             function fbuilder(n){
                 return function(v){
-                    var s=v.toString();
-                    if(s.length>=n)return s.slice(s.length-n,s.length);
-                    if(s.length<n)return new Array(n-s.length+1).join(0)+s;
+                    var s = v.toString();
+                    if(s.length >= n) return s.slice(s.length - n, s.length);
+                    if(s.length < n) return new Array(n - s.length + 1).join(0) + s;
                 };
             }
-            var args=arguments;
-            var resault=new String();
-            var _1=function(c)//状态1 是读入格式字符串的状态 
+            var args = arguments;
+            var resault = new String();
+            var _1 = function(c)//状态1 是读入格式字符串的状态
             {
-                if(c!="%")//对于非%字符按原样输出 
+                if(c != "%")//对于非%字符按原样输出
                 {
-                    resault+=c;
+                    resault += c;
                     return _1;
                 }
                 else//读到%时进入状态2 否则延续状态1
@@ -726,82 +721,82 @@
                     return _2;
                 }
             };
-            var _2=function(c)//状态2 是读入特殊格式字符串的状态
+            var _2 = function(c)//状态2 是读入特殊格式字符串的状态
             {
-                if(c.match(/d/)!=null)//对于数字 构造相应处理函数 返回状态3
+                if(c.match(/d/) != null)//对于数字 构造相应处理函数 返回状态3
                 {
-                    f=fbuilder(Number(c));
+                    f = fbuilder(Number(c));
                     return _3;
                 }
-                else if(c=="f")//对于格式符f 从参数中获取相应处理函数 返回状态3
+                else if(c == "f")//对于格式符f 从参数中获取相应处理函数 返回状态3
                 {
-                    f=args[++j];
+                    f = args[++j];
                     return _3;
                 }
                 else//没有特殊格式符 直接进入状态3
                 {
-                    f=function(v){return v;}
+                    f = function(v){return v;}
                     return _3(c);
                 }
 
 
             };
-            var _3=function(c)
+            var _3 = function(c)
             {
-                if(c=="%")//格式符% 连续2个%将被转义为一个% 返回状态1
+                if(c == "%")//格式符% 连续2个%将被转义为一个% 返回状态1
                 {
-                    resault+=c;
+                    resault += c;
                     return _1;
                 }
-                else if(c=="y")//格式符y 取出年份 返回状态1
+                else if(c == "y")//格式符y 取出年份 返回状态1
                 {
-                    resault+=f(date.getFullYear());
+                    resault += f(date.getFullYear());
 
                     return _1;
                 }
-                else if(c=="m")//格式符m 取出月份 返回状态1
+                else if(c == "m")//格式符m 取出月份 返回状态1
                 {
-                    resault+=f(date.getMonth()+1);
+                    resault += f(date.getMonth()+1);
                     return _1;
                 }
-                else if(c=="d")//格式符d 取出日期 返回状态1
+                else if(c == "d")//格式符d 取出日期 返回状态1
                 {
-                    resault+=f(date.getDate());
+                    resault += f(date.getDate());
                     return _1;
                 }
-                else if(c=="w")//格式符w 取出星期 返回状态1
+                else if(c == "w")//格式符w 取出星期 返回状态1
                 {
-                    resault+=f(date.getDay());
+                    resault += f(date.getDay());
                     return _1;
                 }
-                else if(c=="h")//格式符h 取出小时 返回状态1
+                else if(c == "h")//格式符h 取出小时 返回状态1
                 {
-                    resault+=f(date.getHours());
+                    resault += f(date.getHours());
                     return _1;
                 }
-                else if(c=="i")//格式符i 取出分 返回状态1
+                else if(c == "i")//格式符i 取出分 返回状态1
                 {
-                    resault+=f(date.getMinutes());
+                    resault += f(date.getMinutes());
                     return _1;
                 }
-                else if(c=="s")//格式符s 取出秒 返回状态1
+                else if(c == "s")//格式符s 取出秒 返回状态1
                 {
-                    resault+=f(date.getSeconds());
+                    resault += f(date.getSeconds());
                     return _1;
                 }
                 else return _1//没有合法格式符 忽略 返回状态1
             };
-            var status=_1;
-            for(var i=0;i<formatString.length;i++)
+            var status = _1;
+            for(var i = 0; i < formatString.length; i++)
             {
-                status=status(formatString.charAt(i));
+                status = status(formatString.charAt(i));
             }
             return resault;
         }
         return date;
     }
-    var weekdays="日一二三四五六"
-    console.log(new DateEx().format("%2y-%2m-%2d 星期%fw %2h:%2i:%2s %%",function(v){return weekdays.charAt(v);}))
+    var weekdays = "日一二三四五六";
+    console.log(new DateEx().format("%2y-%2m-%2d 星期%fw %2h:%2i:%2s %%", function(v){return weekdays.charAt(v);}))
 
 
     /**
@@ -817,13 +812,13 @@
     var Context = function (input) {
         this.input = input;
         this.output = 0;
-    }
+    };
 
     Context.prototype = {
         startsWith : function (str) {
             return this.input.substr(0, str.length) === str;
         }
-    }
+    };
 
     var Expression = function (name, one, four, five, nine, multiplier) {
         this.name = name;
@@ -832,7 +827,7 @@
         this.five = five;
         this.nine = nine;
         this.multiplier = multiplier;
-    }
+    };
 
     Expression.prototype = {
         interpret: function (context) {
@@ -857,7 +852,7 @@
                 context.input = context.input.substr(1);
             }
         }
-    }
+    };
 
 
     void function run() {
@@ -875,9 +870,9 @@
             tree[i].interpret(context);
         }
 
-        alert(roman + " = " + context.output);
+        console.log(roman + " = " + context.output);
     }();
-});
+}());
 
 </script>
 </body>
