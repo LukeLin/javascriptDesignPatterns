@@ -104,7 +104,7 @@ new function(){
 (function(){
     // 实现实例
     
-    // 工资表数据的整合
+    // 工资表数据的整合,列出不同公司的工资列表，每个公司的工资列表结构可能不同。
     
     var Iterator = function(aggregate){
         this.aggregate = aggregate;
@@ -188,7 +188,7 @@ new function(){
         }
     };
 
-    // 被客户方收购的那个公子的工资管理类
+    // 被客户方收购的那个公司的工资管理类
     var SalaryManager = function(){
         this.pms = [];
     };
@@ -207,8 +207,8 @@ new function(){
             pm2.setPay(3600);
             pm2.setUserName('赵六');
 
-            this.pms[0] = pm1;
-            this.pms[1] = pm2;
+            this.pms.push(pm1);
+            this.pms.push(pm2);
         }
     };
 
@@ -258,7 +258,6 @@ new function(){
         }
 
         this.pms = [];
-        var i = 0;
         for(i = 0; i < tempCol.length; i++) {
             this.pms[i] = tempCol[i];
         }
@@ -401,11 +400,12 @@ new function(){
         createIterator: function(type){
             if(type === 'random') {
                 return new RandomIterator(this);
-            } 
+            }
             return new Iterator(this);
         }
     };
 
+    // 双向迭代器
     var Iterator = function(aggregate){
         this.pms = aggregate.getPays();
         this.index = 0;
@@ -540,10 +540,25 @@ new function(){
     // 最简单的yield用法
     // 创建一个generatorFunction
     function* Hello() {
-        // 我习惯用大驼峰命名因为这就好比generator的构造函数
         yield 1;
         yield 2;
     }
+
+    /**
+     * function* Hello() { // 我习惯用大驼峰命名因为这就好比generator的构造函数 yield 1; yield 2; }
+        arguments: null
+        caller: null
+        length: 0
+        name: "Hello"
+        prototype: GeneratorFunctionPrototype
+            __proto__: GeneratorFunctionPrototype
+                constructor: function GeneratorFunctionPrototype() { [native code] }
+                next: function next() { [native code] }
+                throw: function throw() { [native code] }
+                __proto__: Object
+         __proto__: function GeneratorFunctionPrototype() { [native code] }
+        < function scope >
+     */
 
     var hello = Hello(); // hello 是一个generator
     var a = hello.next(); // a: Object {value: 1, done: false}
