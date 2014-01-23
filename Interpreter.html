@@ -6,6 +6,18 @@
 </head>
 <body>
 
+&lt;root id="rootId"><br>
+    &lt;a> <br>
+        &lt;b> <br>
+            &lt;c name="testC">12345</c> <br>
+            &lt;d id="1">d1</d> <br>
+            &lt;d id="2">d2</d> <br>
+            &lt;d id="3">d3</d> <br>
+            &lt;d id="4">d4</d> <br>
+        &lt;/b> <br>
+    &lt;/a> <br>
+&lt;/root> <br>
+
 <script>
 /**
  * 解释器模式
@@ -906,17 +918,17 @@
     function state_machine()
     {
         this.state = _1;
-        this.resault = [];
+        this.result = [];
         function _1(c){
             if(c != '/'){
-                this.resault.push(c);
+                this.result.push(c);
                 return _1;
             } else {
                 return _2;
             }
         }
         function _2(c){
-            this.resault.push('/' + c);
+            this.result.push('/' + c);
             return _1;
         }
         this.change = function(c){
@@ -929,7 +941,7 @@
     for(var i = 0; i < queue.length; i++)
         sm.change(queue[i]);
 
-    console.log(sm.resault);
+    console.log(sm.result);
 
 
     /**
