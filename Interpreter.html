@@ -136,11 +136,9 @@
             var nowEle;
 
             for(var i = 0, len = tempNodeList.length; i < len; i++) {
-                if((nowEle = tempNodeList[i]).nodeType === 1) {
-                    if(nowEle.nodeName === eleName) {
+                if((nowEle = tempNodeList[i]).nodeType === 1)
+                    if(nowEle.nodeName === eleName)
                         return nowEle;
-                    }
-                }
             }
 
             return null;
@@ -182,9 +180,8 @@
         },
         removeEle: function(ele){
             for(var i = 0, len = this.eles.length; i < len; i++) {
-                if(ele === this.eles[i]) {
+                if(ele === this.eles[i])
                     this.eles.splice(i--, 1);
-                }
             }
             return true;
         },
@@ -423,7 +420,7 @@
             interpret: function(context){
                 var pEles = context.getPreEles();
                 var ele = null;
-                if(!pEle.length) {
+                if(!pEles.length) {
                     ele = context.getDocument().documentElement;
                 } else {
                     ele = context.getNowEles(pEles[0], this.eleName)[0];
@@ -442,6 +439,20 @@
             this.propName = propName;
         }
         PropertyTerminalExpression.prototype = {
+            interpret: function(context){
+                // 直接获取最后的元素属性的值
+                return context.getPreEles()[0].getAttribute(this.propName);
+            }
+        };
+
+        /**
+         * 多个属性作为终结符对应的解释器
+         * @param {String} propName [属性的名称]
+         */
+        function PropertysTerminalExpression(propName){
+            this.propName = propName;
+        }
+        PropertysTerminalExpression.prototype = {
             interpret: function(context){
                 var eles = context.getPreEles();
                 var ss = [];
@@ -544,7 +555,7 @@
             var aEle = new ElementExpression('a');
             var bEle = new ElementExpression('b');
             var dEle = new ElementsExpression('d');
-            var prop = new PropertyTerminalExpression('id');
+            var prop = new PropertysTerminalExpression('id');
 
             root.addEle(aEle);
             aEle.addEle(bEle);
@@ -558,10 +569,271 @@
             }
         }();
 
+        // 解析器
+        
+        /**
+         * 解析器的实现思路
+         * 1.把客户端传递来的表达式进行分解，分解成为一个一个的元素，并用一个对应的解析模型来封装这个元素的一些信息。
+         * 2.根据每个元素的信息，转化成相对应的解析器对象。
+         * 3.按照先后顺序，把这些解析器对象组合起来，就得到抽象语法树了。
+         *
+         * 为什么不把1和2合并,直接分解出一个元素就转换成相应的解析器对象？
+         * 1.功能分离，不要让一个方法的功能过于复杂。
+         * 2.为了今后的修改和扩展，现在语法简单，所以转换成解析器对象需要考虑的东西少，直接转换也不难，但要是语法复杂了，直接转换就很杂乱了。
+         */
+
+        /**
+         * 用来封装每一个解析出来的元素对应的属性
+         */
+        function ParserModel(){
+            // 是否单个值
+            this.singleValue;
+            // 是否属性，不是属性就是元素
+            this.propertyValue;
+            // 是否终结符
+            this.end;
+        }
+        ParserModel.prototype = {
+            isEnd: function(){
+                return this.end;
+            },
+            setEnd: function(end){
+                this.end = end;
+            },
+            isSingleValue: function(){
+                return this.singleValue;
+            },
+            setSingleValue: function(oneValue){
+                this.singleValue = oneValue;
+            },
+            isPropertyValue: function(){
+                return this.propertyValue;
+            },
+            setPropertyValue: function(propertyValue){
+                this.propertyValue = propertyValue;
+            }
+        };
+
+        var Parser = function (){
+            var BACKLASH = '/';
+            var DOT = '.';
+            var DOLLAR = '$';
+            // 按照分解的先后记录需要解析的元素的名称
+            var listEle = null;
+
+            // 开始实现第一步-------------------------------------
+
+            /**
+             * 传入一个字符串表达式，通过解析，组合成为一个抽象语法树
+             * @param  {String} expr [描述要取值的字符串表达式]
+             * @return {Object}      [对应的抽象语法树]
+             */
+            function parseMapPath(expr){
+                // 先按照“/”分割字符串
+                var tokenizer = expr.split(BACKLASH);
+                // 用来存放分解出来的值的表
+                var mapPath = {};
+                var onePath, eleName, propName;
+                var dotIndex = -1;
+
+                for(var i = 0, len = tokenizer.length; i < len; i++) {
+                    onePath = tokenizer[i];
+
+                    if(tokenizer[i + 1]) {
+                        // 还有下一个值，说明这不是最后一个元素
+                        // 按照现在的语法，属性必然在最后，因此也不是属性
+                        setParsePath(false, onePath, false, mapPath);
+                    } else {
+                        // 说明到最后了
+                        dotIndex = onePath.indexOf(DOT);
+
+                        if(dotIndex >= 0) {
+                            // 说明是要获取属性的值，那就按照“.”来分割
+                            // 前面的就是元素名称，后面的是属性的名字
+                            eleName = onePath.substring(0, dotIndex);
+                            propName = onePath.substring(dotIndex + 1);
+
+                            // 设置属性前面的那个元素，自然不是最后一个，也不是属性
+                            setParsePath(false, eleName, false, mapPath);
+                            // 设置属性，按照现在的语法定义，属性只能是最后一个
+                            setParsePath(true, propName, true, mapPath);
+                        } else {
+                            // 说明是取元素的值，而且是最后一个元素的值
+                            setParsePath(true, onePath, false, mapPath);
+                        }
+
+                        break;
+                    }
+                }
+
+                return mapPath;
+            }
+
+            /**
+             * 按照分解出来的位置和名称来设置需要解析的元素名称
+             * @param {Boolean} end           [是否最后一个]
+             * @param {String} ele           [元素名称]
+             * @param {Boolean} propertyValue [是否取属性]
+             * @param {Object} mapPath       [设置需要解析的元素名称，还有该元素对应的解析模型的表]
+             */
+            function setParsePath(end, ele, propertyValue, mapPath){
+                var pm = new ParserModel();
+                pm.setEnd(end);
+                // 如果带有“$”符号就说明不是一个值
+                pm.setSingleValue(!(ele.indexOf(DOLLAR) >= 0));
+                pm.setPropertyValue(propertyValue);
+                // 去掉"$"
+                ele = ele.replace(DOLLAR, '');
+                mapPath[ele] = pm;
+                listEle.push(ele);
+            }
+
+            // 开始实现第二步-------------------------------------
+
+            /**
+             * 把分解出来的元素名称根据对应的解析模型转换成为相应的解释器对象
+             * @param  {Object} mapPath [分解出来的需解析的元素名称，还有该元素对应的解析模型]
+             * @return {Array}         [把每个元素转换成为相应的解释器对象后的数组]
+             */
+            function mapPath2Interpreter(mapPath){
+                var list = [];
+                var pm, key;
+                var obj = null;
+
+                // 一定要按照分解的先后顺序来转换成解释器对象
+                for(var i = 0, len = listEle.length; i < len; i++) {
+                    key = listEle[i];
+                    pm = mapPath[key];
+
+                    // 不是最后一个
+                    if(!pm.isEnd()) {
+
+                        if(pm.isSingleValue()) 
+                            // 是一个值，转化
+                            obj = new ElementExpression(key);
+                        else 
+                            // 是多个值，转化
+                            obj = new ElementsExpression(key);
+                        
+                    } else {
+                        // 是最后一个
+                        
+                        // 是属性值
+                        if(pm.isPropertyValue()) {
+                            if(pm.isSingleValue())
+                                obj = new PropertyTerminalExpression(key);
+                             else
+                                obj = new PropertysTerminalExpression(key);
+
+                        // 取元素的值
+                        } else {
+                            if(pm.isSingleValue())
+                                obj = new ElementTerminalExpression(key);
+                            else
+                                obj = new ElementsTerminalExpression(key);
+                        }
+                    }
+
+                    list.push(obj);
+                }
+
+                return list;
+            }
+
+            // 开始实现第三步-------------------------------------
+            
+            /**
+             * 构建抽象语法树
+             * @param  {[type]} list [把每个元素转换成为相应的解释器对象后的数组]
+             * @return {[type]}      [description]
+             */
+            function buildTree(list){
+                // 第一个对象，也是返回去的对象，就是抽象语法树的根
+                var returnReadXMLExpr = null;
+                // 定义上一个对象
+                var preReadXmlExpr = null;
+                var readXml, ele, eles;
+
+                for(var i = 0, len = list.length; i < len; i++) {
+                    readXml = list[i];
+                    // 说明是第一个元素
+                    if(preReadXmlExpr === null) {
+                        preReadXmlExpr = readXml;
+                        returnReadXMLExpr = readXml;
+
+                    // 把元素添加到上一个对象下面，同时把本对象设置成为oldRe
+                    // 作为下一个对象的父节点
+                    } else {
+                        if(preReadXmlExpr instanceof ElementExpression) {
+                            ele = preReadXmlExpr;
+                            ele.addEle(readXml);
+                            preReadXmlExpr = readXml;
+                        } else if(preReadXmlExpr instanceof ElementsExpression){
+                            eles = preReadXmlExpr;
+                            eles.addEle(readXml);
+                            preReadXmlExpr = readXml;
+                        }
+                    }
+                }
+
+                return returnReadXMLExpr;
+            }
+
+            return {
+                // 公共方法
+                parse: function(expr){
+                    listEle = [];
+
+                    var mapPath = parseMapPath(expr);
+                    var list = mapPath2Interpreter(mapPath);
+
+                    return buildTree(list);
+                }
+            };
+        }();
+
+        new function(){
+            // 准备上下文
+            var c = new Context('Interpreter.xml');
+            // 通过解析其获取抽象语法树
+            var readXmlExpr = Parser.parse('root/a/b/d$.id$');
+            // 请求解析，获取返回值
+            var ss = readXmlExpr.interpret(c);
+
+            console.log('------------parseing--------------');
+            for(var i = 0, len = ss.length; i < len; i++) {
+                console.log('d的属性id的值是 = ' + ss[i]);
+            }
+            console.log('---------------parsed--------------');
+
+            // 如果要使用同一个上下文，连续进行解析，需要重新初始化上下文对象
+            c.reInit();
+            var readxmlExpr2 = Parser.parse('root/a/b/d$');
+            var ss2 = readxmlExpr2.interpret(c);
+            console.log('------------parseing--------------');
+            for(i = 0, len = ss2.length; i < len; i++) {
+                console.log('d的值是 = ' + ss2[i]);
+            }
+            console.log('---------------parsed--------------');
+
+            c.reInit();
+            var readxmlExpr3 = Parser.parse('root/a/b/c');
+            var ss3 = readxmlExpr3.interpret(c);
+            console.log('------------parseing--------------');
+            console.log('c的name属性值是 = ' + ss3);
+            console.log('---------------parsed--------------');
+
+            c.reInit();
+            var readxmlExpr4 = Parser.parse('root/a/b/c.name');
+            var ss4 = readxmlExpr4.interpret(c);
+            console.log('------------parseing--------------');
+            console.log('c的name属性值是 = ' + ss4);
+            console.log('---------------parsed--------------');
+        }();
+
+        // 这样就实现了类似XPath的部分功能
     }());
 
-    // 解析器
-    // TODO
 
 
     /**
@@ -628,8 +900,8 @@
      * 这个状态机只有两个状态 第一个状态是读入普通字符状态 第二个状态是读入正斜杠以后的状态
      */
 
-        // 在js中 充分利用语言特性 将每个状态实现为一个函数 它接受一个状态改变参数 然后返回下一个状态
-        // 这是一个标准的状态机处理词法分析的例子，事实上，有些简单的解释器模式，仅仅通过词法分析即可实现，功能可以写在状态改变函数中，而无需对产生的token流进行处理。
+    // 在js中 充分利用语言特性 将每个状态实现为一个函数 它接受一个状态改变参数 然后返回下一个状态
+    // 这是一个标准的状态机处理词法分析的例子，事实上，有些简单的解释器模式，仅仅通过词法分析即可实现，功能可以写在状态改变函数中，而无需对产生的token流进行处理。
 
     function state_machine()
     {
@@ -808,6 +1080,8 @@
 
 (function(){
     // http://www.dofactory.com/javascript-interpreter-pattern.aspx
+
+    // 将罗马数字表达式转换为阿拉伯数字
 
     var Context = function (input) {
         this.input = input;
