@@ -859,8 +859,136 @@ observer.doSomethingIfOk();
 observable.status = "ok";
 observer.doSomethingIfOk();
 
+</script>
 
+<select name="country" id="country">
+        <option value="01">01</option>
+        <option value="02">02</option>
+        <option value="03">03</option>
+        <option value="04">04</option>
+        <option value="05">05</option>
+    </select>
+    <select name="province" id="province">
+        <option value="001">001</option>
+        <option value="002">002</option>
+        <option value="003">003</option>
+        <option value="004">004</option>
+        <option value="005">005</option>
+    </select>
+    <select name="city" id="city">
+        <option value="0001">0001</option>
+        <option value="0002">0002</option>
+        <option value="0003">0003</option>
+        <option value="0004">0004</option>
+        <option value="0005">0005</option>
+    </select>
 
+<script>
+    (function(){
+    // 观察者模式和中介者模式组合使用
+    
+    var Mediator = {
+        changed: function(colleague){
+            switch(colleague.element.id){
+                case 'country':
+                    this.logProvinceChange();
+                case 'province':
+                    this.logCityChange();
+                    break;
+            }
+        },
+        logProvinceChange: function(){
+            console.log('省份联动了，当前值为' + this.province.element.value);
+        },
+        logCityChange: function(){
+            console.log('市联动了，当前值为' + this.city.element.value);
+        }
+    };
+    function CountrySelect(element){
+        this.observers = [];
+        this.element = element;
+        var me = this;
+        this.element.addEventListener('change', function(e){
+            me.notifyObservers();
+        }, false);
+    }
+    CountrySelect.prototype = {
+        attach: function(observer){
+            this.observers.push(observer);
+        },
+        detach: function(observer){
+            for(var i = 0, len = this.observers.length; i < len; i++) {
+                if(observer === this.observers[i]) {
+                    this.observers.splice(i, 1);
+                    return;
+                }
+            }
+        },
+        notifyObservers: function(){
+            for(var i = 0, len = this.observers.length; i < len; i++) {
+                this.observers[i].update(this);
+            }
+
+            Mediator.changed(this);
+        }
+    };
+
+    function ProvinceSelect(element){
+        this.observers = [];
+        this.element = element;
+        var me = this;
+        this.element.addEventListener('change', function(e){
+            me.notifyObservers();
+        }, false);
+    }
+    ProvinceSelect.prototype = {
+        attach: function(observer){
+            this.observers.push(observer);
+        },
+        detach: function(observer){
+            for(var i = 0, len = this.observers.length; i < len; i++) {
+                if(observer === this.observers[i]) {
+                    this.observers.splice(i, 1);
+                    return;
+                }
+            }
+        },
+        notifyObservers: function(){
+            for(var i = 0, len = this.observers.length; i < len; i++) {
+                this.observers[i].update(this);
+            }
+
+            Mediator.changed(this);
+        },
+
+        update: function(subject){
+            var index = parseInt(subject.element.value, 10) - 1;
+            this.element.selectedIndex = index;
+
+            this.notifyObservers();
+        }
+    };
+
+    function CitySelect(element){
+        this.element = element;
+    }
+    CitySelect.prototype = {
+        update: function(subject){
+            var index = parseInt(subject.element.value, 10) - 1;
+            this.element.selectedIndex = index;
+        }
+    };
+
+    var country = new CountrySelect(document.getElementById('country'));
+    var province = new ProvinceSelect(document.getElementById('province'));
+    var city = new CitySelect(document.getElementById('city'));
+
+    Mediator.province = province;
+    Mediator.city = city;
+
+    country.attach(province);
+    province.attach(city);
+}());
 </script>
 </body>
 </html>
