@@ -905,9 +905,10 @@ observer.doSomethingIfOk();
             console.log('市联动了，当前值为' + this.city.element.value);
         }
     };
-    function CountrySelect(element){
+    function CountrySelect(element, mediator){
         this.observers = [];
         this.element = element;
+        this.mediator = mediator;
         var me = this;
         this.element.addEventListener('change', function(e){
             me.notifyObservers();
@@ -930,13 +931,14 @@ observer.doSomethingIfOk();
                 this.observers[i].update(this);
             }
 
-            Mediator.changed(this);
+            this.mediator.changed(this);
         }
     };
 
-    function ProvinceSelect(element){
+    function ProvinceSelect(element, mediator){
         this.observers = [];
         this.element = element;
+        this.mediator = mediator;
         var me = this;
         this.element.addEventListener('change', function(e){
             me.notifyObservers();
@@ -959,7 +961,7 @@ observer.doSomethingIfOk();
                 this.observers[i].update(this);
             }
 
-            Mediator.changed(this);
+            this.mediator.changed(this);
         },
 
         update: function(subject){
@@ -980,8 +982,8 @@ observer.doSomethingIfOk();
         }
     };
 
-    var country = new CountrySelect(document.getElementById('country'));
-    var province = new ProvinceSelect(document.getElementById('province'));
+    var country = new CountrySelect(document.getElementById('country'), Mediator);
+    var province = new ProvinceSelect(document.getElementById('province'), Mediator);
     var city = new CitySelect(document.getElementById('city'));
 
     Mediator.province = province;
