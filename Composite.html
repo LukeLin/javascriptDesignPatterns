@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html lang="en-US">
 <head>
-    <meta charset="utf-8">
-    <title></title>
+  <meta charset="utf-8">
+  <title></title>
 </head>
 <body>
 <script>
@@ -19,6 +19,30 @@
  * 组合模式带来的好处
  * （1），你可以用同样的方法处理对象的集合与其中的特定子对象。组合对象（composite）与组成它的对象实现了同一批操作。对组合对象执行的这些操作将向下传递到所有的组成对象（constituent object），这样一来所有的组成对象都会执行同样的操作。在存在大批对象的情况下，这是一种非常有效的技术。藉此可以不着痕迹地用一组对象替换一个对象，反之亦然，这有助于弱化各个对象之间的耦合。
  * （2），它可以用来把一批子对象组织成树形结构，并且使整棵树都可被遍历。所有组合对象都实现了一个用来获取其子对象的方法。借助这个方法，你可以隐藏实现的细节并随心所欲地组织子对象，任何使用这个对象的代码都不会对其内部实现形成依赖。
+ *
+ * 目的：
+ * 让客户端不再区分操作的是组合对象还是叶子对象，而是以一个统一的方式来操作。
+ *
+ * 对象树：
+ * 组合模式会组合出树型结构，组成这个树型结构所使用的多个组件对象，就自然的形成了对象树。
+ *
+ * 组合模式中的递归
+ * 组合模式中的递归，指的是对象递归组合，不是常说的递归算法。在设计上称作递归关联，是对象关联关系中的一种。
+ *
+ * 透明性的实现
+ * 如果把管理子组件的操作定义在Component中，那么客户端只需要面对Component，而无需关心具体的组件类型，这种实现方式就是透明性的实现。
+ * 但是透明性的实现是以安全性为代价的，因为在Component中定义的一些方法，对于叶子对象来说是没有意义的。
+ * 组合模式的透明性实现,通常的方式是：在Component中声明管理子组件的操作，并在Component中为这些方法提供默认的实现，如果子对象不支持的功能，默认的实现可以是抛出一个例外，来表示不支持这个功能。
+ *
+ * 安全性实现
+ * 如果把管理子组件的操作定义在Composite中，那么客户在使用叶子对象的时候，就不会发生使用添加子组件或是删除子组件的操作了，因为压根就没有这样的功能，这种实现方式是安全的。
+ * 但是这样就必须区分Composite对象还是叶子对象，对客户而言这是不透明的。
+ *
+ * 两种各种方式的选择
+ * 对于组合模式而言，会更看重透明性，毕竟组合模式的功能就是要让用户对叶子对象和组合对象的使用具有一致性。
+ *
+ *
+ *
  */
 
 /*
@@ -35,57 +59,295 @@
  组合模式擅长于对大批对象进行操作。它专为组织这类对象并把操作从一个层次向下一层次传递而设计。藉此可以弱化对相见的耦合并可互换地使用一些类或示例。按这种模式编写的代码模块化程度更高，也更容易维护。
  */
 
+(function(){
+  function Component(){}
+  Component.prototype = {
+    someOperation: function(){},
+    addChild: function(){
+      throw new Error('object doesn\'t support this method: addChild');
+    },
+    removeChild: function(){
+      throw new Error('object doesn\'t support this method: removeChild');
+    },
+    getChild: function(){
+      throw new Error('object doesn\'t support this method: getChild');
+    }
+  };
+
+  // 组合对象，通常需要存储子对象，定义有子部件的部件行为
+  function Composite(){
+    this.childComponents = [];
+  }
+  Composite.prototype.__proto__ = Component.prototype;
+  Composite.prototype.someOperation = function(){
+    for(var i = 0, len = this.childComponents.length; i < len; i++) {
+      this.childComponents.someOperation();
+    }
+  };
+  Composite.prototype.addChild = function(child){
+    this.childComponents.push(child);
+  };
+  Composite.prototype.removeChild = function(child){
+    var childComponent;
+    for(var i = 0, len = this.childComponents.length; i < len; i++) {
+      childComponent = this.childComponents[i];
+
+      if(childComponent == child) return true;
+    }
+
+    return false;
+  };
+  Composite.prototype.getChildren = function(index){
+    if(index >= 0 && index < this.childComponents.length) {
+      return this.childComponents[index];
+    }
+    return null;
+  };
+
+  // 叶子对象，也子对象不再包含其他子对象
+  function Leaf(){}
+  Leaf.prototype.__proto__ = Component.prototype;
+  Leaf.prototype.someOperation = function(){};
+
+  var root = new Composite();
+  var a = new Composite();
+  var b = new Composite();
+
+  var leaf1 = new Leaf();
+  var leaf2 = new Leaf();
+  var leaf3 = new Leaf();
+
+  root.addChild(a);
+  root.addChild(b);
+  root.addChild(leaf1);
+  a.addChild(leaf2);
+  b.addChild(leaf3);
+
+  var o = root.getChildren(1);
+  console.log(o);
+}());
+
+(function(){
+  // 父组件引用
+
+  function Component(){
+    this.parent = null;
+  }
+  Component.prototype = {
+    getChildren: function(){
+      throw new Error('object doesn\'t support this method');
+    },
+    addChild: function(){
+      throw new Error('object doesn\'t support this method: addChild');
+    },
+    removeChild: function(){
+      throw new Error('object doesn\'t support this method: removeChild');
+    },
+    getChild: function(){
+      throw new Error('object doesn\'t support this method: getChild');
+    },
+    printStruct: function(){
+      throw new Error('object doesn\'t support this method');
+    }
+  };
+
+  function Composite(name){
+    this.childComponents = [];
+    this.name = name;
+  }
+  Composite.prototype.__proto__ = Component.prototype;
+  Composite.prototype.addChild = function(child){
+    this.childComponents.push(child);
+
+    child.parent = this;
+  };
+  Composite.prototype.removeChild = function(child){
+    var idx = this.childComponents.indexOf(child);
+
+    if(idx !== -1) {
+      for(var i = 0, len = child.getChildren().length; i < len; i++) {
+        var c = child.getChildren()[i];
+        c.parent = this;
+        this.childComponents.push(c);
+      }
+
+      this.childComponents.splice(idx, 1);
+    }
+  };
+  Composite.prototype.getChildren = function(){
+    return this.childComponents;
+  };
+  Composite.prototype.printStruct = function(preStr){
+    preStr = preStr || '';
+    console.log(preStr + '+' + this.name);
+    preStr += '  ';
+    for(var i = 0, len = this.childComponents.length; i < len; i++) {
+      var c = this.childComponents[i];
+      c.printStruct(preStr);
+    }
+  };
+
+  function Leaf(name){
+    this.name = name;
+  }
+  Leaf.prototype.__proto__ = Component.prototype;
+  Leaf.prototype.printStruct = function(preStr){
+    preStr = preStr || '';
+    console.log(preStr + '-' + this.name);
+  };
+
+  var root = new Composite('服装');
+  var c1 = new Composite('男装');
+  var c2 = new Composite('女装');
+
+  var leaf1 = new Leaf('衬衣');
+  var leaf2 = new Leaf('夹克');
+  var leaf3 = new Leaf('裙子');
+  var leaf4 = new Leaf('套装');
+
+  root.addChild(c1);
+  root.addChild(c2);
+  c1.addChild(leaf1);
+  c1.addChild(leaf2);
+  c2.addChild(leaf3);
+  c2.addChild(leaf4);
+
+  root.printStruct();
+  console.log('-----------------------------');
+
+  root.removeChild(c1);
+  root.printStruct();
+}());
+
+
+(function(){
+  // 环状引用
+
+  // 应该要检测并避免出现环状引用，否则容易引起死循环，或是同一个功能被操作多次。
+
+  function Component(){
+    this.componentPath = '';
+  }
+  Component.prototype = {
+    printStruct: function(preStr){},
+    getChildren: function(){
+      throw new Error('object doesn\'t support this method');
+    },
+    addChild: function(){
+      throw new Error('object doesn\'t support this method: addChild');
+    },
+    removeChild: function(){
+      throw new Error('object doesn\'t support this method: removeChild');
+    },
+  };
+
+  function Composite(name){
+    this.name = name;
+    this.childComponents = [];
+  }
+  Composite.prototype.__proto__ = Component.prototype;
+  Composite.prototype.addChild = function(child){
+    this.childComponents.push(child);
+
+    if(!this.componentPath || !this.componentPath.trim().length) {
+      this.componentPath = this.name;
+    }
+
+    if(this.componentPath.startsWith(child.name + '.')) {
+      throw new Error('该组件' + chid.name + ' 已被添加过了');
+    } else {
+      if(this.componentPath.indexOf('.' + child.name) < 0) {
+        child.componentPath = this.componentPath + '.' + child.name;
+      } else {
+        throw new Error('该组件' + child.name + ' 已被添加过了');
+      }
+    }
+  };
+  Composite.prototype.printStruct = function(preStr){
+    console.log(preStr + '+' + this.name);
+
+    for(var i = 0, len = this.childComponents.length; i < len; i++) {
+      var c = this.childComponents[i];
+      c.printStruct(preStr);
+    }
+  };
+
+  function Leaf(name){
+    this.name = name;
+  }
+  Leaf.prototype.__proto__ = Component.prototype;
+  Leaf.prototype.printStruct = function(preStr){
+    preStr = preStr || '';
+    console.log(preStr + '-' + this.name);
+  };
+
+  var root = new Composite('服装');
+  var c1 = new Composite('男装');
+  var c2 = new Composite('衬衣');
+
+  root.addChild(c1);
+  c1.addChild(c2);
+  c2.addChild(c1);
+
+  root.printStruct();
+
+  /*
+  当某个组件被删除后，路径发生变化，需要修改所有相关路径记录情况。
+  更好的方式是，使用动态计算路径，每次添加一个组件的时候，动态地递归寻找父组件，然后父组件再找父组件，直到根组件。
+  */
+}());
+
 // 创建那些组合对象和叶对象需要实现的两个接口
 var Composite = new Interface('Composite', ['add', 'remove', 'getChild']);
 var FormItem = new Interface('FormItem', ['save', 'restore']);
 
 // CompositeForm类
 var CompositeForm = function (id, method, action) {
-    // implements Composite, FormItem
-    this.formComponents = [];
+  // implements Composite, FormItem
+  this.formComponents = [];
 
-    this.element = document.createElement('form');
-    this.element.id = id;
-    this.element.method = method || 'POST';
-    this.element.action = action || '#';
+  this.element = document.createElement('form');
+  this.element.id = id;
+  this.element.method = method || 'POST';
+  this.element.action = action || '#';
 };
 
 CompositeForm.prototype.add = function (child) {
-    Interface.ensureImplements(child, Composite, FormItem);
-    this.formComponents.push(child);
-    this.element.appendChild(child.getElement());
+  Interface.ensureImplements(child, Composite, FormItem);
+  this.formComponents.push(child);
+  this.element.appendChild(child.getElement());
 };
 CompositeForm.prototype.remove = function (child) {
-    for (var i = 0, len = this.formComponents.length; i < len; i++) {
-        if (this.formComponents[i] === child) {
-            this.formComponents.splice(i, 1);
-            break;
-        }
+  for (var i = 0, len = this.formComponents.length; i < len; i++) {
+    if (this.formComponents[i] === child) {
+      this.formComponents.splice(i, 1);
+      break;
     }
+  }
 };
 CompositeForm.prototype.getChild = function (i) {
-    return this.formComponents[i];
+  return this.formComponents[i];
 };
 CompositeForm.prototype.save = function () {
-    for (var i = 0, len = this.formComponents.length; i < len; i++) {
-        this.formComponents[i].save();
-    }
+  for (var i = 0, len = this.formComponents.length; i < len; i++) {
+    this.formComponents[i].save();
+  }
 };
 CompositeForm.prototype.getElement = function () {
-    return this.element;
+  return this.element;
 };
 CompositeForm.prototype.restore = function () {
-    for (var i = 0, len = this.formComponents.length; i < len; i++) {
-        this.formComponents[i].restore();
-    }
+  for (var i = 0, len = this.formComponents.length; i < len; i++) {
+    this.formComponents[i].restore();
+  }
 };
 
 
 // Field叶对象类
 var Field = function (id) {
-    // implements Composite, FormItem
-    this.id = id;
-    this.element = document.getElementById(id);
+  // implements Composite, FormItem
+  this.id = id;
+  this.element = document.getElementById(id);
 };
 Field.prototype.add = function () {
 };
@@ -94,99 +356,99 @@ Field.prototype.remove = function () {
 Field.prototype.getChild = function () {
 };
 Field.prototype.save = function () {
-    setCookie(this.id, this.getValue());
+  setCookie(this.id, this.getValue());
 };
 Field.prototype.getElement = function () {
-    return this.element;
+  return this.element;
 };
 Field.prototype.getValue = function () {
-    throw new Error('Unsupported operation on the class Field');
+  throw new Error('Unsupported operation on the class Field');
 };
 Field.prototype.restore = function () {
-    this.element.value = getCookie(this.id);
+  this.element.value = getCookie(this.id);
 };
 
 
 // InputField叶对象类
 var InputField = function (id, label) {
-    // implements Composite, FormItem
-    Field.call(this, id);
+  // implements Composite, FormItem
+  Field.call(this, id);
 
-    this.input = document.createElement('input');
-    this.input.id = id;
-    this.input.type = "text";
-    this.label = document.createElement('label');
-    this.label.setAttribute('for', id);
-    var labelTextNode = document.createTextNode(label);
-    this.label.appendChild(labelTextNode);
+  this.input = document.createElement('input');
+  this.input.id = id;
+  this.input.type = "text";
+  this.label = document.createElement('label');
+  this.label.setAttribute('for', id);
+  var labelTextNode = document.createTextNode(label);
+  this.label.appendChild(labelTextNode);
 
-    this.element = document.createElement('div');
-    this.element.className = 'input-field';
-    this.element.appendChild(this.label);
-    this.element.appendChild(this.input);
+  this.element = document.createElement('div');
+  this.element.className = 'input-field';
+  this.element.appendChild(this.label);
+  this.element.appendChild(this.input);
 };
 
 // Inherit from Field
 extend(InputField, Field);
 
 InputField.prototype.getValue = function () {
-    return this.input.value;
+  return this.input.value;
 };
 
 
 var TextareaField = function (id, label) {
-    // implements Composite, FormItem
-    Field.call(this, id);
+  // implements Composite, FormItem
+  Field.call(this, id);
 
-    this.textarea = document.createElement('textarea');
-    this.textarea.id = id;
+  this.textarea = document.createElement('textarea');
+  this.textarea.id = id;
 
-    this.label = document.createElement('label');
-    this.label.setAttribute('for', id);
-    var labelTextNode = document.createTextNode(label);
-    this.label.appendChild(labelTextNode);
+  this.label = document.createElement('label');
+  this.label.setAttribute('for', id);
+  var labelTextNode = document.createTextNode(label);
+  this.label.appendChild(labelTextNode);
 
-    this.element = document.createElement('div');
-    this.element.className = 'input-field';
-    this.element.appendChild(this.label);
-    this.element.appendChild(this.textarea);
+  this.element = document.createElement('div');
+  this.element.className = 'input-field';
+  this.element.appendChild(this.label);
+  this.element.appendChild(this.textarea);
 };
 
 extend(TextareaField, Field);
 
 TextareaField.prototype.getValue = function () {
-    return this.textarea.value;
+  return this.textarea.value;
 };
 
 
 var SelectField = function (id, label, options) {
-    Field.call(this, id);
+  Field.call(this, id);
 
-    this.select = document.createElement('select');
-    this.select.id = id;
-    if (typeof options === 'object') {
-        for (var prop in options) {
-            if (!options.hasOwnProperty(prop)) {
-                continue;
-            }
-            var newOption = new Option(prop, options[prop]);
-            this.select.add(newOption, undefined);
-        }
+  this.select = document.createElement('select');
+  this.select.id = id;
+  if (typeof options === 'object') {
+    for (var prop in options) {
+      if (!options.hasOwnProperty(prop)) {
+        continue;
+      }
+      var newOption = new Option(prop, options[prop]);
+      this.select.add(newOption, undefined);
     }
+  }
 
-    this.label = document.createElement('label');
-    this.label.setAttribute('for', id);
-    var labelTextNode = document.createTextNode(label);
-    this.label.appendChild(labelTextNode);
+  this.label = document.createElement('label');
+  this.label.setAttribute('for', id);
+  var labelTextNode = document.createTextNode(label);
+  this.label.appendChild(labelTextNode);
 
-    this.element = document.createElement('div');
-    this.element.className = 'input-field';
-    this.element.appendChild(this.label);
-    this.element.appendChild(this.select);
+  this.element = document.createElement('div');
+  this.element.className = 'input-field';
+  this.element.appendChild(this.label);
+  this.element.appendChild(this.select);
 };
 extend(SelectField, Field);
 SelectField.prototype.getValue = function () {
-    return this.select.options[this.select.selectedIndex].value;
+  return this.select.options[this.select.selectedIndex].value;
 };
 
 
@@ -197,9 +459,9 @@ contactForm.add(new InputField('last-name', 'Last Name:'));
 contactForm.add(new InputField('address', 'Address:'));
 contactForm.add(new InputField('city', 'City:'));
 stateArray = {
-    'GD': 'guangdong',
-    'HN': 'hunan',
-    'BJ': 'beijing'
+  'GD': 'guangdong',
+  'HN': 'hunan',
+  'BJ': 'beijing'
 };
 contactForm.add(new SelectField('state', 'State:', stateArray));
 contactForm.add(new InputField('zip', 'Zip:'));
@@ -207,66 +469,66 @@ contactForm.add(new TextareaField('comments', 'Comments:'));
 
 document.body.appendChild(contactForm.getElement());
 addEvent(window, 'unload', function () {
-    contactForm.save();
+  contactForm.save();
 });
 
 addEvent(window, 'load', function () {
-    contactForm.restore();
+  contactForm.restore();
 });
 
 
 // 向层次体系中添加类
 var CompositeFieldset = function (id, legendText) {
-    this.components = {};
+  this.components = {};
 
-    this.element = document.createElement('fieldset');
-    this.element.id = id;
+  this.element = document.createElement('fieldset');
+  this.element.id = id;
 
-    if (legendText) {
-        this.legend = document.createElement('legend');
-        this.legend.appendChild(document.createTextNode(legendText));
-        this.element.appendChild(this.legend);
-    }
+  if (legendText) {
+    this.legend = document.createElement('legend');
+    this.legend.appendChild(document.createTextNode(legendText));
+    this.element.appendChild(this.legend);
+  }
 };
 
 CompositeFieldset.prototype.add = function (child) {
-    Interface.ensureImplements(child, Composite, FormItem);
-    this.components[child.getElement().id] = child;
-    this.element.appendChild(child.getElement());
+  Interface.ensureImplements(child, Composite, FormItem);
+  this.components[child.getElement().id] = child;
+  this.element.appendChild(child.getElement());
 };
 
 CompositeFieldset.prototype.remove = function (child) {
-    delete this.components[child.getElement().id];
+  delete this.components[child.getElement().id];
 };
 
 CompositeFieldset.prototype.getChild = function (id) {
-    if (this.components[id] !== undefined) {
-        return this.components[id];
-    } else {
-        return null;
-    }
+  if (this.components[id] !== undefined) {
+    return this.components[id];
+  } else {
+    return null;
+  }
 };
 
 CompositeFieldset.prototype.save = function () {
-    for (var id in this.components) {
-        if (!this.components.hasOwnProperty(id)) {
-            continue;
-        }
-        this.components[id].save();
+  for (var id in this.components) {
+    if (!this.components.hasOwnProperty(id)) {
+      continue;
     }
+    this.components[id].save();
+  }
 };
 
 CompositeFieldset.prototype.restore = function () {
-    for (var id in this.components) {
-        if (!this.components.hasOwnProperty(id)) {
-            continue;
-        }
-        this.components[id].restore();
+  for (var id in this.components) {
+    if (!this.components.hasOwnProperty(id)) {
+      continue;
     }
+    this.components[id].restore();
+  }
 };
 
 CompositeFieldset.prototype.getElement = function () {
-    return this.element;
+  return this.element;
 };
 
 var contactForm2 = new CompositeForm('contact-form2', 'POST', '#');
@@ -286,10 +548,10 @@ contactForm2.add(new TextareaField('comments2', 'Comments:'));
 document.body.appendChild(contactForm2.getElement());
 
 addEvent(window, 'unload', function () {
-    contactForm2.save();
+  contactForm2.save();
 });
 addEvent(window, 'load', function () {
-    contactForm2.restore();
+  contactForm2.restore();
 });
 
 
@@ -305,50 +567,50 @@ var GalleryItem = new Interface('GalleryItem', ['hide', 'show']);
 
 // DynamicGallery class.
 var DynamicGallery = function (id) {
-    // implements Composite, GalleryItem
-    this.children = [];
+  // implements Composite, GalleryItem
+  this.children = [];
 
-    this.element = document.createElement('div');
-    this.element.id = id;
-    this.element.className = 'dynamic-gallery';
+  this.element = document.createElement('div');
+  this.element.id = id;
+  this.element.className = 'dynamic-gallery';
 };
 
 DynamicGallery.prototype = {
-    // implement the Composite interface
-    add: function (child) {
-        Interface.ensureImplements(child, Composite, GalleryItem);
-        this.children.push(child);
-        this.element.appendChild(child.getElement());
-    },
-    remove: function (child) {
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            if (node === child) {
-                this.children.splice(i, 1);
-                break;
-            }
-        }
-        this.element.removeChild(child.getElement());
-    },
-    getChild: function (i) {
-        return this.children[i];
-    },
-    // implement the GalleryItem interface
-    hide: function () {
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            node.hide();
-        }
-        this.element.style.display = 'none';
-    },
-    show: function () {
-        this.element.style.display = 'block';
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            node.show();
-        }
-    },
-    // Helper methods
-    getElement: function () {
-        return this.element;
+  // implement the Composite interface
+  add: function (child) {
+    Interface.ensureImplements(child, Composite, GalleryItem);
+    this.children.push(child);
+    this.element.appendChild(child.getElement());
+  },
+  remove: function (child) {
+    for (var node, i = 0; node = this.getChild(i); i++) {
+      if (node === child) {
+        this.children.splice(i, 1);
+        break;
+      }
     }
+    this.element.removeChild(child.getElement());
+  },
+  getChild: function (i) {
+    return this.children[i];
+  },
+  // implement the GalleryItem interface
+  hide: function () {
+    for (var node, i = 0; node = this.getChild(i); i++) {
+      node.hide();
+    }
+    this.element.style.display = 'none';
+  },
+  show: function () {
+    this.element.style.display = 'block';
+    for (var node, i = 0; node = this.getChild(i); i++) {
+      node.show();
+    }
+  },
+  // Helper methods
+  getElement: function () {
+    return this.element;
+  }
 };
 
 /*
@@ -357,38 +619,38 @@ DynamicGallery.prototype = {
 
 // GalleryImage class.
 var GalleryImage = function (src) {
-    // implements Composite, GalleryItem
-    this.element = document.createElement('img');
-    this.element.className = 'gallery-image';
-    this.element.src = src;
+  // implements Composite, GalleryItem
+  this.element = document.createElement('img');
+  this.element.className = 'gallery-image';
+  this.element.src = src;
 };
 
 GalleryImage.prototype = {
-    // implements the Composite interface
-    /*
-     this is a leaf node, so we don't
-     implements these methods,we just
-     define them
-     */
-    add: function () {
-    },
-    remove: function () {
-    },
-    getChild: function () {
-    },
-    // implements the GalleryItem interface
-    hide: function () {
-        this.element.style.display = 'none';
-    },
-    show: function () {
-        // restore the display attribute to
-        // its previus setting.
-        this.element.style.display = '';
-    },
-    // Helper methods
-    getElement: function () {
-        return this.element;
-    }
+  // implements the Composite interface
+  /*
+   this is a leaf node, so we don't
+   implements these methods,we just
+   define them
+   */
+  add: function () {
+  },
+  remove: function () {
+  },
+  getChild: function () {
+  },
+  // implements the GalleryItem interface
+  hide: function () {
+    this.element.style.display = 'none';
+  },
+  show: function () {
+    // restore the display attribute to
+    // its previus setting.
+    this.element.style.display = '';
+  },
+  // Helper methods
+  getElement: function () {
+    return this.element;
+  }
 };
 
 var topGallery = new DynamicGallery('top-gallery');
@@ -400,7 +662,7 @@ topGallery.add(new GalleryImage('img/image-3.jpg'));
 var vacationPhotos = new DynamicGallery('vacation=photos');
 
 for (var i = 0; i < 30; i++) {
-    vacationPhotos.add(new GalleryImage('img/image-' + i + '.jpg'));
+  vacationPhotos.add(new GalleryImage('img/image-' + i + '.jpg'));
 }
 
 topGallery.add(vacationPhotos);
@@ -412,91 +674,133 @@ document.body.appendChild(topGallery.getElement());
 
 /*
  组合模式之利
+1.定义了包含基本对象和组合对象的类层次结构。
+在组合模式中，基本对象可以被组合成复杂的组合对象，而组合对象又可以组合成更复杂的组合对象，可以不断地递归组合下去，从而构成一个统一的组合对象的类层次结构。
 
- 使用组合模式，简单的操作也能产生复杂的结果。你不必编写大量手工遍历数组或其他数据结构的粘合代码，只需对最顶层的对象执行操作，让每一个子对象自己传递这个操作即可。这对于那些再三执行的操作尤其有用。
- 在组合模式中，各个对象之间的耦合非常松散。只要他们实现了同样的借口，那么改变它们的位置或互换它们只是举手之劳。这促进了代码的重用，也有利于代码重构。
- 用组合模式组织起来的对象形成了一个出色的层次体系。每当对顶层组合对象执行一个操作时，实际上是在对整个结构进行深度优化的搜索以查找节点。在这个层次体系中添加，删除和查找节点都非常简单。
+2.同意了组合对象和叶子对象
+在组合模式中，可以把叶子对象当作特殊的组合对象看待，为它们定义统一的父类，从而把组合对象和叶子对象的行为统一起来。
+
+3.简化了客户端调用
+
+4.更容易扩展
+由于客户端是统一地面对Component来操作，因此，新定义的Composite和Leaf子类能够很容易地与已有的结构一起工作，而客户端不需要为增添了新的组件类而改变。
 
 
  组合模式之弊
+ 1.很难限制组合中的组件类型
+ 这使得我们必须动态检测组件类型。
 
- 组合对象的易用性可能掩盖了它所支持的每一种操作的代价。由于对组合对象调用的任何操作都会被传递到他的所有子对象，如果这个层次体系很大的话，系统性能将会受到影响。
- 组合对象类和节点类都被用作HTML元素的包装工具，这是一种常见的用法，在此情况下，组合对象也必须遵守HTML的使用规则，而表格就很难转化为一个组合对象。同时组合模式的正常运作需要用到某种形式的接口。
+
+何时选用？
+1.如果你想表示对象的部分--整体层次结构。
+2.如果你希望统一地使用组合结构中的所有对象。
+
+
+相关模式
+
+组合模式与装饰模式
+可以组合使用。
+装饰模式在组装多个装饰器对象的时候，是一个装饰器找下一个装饰器，下一个再找下一个，如此递归下去。其实这种结构也可以使用组合模式来帮助构建，这样一来，装饰器对象就相当于组合模式的Composite对象了。
+要让两个模式能很好地组合使用，通常会让它们有一个公共的父类。因此装饰器必须支持组合模式需要的一些功能，比如，增加，删除子组件。
+
+组合模式和享元模式
+可以组合使用。
+如果组合模式中出现大量相似的组件对象的话，可以考虑使用享元模式来帮助缓存组件对象，这样可以减少内存占用。
+使用享元模式也是有条件的，如果组件对象的可变化部分的状态能够从组件对象中分离出来，并且组件对象本身不需要向父组件发送请求的话，就可以采用享元模式。
+
+组合模式和迭代器模式
+可以组合使用。
+使用迭代器模式来遍历组合对象的子对象集合，而无需关心具体存放子对象的聚合结构。
+
+组合模式和访问者模式
+可以组合使用。
+访问者模式能够在不修改原有对象结构的情况下，为对象结构中的对象增添新的功能。访问者模式和组合模式合用，可以把原本Composite和Leaf类中的操作和行为都局部化。
+如果在使用组合模式的时候，预计到以后可能会有增添其他功能的可能，那么可以采用访问者模式，来预留好添加新功能的方式和通道，这样以后再添加新功能的时候，就不需要再修改已有的对象结构和已经实现的功能。
+
+组合模式和职责链模式
+可以组合使用。
+职责链模式要解决的问题是：实现请求的发送者和接收者之间解耦。职责链模式的实现方式是把多个接收者组合起来，构成职责链，然后让请求在这条链上传递，直到有接收者处理这个请求为止。
+可以应用组合模式来构建这条链，相当于是子组件找父组件，父组件又找父组件，如此递归下去，构成一条处理请求的组件对象链。
+
+组合模式和命令模式
+可以组合使用。
+命令模式中的宏命令就是使用组合模式来组装出来的。
+
  */
 
 
 // http://www.dofactory.com/javascript-composite-pattern.aspx
 
 (function(){
-    var Node = function (name) {
+  var Node = function (name) {
     this.children = [];
     this.name = name;
-    }
+  }
 
-    Node.prototype = {
-        add: function (child) {
-            this.children.push(child);
-        },
-        remove: function (child) {
-            var length = this.children.length;
-            for (var i = 0; i < length; i++) {
-                if (this.children[i] === child) {
-                    this.children.splice(i, 1);
-                    return;
-                }
-            }
-        },
-        getChild: function (i) {
-            return this.children[i];
-        },
-        hasChildren: function () {
-            return this.children.length > 0;
+  Node.prototype = {
+    add: function (child) {
+      this.children.push(child);
+    },
+    remove: function (child) {
+      var length = this.children.length;
+      for (var i = 0; i < length; i++) {
+        if (this.children[i] === child) {
+          this.children.splice(i, 1);
+          return;
         }
+      }
+    },
+    getChild: function (i) {
+      return this.children[i];
+    },
+    hasChildren: function () {
+      return this.children.length > 0;
     }
+  }
 
-    // recursively traverse a (sub)tree
-    function traverse(indent, node) {
+  // recursively traverse a (sub)tree
+  function traverse(indent, node) {
 
-        log.add(Array(indent++).join("--") + node.name);
+    log.add(Array(indent++).join("--") + node.name);
 
-        for (var i = 0, len = node.children.length; i < len; i++) {
-            traverse(indent, node.getChild(i));
-        }
+    for (var i = 0, len = node.children.length; i < len; i++) {
+      traverse(indent, node.getChild(i));
     }
+  }
 
-    // logging helper
-    var log = (function () {
-        var log = "";
-        return {
-            add: function (msg) { log += msg + "\n"; },
-            show: function () { alert(log); log = ""; }
-        }
-    })();
-
-
-    function run() {
-
-        var tree = new Node("root");
-        var left = new Node("left")
-        var right = new Node("right");
-        var leftleft = new Node("leftleft");
-        var leftright = new Node("leftright");
-        var rightleft = new Node("rightleft");
-        var rightright = new Node("rightright");
-
-        tree.add(left);
-        tree.add(right);
-        tree.remove(right);  // note: remove
-        tree.add(right);
-        left.add(leftleft);
-        left.add(leftright);
-        right.add(rightleft);
-        right.add(rightright);
-
-        traverse(1, tree);
-
-        log.show();
+  // logging helper
+  var log = (function () {
+    var log = "";
+    return {
+      add: function (msg) { log += msg + "\n"; },
+      show: function () { alert(log); log = ""; }
     }
+  })();
+
+
+  function run() {
+
+    var tree = new Node("root");
+    var left = new Node("left")
+    var right = new Node("right");
+    var leftleft = new Node("leftleft");
+    var leftright = new Node("leftright");
+    var rightleft = new Node("rightleft");
+    var rightright = new Node("rightright");
+
+    tree.add(left);
+    tree.add(right);
+    tree.remove(right);  // note: remove
+    tree.add(right);
+    left.add(leftleft);
+    left.add(leftright);
+    right.add(rightleft);
+    right.add(rightright);
+
+    traverse(1, tree);
+
+    log.show();
+  }
 }());
 
 
