@@ -1,424 +1,738 @@
 <!DOCTYPE HTML>
 <html lang="en-US">
 <head>
-    <meta charset="utf-8">
-    <title></title>
+  <meta charset="utf-8">
+  <title></title>
 </head>
 <body>
-<img src="Template.jpg" alt=""/>
-<script>
-    function extend(subclass, superclass) {
-        var F = function () {
-        };
-        F.prototype = superclass.prototype;
-        subclass.prototype = new F();
-        subclass.prototype.constructor = subclass;
-        subclass.super = superclass.prototype;
-
-
-        if (superclass.prototype.constructor === Object.prototype.constructor) {
-            superclass.prototype.constructor = superclass;
-        }
-    }
-
-    function rewrite(targetObj, obj, deep) {
-        if (Object.prototype.toString.call(obj) !== '[object Object]') {
-            return;
-        }
-        for (var i in obj) {
-            if (obj.hasOwnProperty(i)) {
-                if (deep === true) {
-                    targetObj[i] = targetObj[i] || {};
-                    rewrite(targetObj[i], obj[i], deep);
-                } else {
-                    targetObj[i] = obj[i];
-                }
-            }
-        }
-    }
-</script>
 
 <script>
+/**
+ * 模板模式
+ *
+ * 定义了一个操作中的算法的骨架，而将一些步骤延迟到子类中。模板方法使得子类可以不改变一个算法的结构即可重定义该算法的某些特定步骤。
+ *
+ * 本质
+ * 固定算法骨架
+ *
+ * 在一个方法中定义一个算法的骨架，而将一些步骤延迟到子类中。模板方法使得子类可以在不改变算法结构的情况下，重新定义算法中的某些步骤。
+ *
+ * 功能：
+ * 模板方法模式的功能在于固定算法骨架，而让具体算法实现可扩展。
+ * 模板方法模式还额外提供了一个好处，就是可以控制子类的扩展。因为在父类中定义好了算法的步骤，只是在某几个固定的点才会调用到被子类实现的方法，因此也就只允许在这几个点来扩展功能。这些可以被子类覆盖以扩展功能的方法通常被称为“钩子”方法。
+ *
+ * 变与不变
+ * 模板类实现的就是不变的方法和算法的骨架，而需要变化的地方，都通过抽象方法，把具体实现延迟到子类中了，而且还通过父类的定义来约束子类的行为，从而使系统能有更好的复用性和扩展性。
+ *
+ * 好莱坞法则
+ * 作为父类的模板会在需要的时候，调用子类相应的方法，也就是由父类来找子类，而不是让子类来找父类。
+ *
+ * 对设计原则的体现
+ * 模板方法很好地体现了开闭原则和里氏原则。
+ * 首先从设计上分离变与不变，然后把不变的部分抽取出来，定义到父类中，比如算法骨架，一些公共的，固定的实现等。这些不变的部分被封闭起来，尽量不去修改它们。想要扩展新的功能，那就是用子类来扩展，通过子类来实现可变化的步骤，对于这种新增功能的做法是开放的。
+ * 其次，能够实现统一的算法骨架，通过切换不同的具体实现来切换不同的功能，一个根本原因就是里氏替换原则，遵循这个原则，保证所有的子类实现的是同一个算法模板，并能在使用模板的地方，根据需要切换不同的具体实现。
+ *
+ * 相关模式
+ *
+ * 模板方法模式和工厂方法模式
+ * 可以配合使用
+ * 模板方法模式可以通过工厂方法来获取需要调用的对象。
+ *
+ * 模板方法模式和策略模式
+ * 两者有些相似，但是有区别
+ * 从表面看，两个模式都能实现算法的封装，但是模板方法封装的是算法的骨架，这个算法骨架是不变的，变化的是算法中某些步骤的具体实现；而策略模式是把某个步骤的具体实现算法封装起来，所有封装的算法对象是等价的，可以相互替换。
+ * 因此，可以在模板方法中使用策略模式，就是把那些变化的算法步骤通过使用策略模式来实现，但是具体选取哪个策略还是要由外部来确定，而整体的算法步骤，也就是算法骨架则由模板方法来定义了。
+ */
+
+(function () {
+  // 示例代码
+
+  // 定义模板方法，原语操作等的抽象类
+  function AbstractClass() {
+  }
+
+  AbstractClass.prototype = {
+    // 原语操作1，所谓的原语操作就是抽象的操作，必须要由子类提供实现
+    doPrimitiveOperation1: function () {
+    },
+    // 原语操作2
+    doPrimitiveOperation2: function () {
+    },
+    // 模板方法,定义算法骨架
+    templateMethod: function () {
+      this.doPrimitiveOperation1();
+      this.doPrimitiveOperation2();
+    }
+  };
+
+  function ConcreteClass() {
+  }
+
+  ConcreteClass.prototype = {
+    __proto__: AbstractClass.prototype,
+
+    doPrimitiveOperation1: function () {
+      // 具体的实现
+    },
+    doPrimitiveOperation2: function () {
+      // 具体的实现
+    }
+  };
+}());
+
+(function(){
+  // 验证人员登录的例子
+
+  // 封装进行登录控制所需要的数据
+  function LoginModel(){
+    // 登录人员编号
+    this.loginId;
+    // 登录密码
+    this.pwd;
+  }
+
+  // 登录控制的模板
+  function LoginTemplate(){}
+  LoginTemplate.prototype = {
+    // 判断登录数据是否正确，也就是是否能登录成功
+    login: function(loginModel){
+      var dbLm = this.findLoginUser(loginModel.loginId);
+
+      if(dbLm) {
+        // 对密码进行加密
+        var encryptPwd = this.encryptPwd(loginModel.pwd);
+        // 把加密后的密码设置回到登录数据模型中
+        loginModel.pwd = encryptPwd;
+        // 判断是否匹配
+        return this.match(loginModel, dbLm);
+      }
+
+      return false;
+    },
+    // 根据登录编号来查找和获取存储中相应的数据
+    findLoginUser: function(loginId){},
+    // 对密码数据进行加密
+    encryptPwd: function(pwd){
+      return pwd;
+    },
+    // 判断用户填写的登录数据和存储中对应的数据是否匹配得上
+    match: function(lm, dbLm){
+      return lm.loginId === dbLm.loginId
+        && lm.pwd === dbLm.pwd;
+    }
+  };
+
+  // 普通用户登录控制的逻辑处理
+  function NormalLogin(){}
+  NormalLogin.prototype = {
+    __proto__: LoginTemplate.prototype,
+
+    findLoginUser: function(loginId){
+      var lm = new LoginModel();
+      lm.loginId = loginId;
+      lm.pwd = 'testpwd';
+      return lm;
+    }
+  };
+
+  // 工作人员登录控制的逻辑处理
+  function WorkerLogin(){}
+  WorkerLogin.prototype = {
+    __proto__: LoginTemplate.prototype,
+
+    findLoginUser: function(loginId){
+      var lm = new LoginModel();
+      lm.loginId = loginId;
+      lm.pwd = 'workerpwd';
+      return lm;
+    },
+    encryptPwd: function(pwd){
+      console.log('使用MD5进行密码加密');
+      return pwd;
+    }
+  };
+
+  var lm = new LoginModel();
+  lm.loginId = 'admin';
+  lm.pwd = 'workerpwd';
+
+  var lt  = new WorkerLogin();
+  var lt2 = new NormalLogin();
+
+  var flag = lt.login(lm);
+  console.log('可以登录工作平台=' + flag);
+
+  var flag2 = lt2.login(lm);
+  console.log('可以进行普通人员登录=' + flag2);
+
+
+  // another style
+
+  function test(){
+    var crypto = require('crypto');
+    function createHmac(){
+      return crypto.createHmac('sha1', 'password');
+    }
+
+    // 封装进行登录控制所需要的数据
+    function LoginModel(){
+      // 登录人员编号
+      this.loginId;
+      // 登录密码
+      this.pwd;
+    }
+
+    // 登录控制的模板
+    function LoginTemplate(){}
+    LoginTemplate.prototype = {
+      // 判断登录数据是否正确，也就是是否能登录成功
+      login: function(loginModel){
+        var dbLm = this.findLoginUser(loginModel.loginId);
+
+        if(dbLm) {
+          // 对密码进行加密
+          var encryptPwd = this.encryptPwd(loginModel.pwd);
+          // 把加密后的密码设置回到登录数据模型中
+          loginModel.pwd = encryptPwd;
+          // 判断是否匹配
+          return this.match(loginModel, dbLm);
+        }
+
+        return false;
+      },
+      // 根据登录编号来查找和获取存储中相应的数据
+      findLoginUser: function(loginId){},
+      // 对密码数据进行加密
+      encryptPwd: function(pwd){
+        return pwd;
+      },
+      // 判断用户填写的登录数据和存储中对应的数据是否匹配得上
+      match: function(lm, dbLm){
+        return lm.loginId === dbLm.loginId
+          && lm.pwd === dbLm.pwd;
+      }
+    };
+
+    function createLoginClass(prop){
+      Template.prototype = LoginTemplate.prototype;
+
+      return Template;
+
+      function Template(){
+        for(var i in prop) {
+          if(!prop.hasOwnProperty(i)) continue;
+
+          this[i] = prop[i];
+        }
+      }
+    }
+
+    var NormalLogin = createLoginClass({
+      findLoginUser: function(loginId){
+        var lm = new LoginModel();
+        lm.loginId = loginId;
+        lm.pwd = 'testpwd';
+        return lm;
+      }
+    });
+
+    var WorkerLogin = createLoginClass({
+      findLoginUser: function(loginId){
+        var lm = new LoginModel();
+        lm.loginId = loginId;
+        lm.pwd = createHmac().update('workerpwd').digest("hex");
+        return lm;
+      },
+      encryptPwd: function(pwd){
+        console.log('使用MD5进行密码加密');
+        return createHmac().update(pwd).digest('hex');
+      }
+    });
+
+    var lm = new LoginModel();
+    lm.loginId = 'admin';
+    lm.pwd = 'workerpwd';
+
+    var lt  = new WorkerLogin();
+    var lt2 = new NormalLogin();
+
+    var flag = lt.login(lm);
+    console.log('可以登录工作平台=' + flag);
+
+    var flag2 = lt2.login(lm);
+    console.log('可以进行普通人员登录=' + flag2);
+
+
+
+    // 扩展登录控制
+
+    function NormalLoginModel(){
+      LoginModel.call(this);
+
+      // 密码验证问题
+      this.question;
+      // 密码验证答案
+      this.answer;
+    }
+
+    function NormalLogin2(){}
+    NormalLogin2.prototype = {
+      __proto__: LoginTemplate,
+
+      findLoginUser: function(loginId){
+        var nlm = new NormalLoginModel();
+        nlm.loginId = loginId;
+        nlm.pwd = 'testpwd';
+        nlm.question = 'testQuestion';
+        nlm.answer = 'testAnswer';
+
+        return nlm;
+      },
+      match: function(lm, dblm){
+        var f1 = LoginTemplate.prototype.match.apply(this,arguments);
+
+        if(f1) {
+          return dblm.question === lm.question
+            && dblm.answer === lm.answer;
+        }
+
+        return false;
+      }
+    };
+
+    var nlm = new NormalLoginModel();
+    nlm.loginId = 'testUser';
+    nlm.pwd = 'testpwd';
+    nlm.question = 'testQuestion';
+    nlm.answer = 'testAnswer';
+    var lt3 = new NormalLogin2();
+    var flag3 = lt3.login(nlm);
+    console.log('可以进行普通人员加强版登录=' + flag3);
+
+  }
+
+}());
+
+
+(function () {
+  // 咖啡因饮料是一个抽象类
+  var CaffeineBeverage = function () {
+  };
+  CaffeineBeverage.prototype = {
+    /*---模板方法 ----*/
     /**
-     * 模板模式
-     *
-     * 模板方法定义了一个算法的步骤，并允许子类为一个或多个步骤提供实现。
-     *
-     * 本质
-     * 固定算法骨架
-     *
-     * 在一个方法中定义一个算法的骨架，而将一些步骤延迟到子类中。模板方法使得子类可以在不改变算法结构的情况下，重新定义算法中的某些步骤。
+     * 它的用作一个算法的模板，在这个例子中，算法是用来制作咖啡因饮料的,
+     * 在这个模板中，算法内的每一个步骤都被一个方法代表了
      */
-
-    // 咖啡因饮料是一个抽象类
-    var CaffeineBeverage = function () {
-    };
-    CaffeineBeverage.prototype = {
-        /*---模板方法 ----*/
-        /**
-         * 它的用作一个算法的模板，在这个例子中，算法是用来制作咖啡因饮料的,
-         * 在这个模板中，算法内的每一个步骤都被一个方法代表了
-         */
-        prepareRecipe: function () {
-            this.boilWater();
-            this.brew();
-            this.pourInCup();
-            this.addConditions();
-        },
-        /*----------------*/
-        /* 因为咖啡和茶处理这些方法的做法不同，所以这两个方法必须被声明为抽象 */
-        brew: function () {
-            throw new Error('abstract brew method should be written.');
-        },
-        addConditions: function () {
-            throw new Error('abstract addConditions method should be written.');
-        },
-        /* ------------------------------- */
-        boilWater: function () {
-            console.log('boiling water');
-        },
-        pourInCup: function () {
-            console.log('pouring into cup');
-        }
-    };
-
-    var Tea = function () {
-    };
-    extend(Tea, CaffeineBeverage);
-    rewrite(Tea.prototype, {
-        brew: function () {
-            console.log('steeping the tea.');
-        },
-        addConditions: function () {
-            console.log('adding lemon');
-        }
-    });
-
-    var Coffee = function () {
-    };
-    extend(Coffee, CaffeineBeverage);
-    rewrite(Coffee.prototype, {
-        brew: function () {
-            console.log('Dripping Coffee through filter');
-        },
-        addConditions: function () {
-            console.log('adding Sugar and Milk');
-        }
-    });
-
-    var myTea = new Tea();
-    myTea.prepareRecipe();
-
-    /*
-     由CaffeineBeverage类主导一切，它拥有算法，而且保护这个算法。对子类来说，CaffeineBeverage类deep存在，可以将代码的复用最大化。算法只存在于一个地方，所以容易修改。这个模板方法提供了一个框架，可以让其他的咖啡因饮料插进去，新的咖啡因饮料只需要实现自己的方法就可以了。CaffeeineBeverage类专注在算法本身，而由子类提供完整的实现。
-     */
-
-    /*
-     对模板方法进行挂钩
-
-     钩子是一种被声明在抽象类中的方法，但只有空的或者默认的实现。钩子的存在，可以让子类有能力对算法的不同点进行挂钩。要不要挂钩，由子类自行决定。
-     */
-
-    // 高层组件，只有在需要子类实现某个方法时，方调用子类。
-    var CaffeineBeverageWithHook = function () {
-    };
-    CaffeineBeverageWithHook.prototype = {
-        prepareRecipe: function () {
-            this.boilWater();
-            this.brew();
-            this.pourInCup();
-            /*---------- 钩子 ----------*/
-            if (this.customerWantsCondiments()) {
-                this.addCondiments();
-            }
-            /*---------------------------*/
-        },
-        brew: function () {
-            throw new Error('brew method should be rewritten.');
-        },
-        addCondiments: function () {
-            throw new Error('addCondiments method should be written.');
-        },
-        boilWater: function () {
-            console.log('Boiling water');
-        },
-        pourInCup: function () {
-            console.log('pourng into cup');
-        },
-        /*------- 钩子方法 ------*/
-        customerWantsCondiments: function () {
-            return true;
-        }
-        /*----------------------*/
-    };
-
-    var CoffeeWithHook = function () {
-    };
-    extend(CoffeeWithHook, CaffeineBeverageWithHook);
-    rewrite(CoffeeWithHook.prototype, {
-        brew: function () {
-            console.log('Dripping coffee through filter');
-        },
-        customerWantsCondiments: function () {
-            var answer = this.getUSerInput();
-
-            return answer === true;
-        },
-        getUSerInput: function () {
-            return confirm('Would you like milk and sugar with your coffee (y/n)?');
-        },
-        addCondiments: function () {
-            console.log('adding sugar and milk');
-        }
-    });
-
-    var coffeeHook = new CoffeeWithHook();
-    coffeeHook.prepareRecipe();
-
-    /*
-     好莱坞原则
-
-     别调用我们，我们会调用你。
-
-     好莱坞原则可以给我们一种防止“依赖腐败”的方法。当高层组件依赖低层组件，而低层组件又依赖高层组件，而高层组件又依赖边侧组件，而边侧组件又依赖低层组件时，依赖腐败就发生了。在这种情况下，没有人可以轻易地搞懂系统是如何设计的。
-     在好莱坞原则之下，我们允许低层组件将自己挂钩到系统上，但是高层组件会决定什么时候和怎样使用这些低层组件。换句话说，高层组建对待低层组件的方式是“别调用我们，我们会调用你”。
-     */
-
-    /*
-     抽象类不一定包含抽象方法；有抽象方法的类一定是抽象类。
-     “既要约束子类的行为，又要为子类提供公共功能”的时候使用抽象类。
-     */
-
-    var Duck = function (name, weight) {
-        this.name = name;
-        this.weight = weight;
-    };
-    Duck.prototype = {
-        toString: function () {
-            return name + ' weighs ' + this.weight;
-        }
-    };
-
-    var ducks = [
-        new Duck('A', 8),
-        new Duck('B', 2),
-        new Duck('C', 7),
-        new Duck('D', 2),
-        new Duck('E', 10),
-        new Duck('E', 2)
-    ];
-    console.log('before');
-    display(ducks);
-
-    /*---------- 内置对象的模板方法 --------*/
-    ducks.sort(function (obj1, obj2) {
-        return obj1.weight - obj2.weight;
-    });
-    /*-------------------------------------*/
-
-    console.log('after');
-    display(ducks);
-
-    function display(arr) {
-        for (var i = 0, len = arr.length; i < len; i++) {
-            console.log(arr[i] + '');
-        }
+    prepareRecipe: function () {
+      this.boilWater();
+      this.brew();
+      this.pourInCup();
+      this.addConditions();
+    },
+    /*----------------*/
+    /* 因为咖啡和茶处理这些方法的做法不同，所以这两个方法必须被声明为抽象 */
+    brew: function () {
+      throw new Error('abstract brew method should be written.');
+    },
+    addConditions: function () {
+      throw new Error('abstract addConditions method should be written.');
+    },
+    /* ------------------------------- */
+    boilWater: function () {
+      console.log('boiling water');
+    },
+    pourInCup: function () {
+      console.log('pouring into cup');
     }
+  };
 
-    /*
-     优点
+  var Tea = function () {
+  };
+  Tea.prototype = {
+    __proto__: CaffeineBeverage.prototype,
 
-     实现代码复用。
+    brew: function () {
+      console.log('steeping the tea.');
+    },
+    addConditions: function () {
+      console.log('adding lemon');
+    }
+  };
 
-     缺点
+  var Coffee = function () {
+  };
+  Coffee.prototype = {
+    __proto__: CaffeineBeverage.prototype,
 
-     算法骨架不容易升级
-     */
+    brew: function () {
+      console.log('Dripping Coffee through filter');
+    },
+    addConditions: function () {
+      console.log('adding Sugar and Milk');
+    }
+  };
 
-    /*
-     何时使用
+  var myTea = new Tea();
+  myTea.prepareRecipe();
+}());
 
-     1.需要固定定义算法骨架，实现了一个算法的不变的部分，并把可变的行为留给子类来实现的情况。
-     2.各个子类中具有公共行为，应该抽取出来，集中在一个公共类去实现，从而避免代码重复。
-     3.需要控制子类扩展的情况。模板方法模式会在特定的点来调用子类的方法，这样只允许在这些点进行扩展。
-     */
-    
-    
+/*
+ 由CaffeineBeverage类主导一切，它拥有算法，而且保护这个算法。对子类来说，CaffeineBeverage类deep存在，可以将代码的复用最大化。算法只存在于一个地方，所以容易修改。这个模板方法提供了一个框架，可以让其他的咖啡因饮料插进去，新的咖啡因饮料只需要实现自己的方法就可以了。CaffeeineBeverage类专注在算法本身，而由子类提供完整的实现。
+ */
+
+(function(){
+  /*
+   对模板方法进行挂钩
+
+   钩子是一种被声明在抽象类中的方法，但只有空的或者默认的实现。钩子的存在，可以让子类有能力对算法的不同点进行挂钩。要不要挂钩，由子类自行决定。
+   */
+
+// 高层组件，只有在需要子类实现某个方法时，方调用子类。
+  var CaffeineBeverageWithHook = function () {
+  };
+  CaffeineBeverageWithHook.prototype = {
+    prepareRecipe: function () {
+      this.boilWater();
+      this.brew();
+      this.pourInCup();
+      /*---------- 钩子 ----------*/
+      if (this.customerWantsCondiments()) {
+        this.addCondiments();
+      }
+      /*---------------------------*/
+    },
+    brew: function () {
+      throw new Error('brew method should be rewritten.');
+    },
+    addCondiments: function () {
+      throw new Error('addCondiments method should be written.');
+    },
+    boilWater: function () {
+      console.log('Boiling water');
+    },
+    pourInCup: function () {
+      console.log('pourng into cup');
+    },
+    /*------- 钩子方法 ------*/
+    customerWantsCondiments: function () {
+      return true;
+    }
+    /*----------------------*/
+  };
+
+  var CoffeeWithHook = function () {
+  };
+  CoffeeWithHook.prototype = {
+    __proto__: CaffeineBeverageWithHook.prototype,
+
+    brew: function () {
+      console.log('Dripping coffee through filter');
+    },
+    customerWantsCondiments: function () {
+      var answer = this.getUSerInput();
+
+      return answer === true;
+    },
+    getUSerInput: function () {
+      return confirm('Would you like milk and sugar with your coffee (y/n)?');
+    },
+    addCondiments: function () {
+      console.log('adding sugar and milk');
+    }
+  };
+
+  var coffeeHook = new CoffeeWithHook();
+  coffeeHook.prepareRecipe();
+}());
+
+/*
+ 好莱坞原则
+
+ 别调用我们，我们会调用你。
+
+ 好莱坞原则可以给我们一种防止“依赖腐败”的方法。当高层组件依赖低层组件，而低层组件又依赖高层组件，而高层组件又依赖边侧组件，而边侧组件又依赖低层组件时，依赖腐败就发生了。在这种情况下，没有人可以轻易地搞懂系统是如何设计的。
+ 在好莱坞原则之下，我们允许低层组件将自己挂钩到系统上，但是高层组件会决定什么时候和怎样使用这些低层组件。换句话说，高层组建对待低层组件的方式是“别调用我们，我们会调用你”。
+ */
+
+(function () {
+  /*
+   抽象类不一定包含抽象方法；有抽象方法的类一定是抽象类。
+   “既要约束子类的行为，又要为子类提供公共功能”的时候使用抽象类。
+   */
+
+  var Duck = function (name, weight) {
+    this.name = name;
+    this.weight = weight;
+  };
+  Duck.prototype = {
+    toString: function () {
+      return name + ' weighs ' + this.weight;
+    }
+  };
+
+  var ducks = [
+    new Duck('A', 8),
+    new Duck('B', 2),
+    new Duck('C', 7),
+    new Duck('D', 2),
+    new Duck('E', 10),
+    new Duck('E', 2)
+  ];
+  console.log('before');
+  display(ducks);
+
+  /*---------- 内置对象的模板方法 --------*/
+  ducks.sort(function (obj1, obj2) {
+    return obj1.weight - obj2.weight;
+  });
+  /*-------------------------------------*/
+
+  console.log('after');
+  display(ducks);
+
+  function display(arr) {
+    for (var i = 0, len = arr.length; i < len; i++) {
+      console.log(arr[i] + '');
+    }
+  }
+
+  /*
+  排序的算法步骤是固定的，也就是算法骨架是固定的了，只是其中具体比较数据大小的步骤，需要由外部来提供。
+  排序的实现，实际上组合使用了模板方法模式和策略模式，从整体来看是模板方法模式，但到了局部，比如排序比较算法的实现上，就是用的是策略模式了。
+  */
+}());
+
+/**
+ * 模板方法里面包含的操作类型：
+ * 1.模板方法： 就是定义算法骨架的方法。
+ * 2.具体的操作： 在模板中直接实现某些步骤的方法。通常这些步骤的实现算法是固定的，而且是不怎么变化的，因此可以将其当作公共功能实现在模板中。如果不需为子类提供访问这些方法的话，还可以是私有的。这样子类的视线就相对简单些。
+ * 3.具体的AbstractClass操作： 在模板中实现某些公共的功能，可以提供给子类使用，一般不是具体的算法步骤实现，而是一些辅助的公共功能。
+ * 4.原语操作： 就是在模板中定义的抽象操作，通常是模板方法需要调用的操作，时必须的操作，而且在父类中还没有办法确定下来如何实现，需要子类来真正实现的方法。
+ * 5.钩子操作： 在模板中定义，并提供默认实现的操作。这些方法通常被视为可扩展的点，但不是必需的，子类可以有选择地覆盖这些方法，已提供新的实现来扩展功能。
+ * 6.Factory Method：在模板方法中，如果需要得到某些对象实例的话，可以考虑通过工厂方法模式来获取，把具体的构建对象的实现延迟到子类中去。
+ */
+
+(function(){
+  // 一个较为完整的模板定义示例
+
+  function AbstractTemplate(){
+    // 模板方法，定义算法骨架
+    this.templateMethod = function(){
+      operation1();
+      this.operation2();
+      this.doPrimitiveOperation1();
+      this.dePrimitiveOperation2();
+      this.hookOperation();
+    }
+    // 具体操作2，算法中的步骤，固定实现，子类可能需要访问
+    this.operation2 = function(){};
+    // 具体的AbstractClass操作，子类的公共方法，但通常不是具体的算法
+    this.commondOperationi = function(){};
+    // 原语操作1，算法中的步骤，父类无法确定如何真正实现，需要子类来实现
+    this.doPrimitiveOperation1 = function(){};
+    this.doPrimitiveOperation2 = function(){};
+    // 钩子操作，算法中的步骤，可选，提供默认实现
+    // 由子类选择并具体实现
+    this.hookOperationi = function(){};
+
+    // 具体操作1，算法中的步骤，固定实现，而且子类不需要访问
+    function operation1(){}
+    // 工厂方法，创建某个对象，在算法实现中可能需要
+    this.createOneObject = function(){};
+  }
+}());
+
+/*
+ 优点
+ 实现代码复用。
+ 模板方法模式是一种实现代码复用的很好的手段。通过把子类的公共功能提炼和抽取，把公共部分放到模板中去实现。
+
+
+ 缺点
+ 算法骨架不容易升级
+ 模板方法模式最基本的功能就是通过模板的制定，把算法骨架完全固定下来。事实上模板和子类是非常耦合的，如果要对模板中的算法骨架进行变更，可能就会要求所有相关的子类进行相应的变化。所以抽取算法骨架的时候要特别小心，尽量确保不会变化的部分才放到模板中。
+ */
+
+/*
+ 何时使用
+
+ 1.需要固定定义算法骨架，实现了一个算法的不变的部分，并把可变的行为留给子类来实现的情况。
+ 2.各个子类中具有公共行为，应该抽取出来，集中在一个公共类去实现，从而避免代码重复。
+ 3.需要控制子类扩展的情况。模板方法模式会在特定的点来调用子类的方法，这样只允许在这些点进行扩展。
+ */
+
 
 // http://blog.csdn.net/dead_of_winter/article/details/2159420
-    
-function parent(prototype){
-    return function(){
-        for(var p in o) this[p]=prototype[p];
-        // 模板方法
-        this.show=function(){
-             alert("show");
-        }
+
+function parent(prototype) {
+  return function () {
+    for (var p in o) this[p] = prototype[p];
+    // 模板方法
+    this.show = function () {
+      alert("show");
     }
+  };
 }
 
 // 广度优先搜索的例子
 
-function BreadthFirstSearch(extend,beam,finish)
-{
-    return function(){
-        this.finish=finish;
-        this.extend=extend;
-        this.beam=beam; 
-        this.search=function(){
-            
-            var queue=[this];
-            while(queue.length)
-            {
-                var current=queue.shift();
-                if(!current.beam()){
-                    var extended=current.extend();
-                    for(var i=0;i<extended.length;i++)
-                    {
-                        if(extended[i].finish())return extended[i];
-                        queue.push(extended[i]);
-                    }
-                }        
+  function BreadthFirstSearch(extend, beam, finish) {
+    return function () {
+      this.finish = finish;
+      this.extend = extend;
+      this.beam = beam;
+      this.search = function () {
+
+        var queue = [this];
+        while (queue.length) {
+          var current = queue.shift();
+          if (!current.beam()) {
+            var extended = current.extend();
+            for (var i = 0; i < extended.length; i++) {
+              if (extended[i].finish())return extended[i];
+              queue.push(extended[i]);
             }
-            return null;
+          }
         }
+        return null;
+      }
     }
-}
+  }
 
 
-(function(){
+  (function () {
     // 解决八皇后问题的例子的例子
 
-function Queen(n){
-    var ret=new Array();
-    ret.size=n;                                //皇后问题的规模
-    ret.depth=0;                                //搜索的深度
-    ret.pos=0;                                //新皇后的水平位置
-    for(var y=0;y<n;y++)
-    {
+    function Queen(n) {
+      var ret = new Array();
+      ret.size = n;                                //皇后问题的规模
+      ret.depth = 0;                                //搜索的深度
+      ret.pos = 0;                                //新皇后的水平位置
+      for (var y = 0; y < n; y++) {
         ret.push([]);
-        for(var x=0;x<n;x++)
-            ret[ret.length-1].push(0);
-    }
-    function objectPrototypeClone()
-    {
-        var tmp=function(){};
-        tmp.prototype=this;
+        for (var x = 0; x < n; x++)
+          ret[ret.length - 1].push(0);
+      }
+      function objectPrototypeClone() {
+        var tmp = function () {
+        };
+        tmp.prototype = this;
         return new tmp;
-    }
-    ret.clone=function(){
-        var r=objectPrototypeClone.call(this);
-        for(var i=0;i<n;i++)
-        {
-            r[i]=objectPrototypeClone.call(this[i])
+      }
+
+      ret.clone = function () {
+        var r = objectPrototypeClone.call(this);
+        for (var i = 0; i < n; i++) {
+          r[i] = objectPrototypeClone.call(this[i])
         }
         return r;
-    }
-    ret.toString=function(){
-        var str="";
-        for(var y=0;y<n;y++)
-        {
-            for(var x=0;x<n;x++)
-                str+=this[y][x]==0?"○":"★";
-            str+=" ";
+      }
+      ret.toString = function () {
+        var str = "";
+        for (var y = 0; y < n; y++) {
+          for (var x = 0; x < n; x++)
+            str += this[y][x] == 0 ? "○" : "★";
+          str += " ";
         }
         return str;
+      }
+      return ret;
     }
-    return ret;
-}
 
-function extendQueen()
-{
-    var ret=new Array();
-    if(this.depth==this.size)return ret;
-    for(var i=0;i<this.size;i++)
-    {
-        var current=this.clone();
+    function extendQueen() {
+      var ret = new Array();
+      if (this.depth == this.size)return ret;
+      for (var i = 0; i < this.size; i++) {
+        var current = this.clone();
         //alert(current.depth);
-        current[current.depth][i]=1;
-        current.pos=i;
+        current[current.depth][i] = 1;
+        current.pos = i;
         current.depth++;
         ret.push(current);
-    }
-    return ret;
-}
-function beamQueen()
-{
-    var x,y;
-    if(this.depth==0)return false;
-    if(this.depth==this.size)return true;
-    x=this.pos;y=this.depth-1;
-    while(--x>=0&&--y>=0)
-        if(this[y][x]!=0)return true;
-
-    x=this.pos;y=this.depth-1;
-    while(--y>=0)
-        if(this[y][x]!=0)return true;
-
-    x=this.pos;y=this.depth-1;
-    while(--y>=0&&++x<this.size)
-    {
-        if(this[y][x]!=0)return true;
-    }
-    return false;
-}
-
-function finishQueen(){
-
-    if(this.depth<this.size)return false;
-    x=this.pos;y=this.depth-1;
-    while(--x>=0&&--y>=0)
-        if(this[y][x]!=0)return false;
-
-    x=this.pos;y=this.depth-1;
-    while(--y>=0)
-        if(this[y][x]!=0)return false;
-
-    x=this.pos;y=this.depth-1;
-    while(--y>=0&&++x<this.size)
-    {
-        if(this[y][x]!=0)return false;
+      }
+      return ret;
     }
 
-    document.write(++count+". "+this);
-    return false;
-}
-function BreadthFirstSearch(extend,beam,finish)
-{
-    return function(){
-        this.finish=finish;
-        this.extend=extend;
-        this.beam=beam; 
-        this.search=function(){
-            
-            var queue=[this];
-            while(queue.length)
-            {
-                var current=queue.shift();
-                if(!current.beam()){
-                    var extended=current.extend();
-                    for(var i=0;i<extended.length;i++)
-                    {
-                        if(extended[i].finish())return extended[i];
-                        queue.push(extended[i]);
-                    }
-                }        
+    function beamQueen() {
+      var x, y;
+      if (this.depth == 0)return false;
+      if (this.depth == this.size)return true;
+      x = this.pos;
+      y = this.depth - 1;
+      while (--x >= 0 && --y >= 0)
+        if (this[y][x] != 0)return true;
+
+      x = this.pos;
+      y = this.depth - 1;
+      while (--y >= 0)
+        if (this[y][x] != 0)return true;
+
+      x = this.pos;
+      y = this.depth - 1;
+      while (--y >= 0 && ++x < this.size) {
+        if (this[y][x] != 0)return true;
+      }
+      return false;
+    }
+
+    function finishQueen() {
+
+      if (this.depth < this.size)return false;
+      x = this.pos;
+      y = this.depth - 1;
+      while (--x >= 0 && --y >= 0)
+        if (this[y][x] != 0)return false;
+
+      x = this.pos;
+      y = this.depth - 1;
+      while (--y >= 0)
+        if (this[y][x] != 0)return false;
+
+      x = this.pos;
+      y = this.depth - 1;
+      while (--y >= 0 && ++x < this.size) {
+        if (this[y][x] != 0)return false;
+      }
+
+      console.log(++count + ". " + this);
+      return false;
+    }
+
+    function BreadthFirstSearch(extend, beam, finish) {
+      return function () {
+        this.finish = finish;
+        this.extend = extend;
+        this.beam = beam;
+        this.search = function () {
+
+          var queue = [this];
+          while (queue.length) {
+            var current = queue.shift();
+            if (!current.beam()) {
+              var extended = current.extend();
+              for (var i = 0; i < extended.length; i++) {
+                if (extended[i].finish())return extended[i];
+                queue.push(extended[i]);
+              }
             }
-            return null;
+          }
+          return null;
         }
+      }
     }
-}
-function BFSQueen(n)
-{
-    var ret=new Queen(n);
-    var BFS=new BreadthFirstSearch(extendQueen,beamQueen,finishQueen);
-    BFS.apply(ret);
-    return ret;
-}
-var queen=new BFSQueen(8);
-var count=0;
-queen.search();
-}());
+
+    function BFSQueen(n) {
+      var ret = new Queen(n);
+      var BFS = new BreadthFirstSearch(extendQueen, beamQueen, finishQueen);
+      BFS.apply(ret);
+      return ret;
+    }
+
+    var queen = new BFSQueen(8);
+    var count = 0;
+    queen.search();
+  }());
 </script>
 </body>
 </html>
