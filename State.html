@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>State Pattern</title>
+</head>
+<body>
+
+<script>
+  /**
+   * 状态模式
+   *
+   * 定义：
+   * 允许一个对象在其内部状态改变时改变它的行为，对象看起来似乎修改了它的类。
+   *
+   * 1.状态和行为
+   * 所谓对象的状态，通常指的就是对象实例的属性的值；而行为指的就是对象的功能，再具体点，行为大多可以对应到方法上。
+   * 状态模式的功能就是分离状态和行为，通过维护状态的变化，来调用不同状态的的不同功能。
+   * 也就是说，状态和行为是相关联的，它们的关系可以描述为：状态决定行为。
+   *
+   * 2.行为的平行性
+   * 平行性指的是各个状态的行为所处的层次是一样的，相互是独立的，没有关联的，是根据不同的状态来决定到底走平行线哪一条。行为是不用的，当然对应的实现也是不同的，相互之间是不可替换的。
+   * 平等性强调的是可替换性，大家是同一行为的不同描述或实现，因此在同一个行为发生的时候，可以根据条件挑选任意的一个实现来进行相应的处理。
+   * 状态模式和策略模式的结构完全一样。状态模式的行为是平行性的，不可相互替换的；而策略模式的行为是平等性的，可相互替换的。
+   *
+   * 3.上下文和状态处理对象呢
+   * 在状态模式中，上下文是持有状态的对象，但是上下文自身并不处理跟状态相关的行为，而是把处理状态的功能委托给了状态对应的状态处理类来处理。
+   * 在具体的状态处理类中经常需要获取上下文自身的数据，甚至在必要的时候会回调上下文的方法，因此，通常将上下文自身当作一个参数传递给具体的状态处理类。
+   * 客户端一般只和上下文交互。客户端可以用状态对象来配置一个上下文，一旦配置完毕，就不需要再和状态对象打交道了。
+   *
+   * 4.不完美的OCP体验
+   * 由于状态的维护和转换在状态模式结构里面，不管你是扩展了状态实现类，还是新添加了状态实现类，都需要修改状态维护和转换的地方。
+   *
+   * 5.创建和销毁状态对象
+   * 究竟何时创建和销毁状态对象？
+   * 1）当需要使用状态对象的时候创建，使用完后销毁它们
+   * 2）提前创建它们并始终不销毁。
+   * 3）采用延迟加载和缓存合用的方式，就是当第一次需要使用状态对象的时候创建，使用完后并不销毁对象，而是把这个对象缓存起来，等待下一次使用，而且在合适的时候，会有缓存框剪销毁状态对象。
+   * 如果状态在运行时是不可知的，而且上下文比较稳定，建议选择1.
+   * 如果状态改变很频繁，而且状态对象还存储着大量的数据信息，建议选择2.
+   * 如果无法确定状态改变是否频繁，而且有些状态对象的状态数据量大，有些较小，建议选择3.
+   *
+   * 6.状态模式的调用顺序
+   * 在Context中进行状态的维护和转换：
+   * 1）调用上下文的方法来处理业务请求。
+   * 2）判断并维护状态。
+   * 3）根据状态来调用相应的状态处理对象的方法。
+   *
+   * 状态的维护和转换控制
+   * 所谓状态的维护，指的是维护状态的数据，给状态设置不用的状态值；而状态的转换，指的是根据状态的变化来选择不用的状态处理对象。在状态模式中，通常有两个地方可以进行状态的维护和转换控制。
+   * 一个就是在上下文中。因为状态本身通常被实现为上下文对象的状态，因此可以在上下文中进行状态维护，当然也就可以控制状态的转换了。
+   * 另外一个地方就是在状态的处理类中。当每个状态处理对象处理完自身状态所对应的功能后，可以根据需要指定后继状态，一边让应用能正确处理后继的请求。
+   */
+
+  (function(){
+    // 示例代码
+
+    // 实现一个与Context的一个特定状态相关的行为
+    function ConcreteStateA(){}
+    ConcreteStateA.prototype.handle = function(){};
+
+    function ConcreteStateB(){}
+    ConcreteStateB.prototype.handle = function(){};
+
+    // 定义客户感兴趣的接口，通常会维护一个State的对象实例
+    function Context(state){
+      this.state = state;
+    }
+    Context.prototype = {
+      request: function(param){
+        this.state.handle(param);
+      }
+    };
+  }());
+
+  (function(){
+    // 示例
+
+    function NormalVoteState(){}
+    NormalVoteState.prototype.vote = function(user, voteItem, voteManager){
+      voteManager.mapVote[user] = voteItem;
+    };
+
+    function RepeatVoteState(){}
+    RepeatVoteState.prototype.vote = function(user, voteItem, voteManager){
+      console.log('请不要重复投票');
+    };
+
+    function SpliteVoteState(){}
+    SpliteVoteState.prototype.vote = function(user, coteItem, voteManager){
+      var s = voteManager.mapVote[user];
+      if(s) {
+        delete voteManager.mapVote[user];
+      }
+
+      console.log('你有恶意刷票行为，取消投票资格');
+    };
+
+    function BlackVoteState(){}
+    BlackVoteState.prototype.vote = function(user, voteItem, voteManager){
+      console.log('进入黑名单，将禁止登录和使用本系统');
+    };
+
+    function VoteManager(){
+      this.state = null;
+      this.mapVote = {};
+      this.mapVoteCount = {};
+    }
+    VoteManager.prototype = {
+      vote: function(user, voteItem){
+        var oldVoteCount = this.mapVoteCount[user] || 0;
+
+        this.mapVoteCount[user] = ++oldVoteCount;
+
+        if(oldVoteCount == 1){
+          this.state = new NormalVoteState();
+        } else if(oldVoteCount > 1 && oldVoteCount < 5){
+          this.state = new RepeatVoteState();
+        } else if(oldVoteCount >= 5 && oldVoteCount < 8){
+          this.state = new SpliteVoteState();
+        } else if(oldVoteCount >= 8) {
+          this.state = new BlackVoteState();
+        }
+
+        this.state.vote(user, voteItem, this);
+      }
+    };
+
+    var vm = new VoteManager();
+    for(var i = 0; i < 8; i++){
+      vm.vote('u1', 'A');
+    }
+
+
+    // another
+    var States = {
+      normal: function(user, voteItem, voteManager){
+        voteManager.mapVote[user] = voteItem;
+      },
+      repeat: function(user, voteItem, voteManager){
+        console.log('请不要重复投票');
+      },
+      splite: function(user, coteItem, voteManager){
+        var s = voteManager.mapVote[user];
+        if(s != null) {
+          delete voteManager.mapVote[user];
+        }
+
+        console.log('你有恶意刷票行为，取消投票资格');
+      },
+      black: function(user, voteItem, voteManager){
+        console.log('进入黑名单，将禁止登录和使用本系统');
+      }
+    };
+
+    function VoteManager2(){
+      this.state = null;
+      this.mapVote = {};
+      this.mapVoteCount = {};
+    }
+    VoteManager2.prototype = {
+      vote: function(user, voteItem){
+        var oldVoteCount = this.mapVoteCount[user] || 0;
+
+        this.mapVoteCount[user] = ++oldVoteCount;
+
+        var state;
+        if(oldVoteCount == 1){
+          state = 'normal';
+        } else if(oldVoteCount > 1 && oldVoteCount < 5){
+          state = 'repeat';
+        } else if(oldVoteCount >= 5 && oldVoteCount < 8){
+          state = 'splite';
+        } else if(oldVoteCount >= 8) {
+          state = 'black';
+        }
+
+        this.state = States[state];
+
+        this.state(user, voteItem, this);
+      }
+    };
+
+    var vm = new VoteManager2();
+    for(var i = 0; i < 8; i++){
+      vm.vote('u1', 'A');
+    }
+  }());
+
+  (function(){
+    // 在状态处理类中进行后继状态的维护和转换
+
+    function NormalVoteState(){
+      this.vote = function(user, voteItem, voteManager){
+        voteManager.mapVote[user] = voteItem;
+        console.log('恭喜你投票成功');
+        // 正常投票完毕，维护下一个状态，同一个人再投票就重复了
+        voteManager.mapState[user] = new RepeatVoteState();
+      };
+    }
+
+    function RepeatVoteState(){
+      this.vote = function(user, voteItem, voteManager){
+        console.log('请不要重复投票');
+        if(voteManager.mapVoteCount[user] >= 4){
+          voteManager.mapState[user] = new SpliteVoteState();
+        }
+      };
+    }
+
+    function SpliteVoteState(){
+      this.vote = function(user, voteItem, voteManager){
+        var s = voteManager.mapVote[user];
+
+        if(s != null){
+          delete voteManager.mapVote[user];
+        }
+
+        console.log('你有恶意刷票行为，取消投票资格');
+
+        if(voteManager.mapVoteCount[user] >= 7){
+          voteManager.mapState[user] = new BlackVoteState();
+        }
+      };
+    }
+
+    function BlackVoteState(){
+      this.vote = function(user, voteItem, voteManager){
+        console.log('进入黑名单，将禁止登录和使用本系统');
+      };
+    }
+
+    function VoteManager(){
+      this.mapState = {};
+      this.mapVote = {};
+      this.mapVoteCount = {};
+
+      this.vote = function(user, voteItem){
+        var oldVoteCount = this.mapVoteCount[user];
+
+        if(oldVoteCount == null){
+          oldVoteCount = 0;
+        }
+        this.mapVoteCount[user] = ++oldVoteCount;
+
+        var state = this.mapState[user];
+        if(state == null){
+          state = new NormalVoteState();
+        }
+
+        state.vote(user, voteItem, this);
+      };
+    }
+
+
+    var vm = new VoteManager();
+    for(var i = 0; i < 8; i++){
+      vm.vote('u1', 'A');
+    }
+
+    // another way
+
+    function VoteManager2(){
+      var mapState = {};
+      var mapVote = {};
+      var mapVoteCount = {};
+
+      this.vote = function(user, voteItem){
+        var oldVoteCount = mapVoteCount[user];
+
+        if(oldVoteCount == null){
+          oldVoteCount = 0;
+        }
+        mapVoteCount[user] = ++oldVoteCount;
+
+        var state = mapState[user];
+        if(state == null){
+          state = voteNormal;
+        }
+
+        state(user, voteItem);
+      };
+
+      function voteNormal(user, voteItem){
+        mapVote[user] = voteItem;
+        console.log('恭喜你投票成功');
+        // 正常投票完毕，维护下一个状态，同一个人再投票就重复了
+        return mapState[user] = voteRepeat;
+      }
+
+      function voteRepeat(user, voteItem){
+        console.log('请不要重复投票');
+        if(mapVoteCount[user] >= 4){
+          return mapState[user] = voteSplite;
+        }
+      }
+
+      function voteSplite(user, voteItem){
+        var s = mapVote[user];
+
+        if(s != null){
+          delete mapVote[user];
+        }
+
+        console.log('你有恶意刷票行为，取消投票资格');
+
+        if(mapVoteCount[user] >= 7){
+          return mapState[user] = voteBlack;
+        }
+      }
+
+      function voteBlack(user, voteItem){
+        console.log('进入黑名单，将禁止登录和使用本系统');
+      }
+    }
+
+    var vm = new VoteManager2();
+    for(var i = 0; i < 8; i++){
+      vm.vote('u1', 'A');
+    }
+  }());
+</script>
+</body>
+</html>
