@@ -13,6 +13,9 @@
    * 定义：
    * 允许一个对象在其内部状态改变时改变它的行为，对象看起来似乎修改了它的类。
    *
+   * 本质：
+   * 根据状态来分离和选择行为
+   *
    * 1.状态和行为
    * 所谓对象的状态，通常指的就是对象实例的属性的值；而行为指的就是对象的功能，再具体点，行为大多可以对应到方法上。
    * 状态模式的功能就是分离状态和行为，通过维护状态的变化，来调用不同状态的的不同功能。
@@ -46,10 +49,25 @@
    * 2）判断并维护状态。
    * 3）根据状态来调用相应的状态处理对象的方法。
    *
+   * 采用让状态对象来维护和转换状态的调用顺序
+   * 1）调用上下文的方法来处理业务请求。
+   * 2）获取State对象。
+   * 3）委托让相应的状态对象去处理。
+   * 4）调用构造方法得到下一个状态对象的实例。
+   * 5）设置下一个状态处理对象。
+   * 6）再到6），直到结束。
+   *
    * 状态的维护和转换控制
    * 所谓状态的维护，指的是维护状态的数据，给状态设置不用的状态值；而状态的转换，指的是根据状态的变化来选择不用的状态处理对象。在状态模式中，通常有两个地方可以进行状态的维护和转换控制。
    * 一个就是在上下文中。因为状态本身通常被实现为上下文对象的状态，因此可以在上下文中进行状态维护，当然也就可以控制状态的转换了。
-   * 另外一个地方就是在状态的处理类中。当每个状态处理对象处理完自身状态所对应的功能后，可以根据需要指定后继状态，一边让应用能正确处理后继的请求。
+   * 另外一个地方就是在状态的处理类中。当每个状态处理对象处理完自身状态所对应的功能后，可以根据需要指定后继状态，以便让应用能正确处理后继的请求。
+   *
+   * 如何选择这两种方式？
+   * 1.如果状态转换的规则是一定的，一般不需要进行什么扩展规则，那么就适合在上下文中统一进行状态的维护。
+   * 2.如果状态的转换取决于前一个状态动态处理的结果，或者是依赖于外部数据，为了增强灵活性，这种情况下，一般是在状态处理类中进行状态的维护。
+   *
+   * 还可以使用数据库来维护状态
+   *
    */
 
   (function(){
@@ -319,6 +337,205 @@
       vm.vote('u1', 'A');
     }
   }());
+
+  (function(){
+    // 模拟工作流
+    /*
+    请假流程，需项目经理和部门经理审批
+     */
+
+    // 公共状态处理机
+    function LeaveRequestContext(){
+      // 持有一个状态对象
+      this.state = null;
+      // 包含流程处理需要的业务数据对象
+      this.businessVO = null;
+    }
+    LeaveRequestContext.prototype = {
+      // 执行工作
+      doWork: function(){
+        this.state.doWork(this);
+      }
+    };
+
+    // 定义请假单的业务数据模型
+    function LeaveRequestModel(){
+      // 请假人
+      this.user = '';
+      // 请假开始时间
+      this.beginDate = '';
+      // 请假天数
+      this.leaveDays = '';
+      // 审核结果
+      this.result= '';
+    }
+
+    function ProjectManagerState(){
+      this.doWork = function(request){
+        var leaveRequestModel = request.businessVO;
+
+        console.log('项目经理审核中，请稍候。。');
+        console.log(leaveRequestModel.user + '申请从'
+          + leaveRequestModel.beginDate + '开始请假'
+          + leaveRequestModel.leaveDays + '天，请项目经理审核（1为同意，2为不同意）');
+
+        var answer = window.prompt('1为同意，2为不同意');
+        var result = answer == 1 ? '同意' : '不同意';
+        leaveRequestModel.result = '项目经理审核结果：' + result;
+
+        if(answer == 1){
+          if(leaveRequestModel.leaveDays > 3){
+            request.state = new DepManagerState();
+          } else {
+            request.state = new AuditOverState();
+          }
+        } else {
+          request.state = new AuditOverState();
+        }
+
+        request.doWork();
+      };
+    }
+
+    function DepManagerState(){
+      this.doWork = function(request){
+        var leaveRequestModel = request.businessVO;
+
+        console.log('部门经理审核中，请稍候。。');
+        console.log(leaveRequestModel.user + '申请从'
+          + leaveRequestModel.beginDate + '开始请假'
+          + leaveRequestModel.leaveDays + '天，请项目经理审核（1为同意，2为不同意）');
+
+        var answer = window.prompt('1为同意，2为不同意');
+        var result = answer == 1 ? '同意' : '不同意';
+        leaveRequestModel.result = '部门经理审核结果：' + result;
+
+        request.state = new AuditOverState();
+
+        request.doWork();
+      };
+    }
+
+    function AuditOverState(){
+      this.doWork = function(request){
+        var leaveRequestModel = request.businessVO;
+        // do sth
+        console.log(leaveRequestModel.user + '，你的请假申请已经审核结束，结果是：' + leaveRequestModel.result);
+      };
+    }
+
+    var lrm = new LeaveRequestModel();
+    lrm.user = '小林';
+    lrm.beginDate = '2014-4-2';
+    lrm.leaveDays = 5;
+
+    var request = new LeaveRequestContext();
+    request.businessVO = lrm;
+    request.state = new ProjectManagerState();
+
+    request.doWork();
+
+
+    // another
+
+    function LeaveRequestContext2(){
+      this.state = null;
+      // 包含流程处理需要的业务数据对象
+      this.businessVO = null;
+      this.doWork = function(){
+        if(typeof this.state == 'function'){
+          this.state = this.state(this);
+          this.doWork();
+        }
+      };
+    }
+
+    function projectManagerState(request){
+      var leaveRequestModel = request.businessVO;
+
+      console.log('项目经理审核中，请稍候。。');
+      console.log(leaveRequestModel.user + '申请从'
+        + leaveRequestModel.beginDate + '开始请假'
+        + leaveRequestModel.leaveDays + '天，请项目经理审核（1为同意，2为不同意）');
+
+      var answer = window.prompt('1为同意，2为不同意');
+      var result = answer == 1 ? '同意' : '不同意';
+      leaveRequestModel.result = '项目经理审核结果：' + result;
+
+      var state;
+      if(answer == 1){
+        if(leaveRequestModel.leaveDays > 3){
+          state = depManagerState;
+        } else {
+          state = auditOverState;
+        }
+      } else {
+        state = auditOverState;
+      }
+
+      return state;
+    }
+
+    function depManagerState(request){
+      var leaveRequestModel = request.businessVO;
+
+      console.log('部门经理审核中，请稍候。。');
+      console.log(leaveRequestModel.user + '申请从'
+        + leaveRequestModel.beginDate + '开始请假'
+        + leaveRequestModel.leaveDays + '天，请项目经理审核（1为同意，2为不同意）');
+
+      var answer = window.prompt('1为同意，2为不同意');
+      var result = answer == 1 ? '同意' : '不同意';
+      leaveRequestModel.result = '部门经理审核结果：' + result;
+
+      return auditOverState;
+    }
+
+    function auditOverState(request){
+      var leaveRequestModel = request.businessVO;
+      // do sth
+      console.log(leaveRequestModel.user + '，你的请假申请已经审核结束，结果是：' + leaveRequestModel.result);
+    }
+
+    var lrm = new LeaveRequestModel();
+    lrm.user = '小林';
+    lrm.beginDate = '2014-4-2';
+    lrm.leaveDays = 5;
+
+    var request = new LeaveRequestContext2();
+    request.businessVO = lrm;
+    request.state = projectManagerState;
+
+    request.doWork();
+
+  }());
+
+/*
+何时选用状态模式
+1.如果一个对象的行为取决于它的状态，而且它必须在运行时刻根据状态来改变它的行为，可以使用状态模式把状态和行为分离。
+2.如果一个操作中含有庞大的多分支语句，而且这些分支依赖于该对象的状态，可以使用状态模式，把各个分支的处理分散包装到单独的对象处理类中。
+
+
+相关模式
+
+状态模式和策略模式
+两个结构相同。状态模式的行为是平行性的，不可相互替换的；而策略模式的行为是平等性的，可相互替换的。
+
+状态模式和观察者模式
+相似但又有区别，可以组合使用。
+这两个模式都是在状态发生改变的时候触发行为，只不过观察者模式的行为是固定的，那就是通知所有观察者；而状态模式是根据状态来选择不同的处理。
+从表面来看，两个模式相似，观察者模式中的被观察对象就好比状态模式中的上下文，观察者模式中当被观察对象的状态发生改变的时候，触发的通知所有观察者的方法就好比状态模式中，根据状态的变化选择对应的状态处理。
+但实际这两个模式是不同的，观察者模式的目的是在被观察者的状态发生改变的时候，触发观察联动，具体如何处理观察者模式不管；而状态模式的主要目的在于根据状态来分离和选择行为，当状态发生改变的时候，动态地改变行为。
+这两个模式可以组合使用，比如在观察者模式的观察者部分，当被观察对象的状态发生改变，触发通知了所有的观察者后，使用状态模式根据通知过来的状态选择相应的处理。
+
+状态模式和单例模式
+可以组合使用
+把状态模式中的状态处理类实现成单例。
+
+状态模式和享元模式
+可以组合使用
+由于状态模式把状态对应的行为分散到多个状态对象中，会造成很多细粒度的状态对象，可以把这些状态处理对象通过享元模式来共享，从而节省资源。
+ */
 </script>
 </body>
 </html>
