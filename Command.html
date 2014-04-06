@@ -103,9 +103,6 @@
 
  假设你想设计一个网页，客户可以在上面执行一些与自己的账户相关的操作，比如启用和停用某些广告。因为不知道其中的具体广告数量，所以你想设计一个尽可能灵活的用户界面（UI）。为此你打算用命令模式来弱化按钮之类的用户界面元素与其操作之间的耦合。
  */
-// AdCommand interface
-var AdCommand = new Interface('AdCommand', ['execute']);
-
 // 定义两个类，分别用来封装广告的start方法和stop方法
 // StopAd command class
 var StopAd = function (adObject) {
@@ -182,11 +179,6 @@ stopCommand();
  */
 
 // 在命令模式中使用接口
-// Command interface
-var Command = new Interface('Command', ['execute']);
-// Ensure that the execute operation is defined.if not, a descriptive
-// exception will be thrown
-Interface.ensureImplements(someCommand, Command);
 // If no exception is thrown, youcan safely invoke the
 // execute operation
 someCommand.execute();
@@ -1171,23 +1163,23 @@ function test(){
  3.很自然的复合命令
  很容易地组合符合命令，也就是宏命令。
  4.更好的扩展性
- 
+
 
  命令模式之弊
 
  如果一个命令对象只包装了一个方法调用，而且其唯一目的就是这层对象包装的话，那么这种做法是一种浪费。如果你不需要命令模式给予的任何额外特性，也不需要具有一致接口的类所带来的模块性，那么直接使用方法引用而不是完整的命令对象也许更恰当。命令对象也会增加代码调试的难度，因为在应用了命令模式之后原有的方法之上又多了一层可能出错的代码。
- 
- 
+
+
  相关模式
- 
+
  命令模式和组合模式
  可以组合使用
  宏命令的功能就可以使用组合模式。
- 
+
  命令模式和备忘录模式
  可以组合使用
  在实现可撤销功能时，如果采用保存命令执行前的状态，撤销的时候就把状态恢复，就可以考虑使用备忘录模式。
- 
+
  命令模式和模板方法模式
  命令模式可以作为模板方法的一种替代模式，也就是说命令模式可以模仿实现模板方法模式的功能。
  */
