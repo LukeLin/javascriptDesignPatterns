@@ -30,12 +30,9 @@
  那种根本不实现任何访问控制的代理最简单。它所做的只是把所有方法调用传递到本体。这种代理毫无用处，但它也提供一个进一步发展的基础。
  在下面的例子中，我们将创建一个代表图书馆的类。该类封装了一个Book对象
  */
-var Publication = new Interface('Publication', ['getIsbn', 'setIsbn', 'getTitle', 'setTitle', 'getAuthor', 'display']);
 var Book = function (isbn, title, author) {
     // implements Publication
 };
-// Library interface
-var Library = new Interface('Library', ['findBooks', 'checkoutBook', 'returnBook']);
 // PublicLibrary class
 var PublicLibrary = function (books) {
     // implements Library
@@ -236,8 +233,6 @@ xhrHandler.request('GET', '/stats/getBrowserShare/?page=index.html', callback);
 
 
 // 优化版本：
-// PgeStats interface
-var PageStats = new Interface('PageStats', ['getPageviews', 'getUniques', 'getBrowserShare', 'getTopSearchTerms', 'getMostVisitedPages']);
 
 // 定义远程代理StatsProxy：
 // StatsProxy singleton
@@ -387,8 +382,6 @@ StatsProxy.prototype.getUniques = function (callback, startDate, endDate, page) 
 /*
  首先要做的是创建代理的那个本体类。它负责获取员工数据并声称用于在网页上显示这些数据的HTML内容，其显示格式类似于电话号码簿：
  */
-// Directory interface
-var Directory = new Interface('Directory', ['showPage']);
 
 // PersonnelDirectory class, the Real Subject
 var PersonnelDirectory = function (parent) {

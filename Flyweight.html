@@ -190,8 +190,6 @@ var CarRecordManager = (function () {
  */
 
 (function () {
-    // CalendarItem interface
-    var CalendarItem = new Interface('CalendarItem', ['display']);
 
     // CalendarYear class, a composite
     var CalendarYear = function (year, parent) {
@@ -287,8 +285,6 @@ var CarRecordManager = (function () {
  把CalendarDay对象转化为享元对象的过程很简单。首先，修改CalendarDay类本身，出去其中保存的所有数据，让这些数据（日期和父元素）成为外在数据：
  */
 (function () {
-    // CalendarItem interface
-    var Calendar = new Interface('CalendarItem', ['display']);
 
     // CalendarYear class, a composite
     var CalendarYear = function (year, parent) {
@@ -532,8 +528,6 @@ TooltipManager.addTooltip($('link-id2'), 'fuck your ass');
  因为运行期间需要用到的实例的确却数目无法在开发期间确定，所以不能对实例的个数加以限制，而只能要用多少就创建多少，然后把它们保存起来供以后使用。这样就不用再次成熟期创建过程中的开销，而且所创建的实例的数目也刚好能满足需要。
  在这个示例中，DialogBox对象的实现细节并不重要。你只需要知道，它是资源密集型的对象，应该尽量少实例化。该类的基本框架以及它实现的接口如下：
  */
-// DisplayModule interface
-var DisplayModule = new Interface('DisplayModule', ['show', 'hide', 'state']);
 
 // DialogBox class
 var DialogBox = function () {
