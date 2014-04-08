@@ -24,7 +24,6 @@
  装饰者可用于为对象增加功能，它可以用来替换大量子类。
  我们继续用自行车的例子。上次的例子中AcmeBicycleShop类的时候，顾客可以购买的自行车有4钟型号。
  */
-var Bicycle = new Interface('Bicycle', ['assemble', 'wash', 'ride', 'repair']);
 /* BicycleShop class (abstract) */
 var BicycleShop = function () {
 };
@@ -74,7 +73,6 @@ AcmeBicycleShop.prototype.createBicycle = function (model) {
         default:
             bicycle = new ComfortCruiser();
     }
-    Interface.ensureImplements(bicycle, Bicycle);
     return bicycle;
 };
 
@@ -93,8 +91,6 @@ var AcmeComfortCruiserWidthTaillight = function () {
  装饰者模式对于实现这些选择再合适不过了。你不用为自行车和选件的每一种组合创建一个子类，而只需创建4个新类（一个类针对一种选择）即可。这些类与那4钟自行车类一样都要实现Bicycle接口，但它们只被用作这些自行车类的包装类。在这些选件类上进行的方法调用将被转到它们包装的自行车类上，有时会稍有修改。
  在这个例子中，选件类就是装饰者，而自行车类是它们的组件。装饰者对其组件进行了透明包装，二者可以互换使用，这是因为他们实现了同样的接口。下面我们来看应该怎样实现自行车装饰者类。首先要改一下接口，加入一个getPrice方法：
  */
-// the Bicycle interface
-var Bicycle = new Interface('Bycycle', ['assemble', 'wash', 'ride', 'repair', 'getPrice']);
 /*
  所有自行车类和选件装饰者都要实现这个接口。AcmeComfortCruiser类大致是这个样子（不需要为使用装饰者而进行什么修改）
  */
@@ -120,8 +116,6 @@ AcmeComfortCruiser.prototype = {
  */
 // the BicycleDecorator abstract decorator class
 var BicycleDecorator = function (bicycle) {
-    // implements Bicycle
-    Interface.ensureImplements(bicycle, Bicycle);
     this.bicycle = bicycle;
 };
 BicycleDecorator.prototype = {
@@ -452,8 +446,6 @@ AcmeBicycleShop.prototype.createBicycle = function (model, options) {
         bicycle = new decorator(bicycle, argument);
     }
 
-    // Check the interface and return the finished object
-    Interface.ensureImplements(bicycle, Bicycle);
     return bicycle;
 };
 
