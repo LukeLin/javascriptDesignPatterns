@@ -297,9 +297,6 @@
   */
 }());
 
-// 创建那些组合对象和叶对象需要实现的两个接口
-var Composite = new Interface('Composite', ['add', 'remove', 'getChild']);
-var FormItem = new Interface('FormItem', ['save', 'restore']);
 
 // CompositeForm类
 var CompositeForm = function (id, method, action) {
@@ -313,7 +310,6 @@ var CompositeForm = function (id, method, action) {
 };
 
 CompositeForm.prototype.add = function (child) {
-  Interface.ensureImplements(child, Composite, FormItem);
   this.formComponents.push(child);
   this.element.appendChild(child.getElement());
 };
@@ -492,7 +488,6 @@ var CompositeFieldset = function (id, legendText) {
 };
 
 CompositeFieldset.prototype.add = function (child) {
-  Interface.ensureImplements(child, Composite, FormItem);
   this.components[child.getElement().id] = child;
   this.element.appendChild(child.getElement());
 };
@@ -562,8 +557,6 @@ addEvent(window, 'load', function () {
  */
 
 // 图片库
-var Composite = new Interface('Composite', ['add', 'remove', 'getChild']);
-var GalleryItem = new Interface('GalleryItem', ['hide', 'show']);
 
 // DynamicGallery class.
 var DynamicGallery = function (id) {
@@ -578,7 +571,6 @@ var DynamicGallery = function (id) {
 DynamicGallery.prototype = {
   // implement the Composite interface
   add: function (child) {
-    Interface.ensureImplements(child, Composite, GalleryItem);
     this.children.push(child);
     this.element.appendChild(child.getElement());
   },
