@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>职责链模式</title>
-    <meta charset="utf-8">
+  <title>职责链模式</title>
+  <meta charset="utf-8">
 </head>
 <body>
 
@@ -30,10 +30,6 @@
 /*
  为了说明职责链模式的组织方式及其作用，我们使用图书馆的示例，例中的PubicLibrary类保存着一个按图书的ISBN索引的图书目录。如果知道书的ISBN，那么查书很容易，但是按书的主题或类别查书却很困难。下面我们要实现几种目录对象，以便按不同标准对图书进行分类。
  */
-// Interfaces
-var Publication = new Interface('Publication', ['getIsbn', 'setIsbn', 'getTitle', 'setTitle', 'getAuthor', 'setAuthor', 'getGenres', 'setGenres', 'display']);
-var Library = new Interface('Library', ['addBook', 'findBooks', 'checkoutBook', 'returnBook']);
-var Catalog = new Interface('Catalog', ['handleFillingRequest', 'findBooks', 'setSuccessor']);
 
 // Book class
 var Book = function (isbn, title, author, genres) {
@@ -41,114 +37,114 @@ var Book = function (isbn, title, author, genres) {
 
 // PublicLibrary class
 var PublicLibrary = function (books) {
-    this.catalog = {};
-    for (var i = 0, len = books.length; i < len; i++) {
-        this.addBook(books[i]);
-    }
+  this.catalog = {};
+  for (var i = 0, len = books.length; i < len; i++) {
+    this.addBook(books[i]);
+  }
 };
 PublicLibrary.prototype = {
-    constructor: PublicLibrary,
-    findBooks: function (searchString) {
-        var results = [];
-        for (var isbn in this.catalog) {
-            if (this.catalog.hasOwnProperty(isbn)) {
-                if (this.catalog[isbn].getTitle().match(searchString) || this.catalog[isbn].getAuthor().match(searchString)) {
-                    results.push(this.catalog[isbn]);
-                }
-            }
+  constructor: PublicLibrary,
+  findBooks: function (searchString) {
+    var results = [];
+    for (var isbn in this.catalog) {
+      if (this.catalog.hasOwnProperty(isbn)) {
+        if (this.catalog[isbn].getTitle().match(searchString) || this.catalog[isbn].getAuthor().match(searchString)) {
+          results.push(this.catalog[isbn]);
         }
-    },
-    checkoutBook: function (book) {
-        var isbn = book.getIsbn();
-        if (this.catalog[isbn]) {
-            if (this.catalog[isbn].available) {
-                this.catalog[isbn].available = false;
-                return this.catalog[isbn];
-            } else {
-                throw new Error('PublicLibrary: book ' + book.getTitle() + ' is not currently available');
-            }
-        } else {
-            throw new Error('PublicLibrary:book ' + book.getTitle() + ' not found');
-        }
-    },
-    returnBook: function (book) {
-        var isbn = book.getIsbn();
-        if (this.catalog[isbn]) {
-            this.catalog[isbn].available = true;
-        } else {
-            throw new Error('PublicLibrary:book ' + book.getTitle() + ' not found');
-        }
-    },
-    addBook: function (newBook) {
-        this.catalog[newBook.getIsbn()] = {
-            book: newBook,
-            available: true
-        };
+      }
     }
+  },
+  checkoutBook: function (book) {
+    var isbn = book.getIsbn();
+    if (this.catalog[isbn]) {
+      if (this.catalog[isbn].available) {
+        this.catalog[isbn].available = false;
+        return this.catalog[isbn];
+      } else {
+        throw new Error('PublicLibrary: book ' + book.getTitle() + ' is not currently available');
+      }
+    } else {
+      throw new Error('PublicLibrary:book ' + book.getTitle() + ' not found');
+    }
+  },
+  returnBook: function (book) {
+    var isbn = book.getIsbn();
+    if (this.catalog[isbn]) {
+      this.catalog[isbn].available = true;
+    } else {
+      throw new Error('PublicLibrary:book ' + book.getTitle() + ' not found');
+    }
+  },
+  addBook: function (newBook) {
+    this.catalog[newBook.getIsbn()] = {
+      book: newBook,
+      available: true
+    };
+  }
 };
 
 // PublicLibrary对象把每一本书都提供给每一种分类目录进行处理
 // PublicLibrary class, with hard-coded catalogs for genre
 var PublicLibrary = function (books) {
-    this.catalog = {};
-    this.biographyCatalog = new BiograghyCatalog();
-    this.fantasyCatalog = new FantasyCatalog();
-    this.mysteryCatalog = new MysteryCatalog();
-    this.nonFictionCatalog = new NonFictionCatalog();
-    this.sciFiCatalog = new SciFiCatalog();
+  this.catalog = {};
+  this.biographyCatalog = new BiograghyCatalog();
+  this.fantasyCatalog = new FantasyCatalog();
+  this.mysteryCatalog = new MysteryCatalog();
+  this.nonFictionCatalog = new NonFictionCatalog();
+  this.sciFiCatalog = new SciFiCatalog();
 
-    for (var i = 0, len = books.length; i < len; i++) {
-        this.addBook(books[i]);
-    }
+  for (var i = 0, len = books.length; i < len; i++) {
+    this.addBook(books[i]);
+  }
 };
 PublicLibrary.prototype = {
-    findBooks: function (searchString) {
-    },
-    checkoutBook: function (book) {
-    },
-    returnBook: function () {
-    },
-    addBook: function (newBook) {
-        // Always add the book to the main catalog
-        this.catalog[newBook.getIsbn()] = {
-            book: newBook,
-            available: true
-        };
+  findBooks: function (searchString) {
+  },
+  checkoutBook: function (book) {
+  },
+  returnBook: function () {
+  },
+  addBook: function (newBook) {
+    // Always add the book to the main catalog
+    this.catalog[newBook.getIsbn()] = {
+      book: newBook,
+      available: true
+    };
 
-        // Try to add the book to each genre catalog
-        this.biographyCatalog.handleFilingRequest(newBook);
-        this.fantasyCatalog.handleFilingRequest(newBook);
-        this.mysteryCatalog.handleFilingRequest(newBook);
-        this.nonFictionCatalog.handleFilingRequest(newBook);
-        this.sciFiCatalog.handleFilingRequest(newBook);
-    }
+    // Try to add the book to each genre catalog
+    this.biographyCatalog.handleFilingRequest(newBook);
+    this.fantasyCatalog.handleFilingRequest(newBook);
+    this.mysteryCatalog.handleFilingRequest(newBook);
+    this.nonFictionCatalog.handleFilingRequest(newBook);
+    this.sciFiCatalog.handleFilingRequest(newBook);
+  }
 };
 /*
  前面这段代码可以奏效，不过其中固化了对5个不同类的依赖。如果想增加更多图书类别，那就需要修改构造函数和addBook方法这两处的代码。此外，把这些目录类别固化在构造函数中也没有多大意义，因为PublicLibrary的不同实例可能希望拥有完全不同的一套分类目录。而你也不可能在对象实例化之后再修改其支持的类别。这些理由都充分说明了前面的方法并不可取。下面来看职责链模式能为它带来什么改进：
  */
 // PublicLibrary class, with genre catalogs in a chain of responsibility
 var PublicLibrary = function (books, firstGenreCatalog) {
-    this.catalog = {};
-    this.firstGenreCatalog = firstGenreCatalog;
+  this.catalog = {};
+  this.firstGenreCatalog = firstGenreCatalog;
 
-    for (var i = 0, len = books.length; i < len; i++) {
-        this.addBook(books[i]);
-    }
+  for (var i = 0, len = books.length; i < len; i++) {
+    this.addBook(books[i]);
+  }
 };
 PublicLibrary.prototype = {
-    findBooks: function (searchStrng) {
-    },
-    checkoutBook: function (book) {
-    },
-    returnBook: function (book) {
-    },
-    addBook: function (newBook) {
-        this.catalog[newBook.getIsbn()] = {
-            book: newBook,
-            available: true
-        };
-        this.firstGenreCatalog.handleFilingRequest(newBook);
-    }
+  findBooks: function (searchStrng) {
+  },
+  checkoutBook: function (book) {
+  },
+  returnBook: function (book) {
+  },
+  addBook: function (newBook) {
+    this.catalog[newBook.getIsbn()] = {
+      book: newBook,
+      available: true
+    };
+    this.firstGenreCatalog.handleFilingRequest(newBook);
+  }
 };
 /*
  这个改进很明显。现在需要保存的只是指向分类目录链中第一个环节的引用。如果想把一本新书编入各种分类目录中，只需要将其传给链中第一个目录对象即可。第一个目录要么把它编入自己的目录（如果它符合所需标准），要么不编，然后，该目录会将该请求传递给下一个目录。因为一本图书可以属于不止一个类别，所以每个目录都会把请求往下传递。
@@ -180,54 +176,52 @@ sciFiCatalog.setSuccessor(historyCatalog);
  */
 // GenreCatalog class, used as a superclass for specific catalog classes
 var GenreCatalog = function () {
-    this.successor = null;
-    this.catalog = [];
+  this.successor = null;
+  this.catalog = [];
 };
 GenreCatalog.prototype = {
-    _bookMatchesCriteria: function (book) {
-        return false;
-    },
-    handleFilingRequest: function (book) {
-        // Check to see if the book belongs in this catagory
-        if (this._bookMatchesCriteria(book)) {
-            this.catalog.push(book);
-        }
-        // Pass the request on to the next link
-        if (this.successor) {
-            this.successor.handleFilingRequest(book);
-        }
-    },
-    findBooks: function (request) {
-        if (this.successor) {
-            return this.successor.findBooks(request);
-        }
-    },
-    setSuccessor: function (successor) {
-        if (Interface.ensureImplements(successor, Catalog)) {
-            this.successor = successor;
-        }
+  _bookMatchesCriteria: function (book) {
+    return false;
+  },
+  handleFilingRequest: function (book) {
+    // Check to see if the book belongs in this catagory
+    if (this._bookMatchesCriteria(book)) {
+      this.catalog.push(book);
     }
+    // Pass the request on to the next link
+    if (this.successor) {
+      this.successor.handleFilingRequest(book);
+    }
+  },
+  findBooks: function (request) {
+    if (this.successor) {
+      return this.successor.findBooks(request);
+    }
+  },
+  setSuccessor: function (successor) {
+    this.successor = successor;
+  }
 };
 /*
  这个超类提供了所有必需方法的默认实现，它们可以被各种子类继承。子类只需要重写findBooks和_bookMatchesCriteria这两个方法。其中后一个方法是一个伪私用方法，它负责判断一本书是否应被编入相关分类目录。GenreCatalog类提供了这两个方法的最简实现，以防子类没有重写它们。
  */
 // SciFiCatalog class
 var SciFiCatalog = function () {
-    SciFiCatalog.superclass.constructor.apply(this);
+  SciFiCatalog.superclass.constructor.apply(this);
 };
 extend(SciFiCatalog, GenreCatalog);
 SciFiCatalog.prototype._bookMatchesCriteria = function (book) {
-    var genres = book.getGenres();
-    if (book.getTitle().match(/space/i)) {
-        return true;
+  var genres = book.getGenres();
+  if (book.getTitle().match(/space/i)) {
+    return true;
+  }
+  for (var i = 0, len = genres.length; i < len; i++) {
+    var genre = genres[i].toLowerCase();
+    if (genre === 'sci-fi' || genre === 'scifi' || genre === 'science fiction') {
+      return true;
     }
-    for (var i = 0, len = genres.length; i < len; i++) {
-        var genre = genres[i].toLowerCase();
-        if (genre === 'sci-fi' || genre === 'scifi' || genre === 'science fiction') {
-            return true;
-        }
-    }
-    return false;
+  }
+  return false;
 };
 
 /*
@@ -242,36 +236,36 @@ SciFiCatalog.prototype._bookMatchesCriteria = function (book) {
 var PublicLibrary = function (books) {
 };
 PublicLibrary.prototype = {
-    findBooks: function (searchString, genres) {
-        // If the optional genres argument is given,search for books only in
-        // those genres.Use the chain of responsibility to perform the search
-        if (typeof genres === 'object' && genres.length > 0) {
-            var requestObject = {
-                searchString: searchString,
-                genres: genres,
-                results: []
-            };
-            var responseObject = this.firstGenreCatalog.findBooks(requestObject);
-            return responseObject.results;
-        } else {
-            // Otherwise,search through all books
-            var results = [];
-            for (var isbn in this.catalog) {
-                if (this.catalog.hasOwnProperty(isbn)) {
-                    if (this.catalog[isbn].getTitle().match(searchString) || this.catalog[isbn].getAuthor().match(searchString)) {
-                        results.push(this.catalog[isbn]);
-                    }
-                }
-            }
-            return results;
+  findBooks: function (searchString, genres) {
+    // If the optional genres argument is given,search for books only in
+    // those genres.Use the chain of responsibility to perform the search
+    if (typeof genres === 'object' && genres.length > 0) {
+      var requestObject = {
+        searchString: searchString,
+        genres: genres,
+        results: []
+      };
+      var responseObject = this.firstGenreCatalog.findBooks(requestObject);
+      return responseObject.results;
+    } else {
+      // Otherwise,search through all books
+      var results = [];
+      for (var isbn in this.catalog) {
+        if (this.catalog.hasOwnProperty(isbn)) {
+          if (this.catalog[isbn].getTitle().match(searchString) || this.catalog[isbn].getAuthor().match(searchString)) {
+            results.push(this.catalog[isbn]);
+          }
         }
-    },
-    checkoutBook: function (book) {
-    },
-    returnBook: function () {
-    },
-    addBook: function () {
+      }
+      return results;
     }
+  },
+  checkoutBook: function (book) {
+  },
+  returnBook: function () {
+  },
+  addBook: function () {
+  }
 };
 /*
  findBooks方法创建了一个用来封装与请求相关的所有信息的对象，这些信息包括将要搜索的一组类别，搜索用词和一个用来保存查找结果的空数组。撞见这个对象的主要原因是，把所有数据集中在一起后管理起来方便得多，这些信息需要再通过链上各个环节的过程中保持完好无缺，把它们封装在一个对象中更有利于做到这一点。在本例中，这个对象也会作为返回值返回给客户代码，如果要一次在链上发起多个搜索，那么这样设计也有助于把搜索结果与所搜索的用词和类别保存在一起。
@@ -282,48 +276,48 @@ PublicLibrary.prototype = {
  */
 // GenreCatalog class, used as a superclass for specific catalog classes
 var GenreCatalog = function () {
-    this.successor = null;
-    this.catalog = [];
-    this.genreNames = [];
+  this.successor = null;
+  this.catalog = [];
+  this.genreNames = [];
 };
 GenreCatalog.prototype = {
-    constructor: GenreCatalog,
-    _bookMatchesCriteria: function (book) {
-    },
-    handleFilingRequest: function (book) {
-    },
-    findBooks: function (request) {
-        var found = false;
-        for (var i = 0, len = request.genres.length; i < len; i++) {
-            if (this.genreNames[i] === request.genres[i]) {
-                found = true;
-                break;
-            }
-        }
-
-        if (found) {
-            outerloop: for (var i = 0, len = this.catalog.length; i < len; i++) {
-                var book = this.catalog[i];
-                if (book.getTitle().match(request.searchString) ||
-                        book.getAuthor().match(request.searchString)) {
-                    for (var j = 0, requestLen = request.results.length; j < requestLen; j++) {
-                        if (request.results[j].getIsbn() === book.getIsbn()) {
-                            continue outerloop;
-                        }
-                    }
-                    request.results.push(book);
-                }
-            }
-        }
-
-        if (this.successor) {
-            return this.successor.findBooks(request);
-        } else {
-            return request;
-        }
-    },
-    setSuccessor: function (successor) {
+  constructor: GenreCatalog,
+  _bookMatchesCriteria: function (book) {
+  },
+  handleFilingRequest: function (book) {
+  },
+  findBooks: function (request) {
+    var found = false;
+    for (var i = 0, len = request.genres.length; i < len; i++) {
+      if (this.genreNames[i] === request.genres[i]) {
+        found = true;
+        break;
+      }
     }
+
+    if (found) {
+      outerloop: for (var i = 0, len = this.catalog.length; i < len; i++) {
+        var book = this.catalog[i];
+        if (book.getTitle().match(request.searchString) ||
+          book.getAuthor().match(request.searchString)) {
+          for (var j = 0, requestLen = request.results.length; j < requestLen; j++) {
+            if (request.results[j].getIsbn() === book.getIsbn()) {
+              continue outerloop;
+            }
+          }
+          request.results.push(book);
+        }
+      }
+    }
+
+    if (this.successor) {
+      return this.successor.findBooks(request);
+    } else {
+      return request;
+    }
+  },
+  setSuccessor: function (successor) {
+  }
 };
 /*
  这个方法可以分为三大部分。第一部分逐一检查请求对象中的每一个类别名称，看看其是否与对象中保存的一组类别名称中的某一个匹配。如果匹配，那么代码的第二部分会逐一检查目录中的所有图书，看看其书名和作者姓名是否与搜索用词匹配。与搜索用词匹配的图书将被添加到请求对象中的results数组中，不过其前提是该数组中还没有这本书。在最后一部分，如果当前目录对象不是链上的最后一环，那么请求将被沿目录链继续下传，否则它将返回请求对象。最终请求对象将被从链尾开始沿目录链逐环向上返回，直到返回给客户代码。
@@ -334,12 +328,12 @@ GenreCatalog.prototype = {
  */
 // SciFiCatalog class
 var SciFiCatalog = function () {
-    SciFiCatalog.superclass.constructor.call(this);
-    this.genreName = ['sci-fi', 'scifi', 'science-fiction'];
+  SciFiCatalog.superclass.constructor.call(this);
+  this.genreName = ['sci-fi', 'scifi', 'science-fiction'];
 };
 extend(SciFiCatalog, GenreCatalog);
 SciFiCatalog.prototype._bookMatchesCriteria = function (book) {
-    //...
+  //...
 };
 
 /*
@@ -368,74 +362,70 @@ SciFiCatalog.prototype._bookMatchesCriteria = function (book) {
 /*
  图片库的进一步讨论
  */
-// Interface
-var Composite = new Interface('Composite', ['add', 'remove', 'getChild']);
-var GalleryItem = new Interface('GalleryItem', ['hide', 'show']);
 
 // DynamicGallery class
 var DynamicGallery = function (id) {
-    this.children = [];
-    this.element = document.createElement('div');
-    this.element.id = id;
-    this.element.className = 'dynamic-gallery';
+  this.children = [];
+  this.element = document.createElement('div');
+  this.element.id = id;
+  this.element.className = 'dynamic-gallery';
 };
 DynamicGallery.prototype = {
-    add: function (child) {
-        Interface.ensureImplements(child, Composite, GalleryItem);
+  add: function (child) {
 
-        this.children.push(child);
-        this.element.appendChild(child.getElement());
-    },
-    remove: function (child) {
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            if (node == child) {
-                this.children.splice(i, 1);
-                break;
-            }
-        }
-    },
-    getChild: function (i) {
-        return this.children[i];
-    },
-    hide: function () {
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            node.hide();
-        }
-        this.element.style.display = 'none';
-    },
-    show: function () {
-        this.element.style.display = '';
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            node.show();
-        }
-    },
-    getElement: function () {
-        return this.element;
+    this.children.push(child);
+    this.element.appendChild(child.getElement());
+  },
+  remove: function (child) {
+    for (var node, i = 0; node = this.getChild(i); i++) {
+      if (node == child) {
+        this.children.splice(i, 1);
+        break;
+      }
     }
+  },
+  getChild: function (i) {
+    return this.children[i];
+  },
+  hide: function () {
+    for (var node, i = 0; node = this.getChild(i); i++) {
+      node.hide();
+    }
+    this.element.style.display = 'none';
+  },
+  show: function () {
+    this.element.style.display = '';
+    for (var node, i = 0; node = this.getChild(i); i++) {
+      node.show();
+    }
+  },
+  getElement: function () {
+    return this.element;
+  }
 };
 
 // GalleryImage class
 var GalleryImage = function (src) {
-    this.element = document.createElement('img');
-    this.element.className = 'gallert-image';
-    this.element.src = src;
+  this.element = document.createElement('img');
+  this.element.className = 'gallert-image';
+  this.element.src = src;
 };
 GalleryImage.prototype = {
-    add: function () {
-    },
-    remove: function () {
-    },
-    getChild: function () {
-    },
-    hide: function () {
-        this.element.style.display = 'none';
-    },
-    show: function () {
-        this.element.style.display = '';
-    },
-    getElement: function () {
-        return this.element;
-    }
+  add: function () {
+  },
+  remove: function () {
+  },
+  getChild: function () {
+  },
+  hide: function () {
+    this.element.style.display = 'none';
+  },
+  show: function () {
+    this.element.style.display = '';
+  },
+  getElement: function () {
+    return this.element;
+  }
 };
 
 /*
@@ -445,46 +435,44 @@ GalleryImage.prototype = {
  这样做需要知道什么时候应该停止以及什么时候应该将它传递给子节点。这正是职责链模式的核心：懂得什么时候处理请求以及什么时候传递请求，每个组合对象节点和叶节点都有两种状态：现实和隐藏。hide请求根本不必传递，因为用CSS隐藏组合节点将自动隐藏其所有子节点。show请求则总是需要传递，因为无法预先得知组合对象节点的所有子节点的状态。我们做的第一个优化是从hide方法中删除将方法调用传递给子节点的那部分代码：
  */
 var DynamicGallery = function (id) {
-    this.children = [];
-    this.element = document.createElement('div');
-    this.element.id = id;
-    this.element.className = 'dynamic-gallery';
+  this.children = [];
+  this.element = document.createElement('div');
+  this.element.id = id;
+  this.element.className = 'dynamic-gallery';
 };
 DynamicGallery.prototype = {
-    add: function (child) {
-        Interface.ensureImplements(child, Composite, GalleryItem);
-
-        this.children.push(child);
-        this.element.appendChild(child.getElement());
-    },
-    remove: function (child) {
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            if (node == child) {
-                this.children.splice(i, 1);
-                break;
-            }
-        }
-    },
-    getChild: function (i) {
-        return this.children[i];
-    },
-    hide: function () {
-        /*
-         for (var node, i = 0; node = this.getChild(i); i++) {
-         node.hide();
-         }
-         */
-        this.element.style.display = 'none';
-    },
-    show: function () {
-        this.element.style.display = '';
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            node.show();
-        }
-    },
-    getElement: function () {
-        return this.element;
+  add: function (child) {
+    this.children.push(child);
+    this.element.appendChild(child.getElement());
+  },
+  remove: function (child) {
+    for (var node, i = 0; node = this.getChild(i); i++) {
+      if (node == child) {
+        this.children.splice(i, 1);
+        break;
+      }
     }
+  },
+  getChild: function (i) {
+    return this.children[i];
+  },
+  hide: function () {
+    /*
+     for (var node, i = 0; node = this.getChild(i); i++) {
+     node.hide();
+     }
+     */
+    this.element.style.display = 'none';
+  },
+  show: function () {
+    this.element.style.display = '';
+    for (var node, i = 0; node = this.getChild(i); i++) {
+      node.show();
+    }
+  },
+  getElement: function () {
+    return this.element;
+  }
 };
 /*
  现在该组合对象层次体系中的任何一段都可以被视为一条职责链。在传递hide或show请求的时候，你并不知道或关心具体将由哪些对象执行那些实际实现隐藏或现实的操作，因为请求处理是隐式的。
@@ -495,96 +483,94 @@ DynamicGallery.prototype = {
 
  标签是一个描述性的标题，可以用来对图片进行分类。图片和图片库都可以添加标签。为图片库添加标签实际上相当于让其中的所有图片都使用这个标签。你可以在层次体系的任何层次上搜索具有指定标签的所有图像。这正是职责链的优化的地方。如果在搜索过程中遇到一个具有所请求的标签的组合对象节点，那就可以停止请求并将该节点的所有叶级后代节点作为搜索结果返回：
  */
-var Composite = new Interface('Composite', ['add', 'remove', 'getChild', 'getAllLeaves']);
-var GalleryItem = new Interface('GalleryItem', ['hide', 'show', 'addTag']);
 
 // DynamicGallery class
 var DynamicGallery = function (id) {
-    this.children = [];
-    this.tags = [];
-    this.element = document.createElement('div');
-    this.element.id = id;
-    this.element.className = 'dynamic-gallery';
+  this.children = [];
+  this.tags = [];
+  this.element = document.createElement('div');
+  this.element.id = id;
+  this.element.className = 'dynamic-gallery';
 };
 DynamicGallery.prototype = {
-    //...
-    addTag: function (tag) {
-        this.tags.push(tag);
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            node.addTag(tag);
-        }
-    },
-    /*
-     用于获取特定组合对象的所有叶级后代节点并将它们组织为一个数组返回。
-     */
-    getAllLeaves: function () {
-        var leaves = [];
-        for (var node, i = 0; node = this.getChild(i); i++) {
-            leaves = leaves.concat(node.getAllLeaves());
-        }
-        return leaves;
-    },
-    /*********    职责链优化    *************/
-    /*
-     首先判断当前对象是否能处理请求，其具体做法是在当前对象的tags数组中检查指定的标签。如果能找到，那就表明层次体系中当前这个组合对象的所有子对象也都将具有这个标签。此时即可停止搜索，然后在这个层次上处理请求。如果找不到指定标签，则将请求传递给每一个子对象，并返回结果
-     */
-    getPhotosWithTag: function (tag) {
-        // First srach in this object's tags, if the tag is found here,
-        // we can stop search and just return all the leaf nodes
-        for (var i = 0, len = this.tags.length; i < len; i++) {
-            if (this.tags[i] === tag) {
-                return this.getAllLeaves();
-            }
-        }
-
-        // If the tag isn;t found in this object's tags, pass the request
-        // down the hierarchy
-        for (var results = [], node, i = 0; node = this.getChild(i); i++) {
-            results = results.concat(node.getPhotosWithTag(tag));
-        }
-        return results;
+  //...
+  addTag: function (tag) {
+    this.tags.push(tag);
+    for (var node, i = 0; node = this.getChild(i); i++) {
+      node.addTag(tag);
     }
-    /*********            *************/
-    //, ...
+  },
+  /*
+   用于获取特定组合对象的所有叶级后代节点并将它们组织为一个数组返回。
+   */
+  getAllLeaves: function () {
+    var leaves = [];
+    for (var node, i = 0; node = this.getChild(i); i++) {
+      leaves = leaves.concat(node.getAllLeaves());
+    }
+    return leaves;
+  },
+  /*********    职责链优化    *************/
+  /*
+   首先判断当前对象是否能处理请求，其具体做法是在当前对象的tags数组中检查指定的标签。如果能找到，那就表明层次体系中当前这个组合对象的所有子对象也都将具有这个标签。此时即可停止搜索，然后在这个层次上处理请求。如果找不到指定标签，则将请求传递给每一个子对象，并返回结果
+   */
+  getPhotosWithTag: function (tag) {
+    // First srach in this object's tags, if the tag is found here,
+    // we can stop search and just return all the leaf nodes
+    for (var i = 0, len = this.tags.length; i < len; i++) {
+      if (this.tags[i] === tag) {
+        return this.getAllLeaves();
+      }
+    }
+
+    // If the tag isn;t found in this object's tags, pass the request
+    // down the hierarchy
+    for (var results = [], node, i = 0; node = this.getChild(i); i++) {
+      results = results.concat(node.getPhotosWithTag(tag));
+    }
+    return results;
+  }
+  /*********            *************/
+  //, ...
 };
 
 // GalleryImage class
 var GalleryImage = function (src) {
-    this.element = document.createElement('img');
-    this.element.className = 'gallery-image';
-    this.element.src = src;
-    this.tags = [];
+  this.element = document.createElement('img');
+  this.element.className = 'gallery-image';
+  this.element.src = src;
+  this.tags = [];
 };
 GalleryImage.prototype = {
-    //...
-    addTag: function (tag) {
-        this.tags.push(tag);
-    },
-    getAllLeaves: function () {
+  //...
+  addTag: function (tag) {
+    this.tags.push(tag);
+  },
+  getAllLeaves: function () {
+    return [this];
+  },
+  getPhotosWithTag: function (tag) {
+    for (var i = 0, len = this.tags.length; i < len; i++) {
+      if (this.tags[i] === tag) {
         return [this];
-    },
-    getPhotosWithTag: function (tag) {
-        for (var i = 0, len = this.tags.length; i < len; i++) {
-            if (this.tags[i] === tag) {
-                return [this];
-            }
-        }
-        return [];
+      }
     }
-    //, ...
+    return [];
+  }
+  //, ...
 };
 
 /*
-职责链模式之利
+ 职责链模式之利
 
-借助职责链模式，可以动态选择由哪个对象处理请求。这意味着你可以使用只有在运行期间才能知道的条件来把任务分派给最恰当的对象。这比试图在开发期间静态指定处理请求的对象高效得多。还可以使用这个模式消除发出请求的对象与处理请求的对象之间的耦合。藉此可以在模块的组织方面获得更大的灵活性，而且在重构和修改该代码的时候不用担心会把类名固化在算法中。
-在已经有现成的链或层次体系的情况下，职责链模式更加有效。与组合模式的结合使用就属于这种情况。你可以重用组合对象的结构来传递请求。直到找到一个可以处理请求的对象。在此情况下，不用编写粘合性代码来实例化哪些对象或建立链。
+ 借助职责链模式，可以动态选择由哪个对象处理请求。这意味着你可以使用只有在运行期间才能知道的条件来把任务分派给最恰当的对象。这比试图在开发期间静态指定处理请求的对象高效得多。还可以使用这个模式消除发出请求的对象与处理请求的对象之间的耦合。藉此可以在模块的组织方面获得更大的灵活性，而且在重构和修改该代码的时候不用担心会把类名固化在算法中。
+ 在已经有现成的链或层次体系的情况下，职责链模式更加有效。与组合模式的结合使用就属于这种情况。你可以重用组合对象的结构来传递请求。直到找到一个可以处理请求的对象。在此情况下，不用编写粘合性代码来实例化哪些对象或建立链。
 
 
-职责链模式之弊
+ 职责链模式之弊
 
-由于在职责链模式中，请求与具体的处理程序被隔离开来，因此无法保证它一定会被处理，而不是径直从链尾离开。这种模式使用的接收者是隐式的，因此无法得知如果请求能够得到处理的话具体将由哪个对象处理它。这个问题可以通过创建一个通用的接收者将其添加到所有链的尾端来解决，但是这个办法很繁琐，而且这样就失去了可以随时在链尾添加新环节的灵活性。
-职责链与组合对象类的搭配使用可能有点困惑。原本组合对象节点可以与叶节点互换使用，而且客户代码看不出其中的差别，所有方法调用都被组合对象往层次体系的下层传递。但职责链方法改变了这个约定。在引入职责链之后，有些方法会在组合对象这里进行处理，而不会继续往下传。要想让这些方法可以与叶方法互换，其代码的编写会很棘手。他们的效率很高，但为此付出的代价是代码的复杂度。
+ 由于在职责链模式中，请求与具体的处理程序被隔离开来，因此无法保证它一定会被处理，而不是径直从链尾离开。这种模式使用的接收者是隐式的，因此无法得知如果请求能够得到处理的话具体将由哪个对象处理它。这个问题可以通过创建一个通用的接收者将其添加到所有链的尾端来解决，但是这个办法很繁琐，而且这样就失去了可以随时在链尾添加新环节的灵活性。
+ 职责链与组合对象类的搭配使用可能有点困惑。原本组合对象节点可以与叶节点互换使用，而且客户代码看不出其中的差别，所有方法调用都被组合对象往层次体系的下层传递。但职责链方法改变了这个约定。在引入职责链之后，有些方法会在组合对象这里进行处理，而不会继续往下传。要想让这些方法可以与叶方法互换，其代码的编写会很棘手。他们的效率很高，但为此付出的代价是代码的复杂度。
  */
 
 
@@ -597,29 +583,29 @@ var NO_TOPIC = -1;
 var Topic;
 
 function Handler(s, t) {
-    this.successor = s || null;
-    this.topic = t || 0;
+  this.successor = s || null;
+  this.topic = t || 0;
 }
 
 Handler.prototype = {
-    handle:function () {
-        console.log(this.has());
-        if (this.successor) {
-            this.successor.handle();
-        }
-        console.log(this.topic);
-    },
-    has:function () {
-        return this.topic != NO_TOPIC;
+  handle: function () {
+    console.log(this.has());
+    if (this.successor) {
+      this.successor.handle();
     }
+    console.log(this.topic);
+  },
+  has: function () {
+    return this.topic != NO_TOPIC;
+  }
 };
 
 var _handle = Handler.prototype.handle;
 
 var app = new Handler({
-    handle:function () {
-        console.log('app handle');
-    }
+  handle: function () {
+    console.log('app handle');
+  }
 }, 3);
 
 var dialog = new Handler(app, 1);
@@ -646,61 +632,60 @@ button.handle();
 // https://gist.github.com/1174982
 
 
-
 // http://www.joezimjs.com/javascript/javascript-design-patterns-chain-of-responsibility/
-var MoneyStack = function(billSize) {
-    this.billSize = billSize;
-    this.next = null;
+var MoneyStack = function (billSize) {
+  this.billSize = billSize;
+  this.next = null;
 }
 MoneyStack.prototype = {
-    withdraw: function(amount) {
-        var numOfBills = Math.floor(amount / this.billSize);
+  withdraw: function (amount) {
+    var numOfBills = Math.floor(amount / this.billSize);
 
-        if (numOfBills > 0) {
-            // Eject the bills
-            this._ejectMoney(numOfBills);
-            // Shrink the amount by how much money we ejected
-            amount -= (this.billSize * numOfBills);
-        }
-
-        // If there is any money left to withdraw and if we have
-        // another stack in the line, pass the request on
-        amount > 0 && this.next && this.next.withdraw(amount);
-    },
-    // set the stack that comes next in the chain
-    setNextStack: function(stack) {
-        this.next = stack;
-    },
-    // private method that ejects the money
-    _ejectMoney: function(numOfBills) {
-        console.log(numOfBills + " $" + this.billSize
-                + " bill(s) has/have been spit out");
+    if (numOfBills > 0) {
+      // Eject the bills
+      this._ejectMoney(numOfBills);
+      // Shrink the amount by how much money we ejected
+      amount -= (this.billSize * numOfBills);
     }
+
+    // If there is any money left to withdraw and if we have
+    // another stack in the line, pass the request on
+    amount > 0 && this.next && this.next.withdraw(amount);
+  },
+  // set the stack that comes next in the chain
+  setNextStack: function (stack) {
+    this.next = stack;
+  },
+  // private method that ejects the money
+  _ejectMoney: function (numOfBills) {
+    console.log(numOfBills + " $" + this.billSize
+      + " bill(s) has/have been spit out");
+  }
 };
 
-var ATM = function() {
-    // Create the stacks of money
-    // We'll show you the implementation for this next
-    var stack100 = new MoneyStack(100),
-            stack50 = new MoneyStack(50),
-            stack20 = new MoneyStack(20),
-            stack10 = new MoneyStack(10),
-            stack5 = new MoneyStack(5),
-            stack1 = new MoneyStack(1);
+var ATM = function () {
+  // Create the stacks of money
+  // We'll show you the implementation for this next
+  var stack100 = new MoneyStack(100),
+    stack50 = new MoneyStack(50),
+    stack20 = new MoneyStack(20),
+    stack10 = new MoneyStack(10),
+    stack5 = new MoneyStack(5),
+    stack1 = new MoneyStack(1);
 
-    // Set the hierarchy for the stacks
-    stack100.setNextStack(stack50);
-    stack50.setNextStack(stack20);
-    stack20.setNextStack(stack10);
-    stack10.setNextStack(stack5);
-    stack5.setNextStack(stack1);
+  // Set the hierarchy for the stacks
+  stack100.setNextStack(stack50);
+  stack50.setNextStack(stack20);
+  stack20.setNextStack(stack10);
+  stack10.setNextStack(stack5);
+  stack5.setNextStack(stack1);
 
-    // Set the top stack as a property
-    this.moneyStacks = stack100;
+  // Set the top stack as a property
+  this.moneyStacks = stack100;
 }
 
-ATM.prototype.withdraw = function(amount) {
-    this.moneyStacks.withdraw(amount);
+ATM.prototype.withdraw = function (amount) {
+  this.moneyStacks.withdraw(amount);
 }
 
 // USAGE
