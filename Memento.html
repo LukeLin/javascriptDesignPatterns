@@ -65,7 +65,11 @@
    * 使用备忘录对象来恢复原发器对象状态的阶段：
    * 1.调用retriveMemento方法来获取要恢复的备忘录对象。
    * 2.调用setMemento方法，传入备忘录对象，来让原发器恢复状态。
-   * 3.调用方法来获取状态数据/
+   * 3.调用方法来获取状态数据。
+   *
+   *
+   * 离线存储
+   * 从备忘录模式的功能和实现上，是可以把备忘录的数据实现成为离线存储。
    */
 
   (function(){
@@ -194,6 +198,162 @@
     mock.schema2();
 
   }());
+
+  (function(){
+    // 再次实现可撤销操作
+
+    function AbstractCommand(){
+      this.operation = null;
+    }
+    AbstractCommand.prototype = {
+      execute: function(){},
+      undo: function(memento){
+        this.operation.setMemento(memento);
+      },
+      redo: function(memento){
+        this.operation.setMemento(memento);
+      },
+      createMemento: function(){
+        return this.operation.createMemento();
+      }
+    };
+
+    function AddCommand(opeNum){
+      AbstractCommand.call(this);
+      this.opeNum = opeNum;
+    }
+    AddCommand.prototype = {
+      __proto__: AbstractCommand.prototype,
+
+      execute: function(){
+        this.operation.add(this.opeNum);
+      }
+    };
+
+    function SubstractCommand(opeNum){
+      AbstractCommand.call(this);
+      this.opeNum = opeNum;
+    }
+    SubstractCommand.prototype = {
+      __proto__: AbstractCommand.prototype,
+
+      execute: function(){
+        this.operation.substract(this.opeNum);
+      }
+    };
+
+    function Operation(){
+      var result = 0;
+      this.getResult = function(){
+        return result;
+      };
+      this.add = function(num){
+        result += num;
+      };
+      this.substract = function(num){
+        result -= num;
+      };
+      this.createMemento = function(){
+        return new MementoImpl(result);
+      };
+      this.setMemento = function(memento){
+        result = memento.getResult();
+      };
+
+      function MementoImpl(result){
+        result = result || 0;
+        this.getResult = function(){
+          return result;
+        };
+      }
+    }
+
+    function Calculator(){
+      this.undoCmds = [];
+      this.redoCmds = [];
+      this.undoMementos = [];
+      this.redoMementos = [];
+      this.addCmd = null;
+      this.substractCmd = null;
+    }
+    Calculator.prototype = {
+      addPressed: function(){
+        var m1 = this.addCmd.createMemento();
+
+        this.addCmd.execute();
+        this.undoCmds.push(this.addCmd);
+
+        var m2 = this.addCmd.createMemento();
+        this.undoMementos.push([m1, m2]);
+      },
+      substractPressed: function(){
+        var m1 = this.substractCmd.createMemento();
+
+        this.substractCmd.execute();
+        this.undoCmds.push(this.substractCmd);
+
+        var m2 = this.substractCmd.createMemento();
+        this.undoMementos.push([m1, m2]);
+      },
+      // 撤销
+      undoPressed: function(){
+        if(this.undoCmds.length){
+          var cmd = this.undoCmds.pop();
+          var ms = this.undoMementos.pop();
+
+          cmd.undo(ms[0]);
+          this.redoCmds.push(cmd);
+          this.redoMementos.push(ms);
+        } else {
+          console.log('很抱歉，没有可撤销命令');
+        }
+      },
+      // 恢复
+      redoPressed: function(){
+        if(this.redoCmds.length){
+          var cmd = this.redoCmds.pop();
+          var ms = this.redoMementos.pop();
+
+          cmd.redo(ms[1]);
+
+          this.undoCmds.push(cmd);
+          this.undoMementos.push(ms);
+        } else {
+          console.log('很抱歉，没有可撤销命令');
+        }
+      }
+    };
+
+    var operation = new Operation();
+    var addCmd = new AddCommand(5);
+    var substractCmd = new SubstractCommand(3);
+
+    addCmd.operation = operation;
+    substractCmd.operation = operation;
+
+    var calculator = new Calculator();
+    calculator.addCmd = addCmd;
+    calculator.substractCmd = substractCmd;
+
+    calculator.addPressed();
+    console.log('一次加法运算后的结果为：' + operation.getResult());
+
+    calculator.substractPressed();
+    console.log('一次减法运算后的结果为：' + operation.getResult());
+
+    calculator.undoPressed();
+    console.log('撤销一次后的结果为：' + operation.getResult());
+
+    calculator.undoPressed();
+    console.log('再撤销一次后的结果为：' + operation.getResult());
+
+    calculator.redoPressed();
+    console.log('恢复操作一次后的结果为：' + operation.getResult());
+
+    calculator.redoPressed();
+    console.log('在恢复操作一次后的结果为：' + operation.getResult());
+  }());
+
 </script>
 </body>
 </html>
