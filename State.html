@@ -536,6 +536,72 @@
 可以组合使用
 由于状态模式把状态对应的行为分散到多个状态对象中，会造成很多细粒度的状态对象，可以把这些状态处理对象通过享元模式来共享，从而节省资源。
  */
+
+  (function(){
+    // http://www.dofactory.com/javascript-state-pattern.aspx
+    var TrafficLight = function () {
+
+      var count = 0;
+      var currentState = new Red(this);
+
+      this.change = function (state) {
+        // limits number of changes
+        if (count++ >= 10) return;
+
+        currentState = state;
+        currentState.go();
+      };
+
+      this.start = function () {
+        currentState.go();
+      };
+    }
+
+    var Red = function (light) {
+      this.light = light;
+
+      this.go = function () {
+        log.add("Red --> for 1 minute");
+        light.change(new Green(light));
+      }
+    };
+
+    var Yellow = function (light) {
+      this.light = light;
+
+      this.go = function () {
+        log.add("Yellow --> for 10 seconds");
+        light.change(new Red(light));
+      }
+    };
+
+    var Green = function (light) {
+      this.light = light;
+
+      this.go = function () {
+        log.add("Green --> for 1 minute");
+        light.change(new Yellow(light));
+      }
+    };
+
+// log helper
+
+    var log = (function () {
+      var log = "";
+      return {
+        add: function (msg) { log += msg + "\n"; },
+        show: function () { alert(log); log = ""; }
+      }
+    })();
+
+    function run() {
+
+      var light = new TrafficLight();
+      light.start();
+
+      log.show();
+    }
+  }());
 </script>
 </body>
 </html>
