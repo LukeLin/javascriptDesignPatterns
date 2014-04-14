@@ -5,37 +5,6 @@
 	<title>生成器模式</title>
 </head>
 <body>
-	<script>
-	function extend(subclass, superclass) {
-        var F = function () {
-        };
-        F.prototype = superclass.prototype;
-        subclass.prototype = new F();
-        subclass.prototype.constructor = subclass;
-        subclass.super = superclass.prototype;
-
-
-        if (superclass.prototype.constructor === Object.prototype.constructor) {
-            superclass.prototype.constructor = superclass;
-        }
-    }
-
-    function mixin(targetObj, obj, deep) {
-        if (Object.prototype.toString.call(obj) !== '[object Object]') {
-            return;
-        }
-        for (var i in obj) {
-            if (obj.hasOwnProperty(i)) {
-                if (deep === true) {
-                    targetObj[i] = targetObj[i] || {};
-                    mixin(targetObj[i], obj[i], deep);
-                } else {
-                    targetObj[i] = obj[i];
-                }
-            }
-        }
-    }
-    </script>
 	
 	<script>
 /**
@@ -114,44 +83,45 @@ Director.prototype = {
 
 	// 实现到处数据到文本文件的生成器对象	
 	var TxtBuilder = function(){
-		this.buffer = new StringBuffer();
+		this.stringBuffer = '';
 	};
-	extend(TxtBuilder, Builder);
-	mixin(TxtBuilder.prototype, {
-		buildBody: function(mapData){
-			var tblName, edm;
-			for(tblName in mapData) {
-				this.buffer.append(tblName + "\n");
+  TxtBuilder.prototype = {
+    __proto__: Builder.prototype,
 
-				for(edm in mapData[tblName]) {
-					this.buffer.append(edm.getProductId() + ',' +
-						edm.getPrice() + ',' + edm.getAmount() + '\n')
-				}
-			}
-		},
-		buildFooter: function(efm){
-			this.buffer.append(efm.getExportUser());
-		},
-		buildHeader: function(ehm){
-			this.buffer.append(ehm.getDepId() + ',' +
-				ehm.getExportDate() | '\n');
-		},
-		getResult: function(){
-			return this.buffer;
-		}
-	});
+    buildBody: function(mapData){
+      var tblName, edm;
+      for(tblName in mapData) {
+        this.stringBuffer += tblName + "\n";
+
+        for(edm in mapData[tblName]) {
+          this.stringBuffer += edm.getProductId() + ',' +
+            edm.getPrice() + ',' + edm.getAmount() + '\n';
+        }
+      }
+    },
+    buildFooter: function(efm){
+      this.stringBuffer += efm.getExportUser();
+    },
+    buildHeader: function(ehm){
+      this.stringBuffer += ehm.getDepId() + ',' +
+        ehm.getExportDate() | '\n';
+    },
+    getResult: function(){
+      return new Buffer(this.stringBuffer);
+    }
+  };
 
 	// 实现导出数据到XML文件的生成器对象
 	var XmlBuilder = function(){
-		this.buffer = new StringBuffer();
+		this.stringBuffer = '';
 	};
-	extend(XmlBuilder, Builder);
-	mixin(XmlBuilder.prototype, {
-		buildBody: function(){},
-		buildFooter: function(){},
-		buildHeader: function(){},
-		getResult: function(){}
-	});
+  XmlBuilder.prototype = {
+    __proto__: Builder,
+    buildBody: function(){},
+    buildFooter: function(){},
+    buildHeader: function(){},
+    getResult: function(){}
+  };
 
 	// 指导者，指导使用生成器的接口来构建输出的文件的对象
 	var Director = function(builder){

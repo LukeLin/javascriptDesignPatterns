@@ -41,24 +41,10 @@ BicycleShop.prototype = {
     }
 };
 
-function extend(subClass, superClass) {
-    function F() {
-    }
-
-    F.prototype = superClass.prototype;
-    subClass.prototype = new F();
-    subClass.prototype.constructor = subClass;
-
-    subClass.superclass = superClass.prototype;
-
-    if (superClass.prototype.constructor === Object.prototype.constructor) {
-        superClass.prototype.constructor = superClass;
-    }
-}
 /* AcmeBicycleShop class */
 var AcmeBicycleShop = function () {
 };
-extend(AcmeBicycleShop, BicycleShop);
+AcmeBicycleShop.prototype.__proto__ = BicycleShop.prototype;
 AcmeBicycleShop.prototype.createBicycle = function (model) {
     var bicycle;
 
@@ -91,6 +77,7 @@ var AcmeComfortCruiserWidthTaillight = function () {
  装饰者模式对于实现这些选择再合适不过了。你不用为自行车和选件的每一种组合创建一个子类，而只需创建4个新类（一个类针对一种选择）即可。这些类与那4钟自行车类一样都要实现Bicycle接口，但它们只被用作这些自行车类的包装类。在这些选件类上进行的方法调用将被转到它们包装的自行车类上，有时会稍有修改。
  在这个例子中，选件类就是装饰者，而自行车类是它们的组件。装饰者对其组件进行了透明包装，二者可以互换使用，这是因为他们实现了同样的接口。下面我们来看应该怎样实现自行车装饰者类。首先要改一下接口，加入一个getPrice方法：
  */
+
 /*
  所有自行车类和选件装饰者都要实现这个接口。AcmeComfortCruiser类大致是这个样子（不需要为使用装饰者而进行什么修改）
  */
@@ -144,9 +131,9 @@ BicycleDecorator.prototype = {
 var HeadlightDecorator = function (bicycle) {
     // implements Bicycle
     // call the superclass's constructor
-    HeadlightDecorator.superclass.constructor.call(this, bicycle);
+  BicycleDecorator.call(this, bicycle);
 };
-extend(HeadlightDecorator, BicycleDecorator);
+HeadlightDecorator.prototype.__proto__ = BicycleDecorator.prototype;
 HeadlightDecorator.prototype.assemble = function () {
     return this.bicycle.assemble() + ' Attach headlight to handlebars';
 };
@@ -170,9 +157,9 @@ console.log(myBicycle.getPrice());
 var TaillightDecorator = function (bicycle) {
     // implements Bicycle
     // call the superclass's constructor
-    TaillightDecorator.superclass.constructor.call(this, bicycle);
+  BicycleDecorator.call(this, bicycle);
 };
-extend(TaillightDecorator, BicycleDecorator);
+TaillightDecorator.prototype.__proto__ = BicycleDecorator.prototype;
 TaillightDecorator.prototype.assemble = function () {
     return this.bicycle.assemble() + ' Attach taillight to the seat post.';
 };
@@ -230,10 +217,10 @@ console.log(myBicycle.getPrice());
 // FrameColorDecorator class.
 var FrameColorDecorator = function (bicycle, frameColor) {
     // implements Bicycle
-    FrameColorDecorator.superclass.constructor.call(this, bicycle);
+  BicycleDecorator.call(this, bicycle);
     this.frameColor = frameColor;
 };
-extend(FrameColorDecorator, BicycleDecorator);  // extend the superclass
+FrameColorDecorator.prototype.__proto__ = BicycleDecorator.prototype;
 FrameColorDecorator.prototype.assemble = function () {
     return 'Paint the frame ' + this.frameColor + ' and allow it to dry.' + this.bicycle.assemble();
 };
@@ -263,9 +250,9 @@ console.log(myBicycle.assemble());
 // LifetimeWarrantyDecorator class.
 var LifetimeWarrantyDecorator = function (bicycle) {
     // implements Bicycle
-    LifetimeWarrantyDecorator.superclass.constructor.call(this, bicycle);
+  BicycleDecorator.call(this, bicycle);
 };
-extend(LifetimeWarrantyDecorator, BicycleDecorator);
+LifetimeWarrantyDecorator.prototype.__proto__ = BicycleDecorator.prototype;
 LifetimeWarrantyDecorator.prototype.repair = function () {
     return 'This bicycle is covered by a lifetime warranty.Please take it to an authorized Acme Repair Center.';
 };
@@ -279,13 +266,13 @@ LifetimeWarrantyDecorator.prototype.getPrice = function () {
 // TimedWarrantyDecorator class.
 var TimedWarrantyDecorator = function (bicycle, coverageLengthInYears) {
     // implements Bicycle
-    TimedWarrantyDecorator.superclass.constructor.call(this, bicycle);
+  BicycleDecorator.call(this, bicycle);
     this.coverageLength = coverageLengthInYears;
     this.expDate = new Date();
     var coverageLengthInMs = this.coverageLength * 365 * 24 * 60 * 60 * 1000;
     this.expDate.setTime(this.expDate.getTime() + coverageLengthInms);
 };
-extend(TimedWarrantyDecorator, BicycleDecorator);
+TimedWarrantyDecorator.prototype.__proto__ = BicycleDecorator.prototype;
 TimedWarrantyDecorator.prototype.repair = function () {
     var repairInstructions;
     var currentDate = new Date();
@@ -315,10 +302,9 @@ var BellDecorator = function (bicycle) {
     // implements Bicycle
 
     // Call the superclass
-    BellDecorator.superclass.constructor.call(this, bicycle);
+  BicycleDecorator.call(this, bicycle);
 };
-// Extend the superclass
-extend(BellDecorator, BicycleDecorator);
+BellDecorator.prototype.__proto__ = BicycleDecorator.prototype;
 BellDecorator.prototype.assemble = function () {
     return this.bicycle.assemble() + ' Attach bell to handlebars';
 };
@@ -403,7 +389,7 @@ BicycleDecorator.prototype = {
 // 原来的AcmeBicycleShop factory class.
 var AcmeBicycleShop = function () {
 };
-extend(AcmeBicycleShop, BicycleShop);
+AcmeBicycleShop.prototype.__proto__ = BicycleShop.prototype;
 AcmeBicycleShop.prototype.createBicycle = function (model) {
     var bicycle;
     switch (model) {
@@ -430,7 +416,7 @@ AcmeBicycleShop.prototype.createBicycle = function (model) {
 // AcmeBicycleShop factory class, with decorators.
 var AcmeBicycleShop = function () {
 };
-extend(AcmeBicycleShop, BicycleShop);
+AcmeBicycleShop.prototype.__proto__ = BicycleShop.prototype;
 AcmeBicycleShop.prototype.createBicycle = function (model, options) {
     // Instantiate the bicycle object.
     var bicycle = new AcmeBicycleShop.models[model]();

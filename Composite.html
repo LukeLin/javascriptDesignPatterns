@@ -385,7 +385,7 @@ var InputField = function (id, label) {
 };
 
 // Inherit from Field
-extend(InputField, Field);
+InputField.prototype.__proto__ = Field.prototype;
 
 InputField.prototype.getValue = function () {
   return this.input.value;
@@ -410,7 +410,7 @@ var TextareaField = function (id, label) {
   this.element.appendChild(this.textarea);
 };
 
-extend(TextareaField, Field);
+TextareaField.prototype.__proto__ = Field.prototype;
 
 TextareaField.prototype.getValue = function () {
   return this.textarea.value;
@@ -442,7 +442,7 @@ var SelectField = function (id, label, options) {
   this.element.appendChild(this.label);
   this.element.appendChild(this.select);
 };
-extend(SelectField, Field);
+SelectField.prototype.__proto__ = Field.prototype;
 SelectField.prototype.getValue = function () {
   return this.select.options[this.select.selectedIndex].value;
 };

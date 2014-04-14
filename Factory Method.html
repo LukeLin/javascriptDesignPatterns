@@ -60,7 +60,6 @@ BicycleShop.prototype = {
  接口在工厂模式中起着很重要的作用。如果不对对象进行某种类型检查以确保其实现了必须的方法，工厂模式带来的好处也就所剩无几了。在所有这些例子中，你可以创建一些对象并且对它们一视同仁，那是因为你可以确信它们都实现了同样一批方法。
  */
 
-
 /* Speedster class */
 var Speedster = function () {
   // implements Bicycle
@@ -222,6 +221,7 @@ AcmeBicycleShop.prototype.createBicycle = function (model) {
     default:
       bicycle = new ComfortCruiser();
   }
+  Interface.ensureImplements(bicycle, Bicycle);
   return bicycle;
 };
 
@@ -243,6 +243,7 @@ GeneralProductsBicycleShop.prototype.createBicycle = function (model) {
     default:
       bicycle = new ComfortCruiser();
   }
+
   return bicycle;
 };
 /*
@@ -277,6 +278,8 @@ var yourSecondNewBike = bobsCruisers.sellBicycle('The Lowrider');
 // 示例：XHR工厂
 /* 简单工厂非常适合这种场合，它可以用来根据浏览器能力的不同生成一个XMLHttpRequest或ActiveXObject实例
  */
+/* AjaxHandler interface */
+var AjaxHandler = new Interface('AjaxHandler', ['request', 'createXhrObject']);
 
 /* SimpleHandler class */
 var SimpleHandler = function () {
@@ -457,6 +460,7 @@ var XhrManager = {
       xhr = new SimpleHandler();
     }
 
+    Interface.ensureImplements(xhr, AjaxHandler);
     return xhr;
   },
   test: function () {
@@ -541,6 +545,8 @@ myHandler.request('GET', 'script.php', callback);
  */
 
 
+/* AjaxHandler interface */
+var AjaxHandler = new Interface('AjaxHandler', ['request', 'createXhrObject']);
 
 /* SimpleHandler class */
 var SimpleHandler = function () {
@@ -609,6 +615,8 @@ function $() {
 /*------------------
  显示类，它把输出内容包装为一个无序列表
  --------------------*/
+/* DisplayModule interface */
+var DisplayModule = new Interface('DisplayModule', ['append', 'remove', 'clear']);
 
 /* ListDisplay class. */
 var ListDisplay = function (id, parent) {
@@ -694,7 +702,6 @@ FeedReader.prototype = {
 var FeedManager = {
   createFeedReader: function (conf) {
     var displayModule = new ListDisplay(conf.id + '-display', conf.parent);
-
     var simpleHandler = new SimpleHandler();
     var xhrHandler = simpleHandler.createXhrObject();
 
