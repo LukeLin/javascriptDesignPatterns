@@ -207,9 +207,9 @@ GenreCatalog.prototype = {
  */
 // SciFiCatalog class
 var SciFiCatalog = function () {
-  SciFiCatalog.superclass.constructor.apply(this);
+    GenreCatalog.call(this);
 };
-extend(SciFiCatalog, GenreCatalog);
+SciFiCatalog.prototype = Object.create(GenreCatalog.prototype);
 SciFiCatalog.prototype._bookMatchesCriteria = function (book) {
   var genres = book.getGenres();
   if (book.getTitle().match(/space/i)) {
@@ -331,7 +331,7 @@ var SciFiCatalog = function () {
   SciFiCatalog.superclass.constructor.call(this);
   this.genreName = ['sci-fi', 'scifi', 'science-fiction'];
 };
-extend(SciFiCatalog, GenreCatalog);
+SciFiCatalog.prototype = Object.create(GenreCatalog.prototype);
 SciFiCatalog.prototype._bookMatchesCriteria = function (book) {
   //...
 };
