@@ -44,7 +44,7 @@ BicycleShop.prototype = {
 /* AcmeBicycleShop class */
 var AcmeBicycleShop = function () {
 };
-AcmeBicycleShop.prototype.__proto__ = BicycleShop.prototype;
+AcmeBicycleShop.prototype = Object.create(BicycleShop.prototype);
 AcmeBicycleShop.prototype.createBicycle = function (model) {
     var bicycle;
 
@@ -133,7 +133,7 @@ var HeadlightDecorator = function (bicycle) {
     // call the superclass's constructor
   BicycleDecorator.call(this, bicycle);
 };
-HeadlightDecorator.prototype.__proto__ = BicycleDecorator.prototype;
+HeadlightDecorator.prototype = Object.create(BicycleDecorator.prototype);
 HeadlightDecorator.prototype.assemble = function () {
     return this.bicycle.assemble() + ' Attach headlight to handlebars';
 };
@@ -159,7 +159,7 @@ var TaillightDecorator = function (bicycle) {
     // call the superclass's constructor
   BicycleDecorator.call(this, bicycle);
 };
-TaillightDecorator.prototype.__proto__ = BicycleDecorator.prototype;
+TaillightDecorator.prototype = Object.create(BicycleDecorator.prototype);
 TaillightDecorator.prototype.assemble = function () {
     return this.bicycle.assemble() + ' Attach taillight to the seat post.';
 };
@@ -220,7 +220,7 @@ var FrameColorDecorator = function (bicycle, frameColor) {
   BicycleDecorator.call(this, bicycle);
     this.frameColor = frameColor;
 };
-FrameColorDecorator.prototype.__proto__ = BicycleDecorator.prototype;
+FrameColorDecorator.prototype = Object.create(BicycleDecorator.prototype);
 FrameColorDecorator.prototype.assemble = function () {
     return 'Paint the frame ' + this.frameColor + ' and allow it to dry.' + this.bicycle.assemble();
 };
@@ -252,7 +252,7 @@ var LifetimeWarrantyDecorator = function (bicycle) {
     // implements Bicycle
   BicycleDecorator.call(this, bicycle);
 };
-LifetimeWarrantyDecorator.prototype.__proto__ = BicycleDecorator.prototype;
+LifetimeWarrantyDecorator.prototype = Object.create(BicycleDecorator.prototype);
 LifetimeWarrantyDecorator.prototype.repair = function () {
     return 'This bicycle is covered by a lifetime warranty.Please take it to an authorized Acme Repair Center.';
 };
@@ -272,7 +272,7 @@ var TimedWarrantyDecorator = function (bicycle, coverageLengthInYears) {
     var coverageLengthInMs = this.coverageLength * 365 * 24 * 60 * 60 * 1000;
     this.expDate.setTime(this.expDate.getTime() + coverageLengthInms);
 };
-TimedWarrantyDecorator.prototype.__proto__ = BicycleDecorator.prototype;
+TimedWarrantyDecorator.prototype = Object.create(BicycleDecorator.prototype);
 TimedWarrantyDecorator.prototype.repair = function () {
     var repairInstructions;
     var currentDate = new Date();
@@ -304,7 +304,7 @@ var BellDecorator = function (bicycle) {
     // Call the superclass
   BicycleDecorator.call(this, bicycle);
 };
-BellDecorator.prototype.__proto__ = BicycleDecorator.prototype;
+BellDecorator.prototype = Object.create(BicycleDecorator.prototype);
 BellDecorator.prototype.assemble = function () {
     return this.bicycle.assemble() + ' Attach bell to handlebars';
 };
@@ -389,7 +389,7 @@ BicycleDecorator.prototype = {
 // 原来的AcmeBicycleShop factory class.
 var AcmeBicycleShop = function () {
 };
-AcmeBicycleShop.prototype.__proto__ = BicycleShop.prototype;
+AcmeBicycleShop.prototype = Object.create(BicycleShop.prototype);
 AcmeBicycleShop.prototype.createBicycle = function (model) {
     var bicycle;
     switch (model) {
@@ -416,7 +416,7 @@ AcmeBicycleShop.prototype.createBicycle = function (model) {
 // AcmeBicycleShop factory class, with decorators.
 var AcmeBicycleShop = function () {
 };
-AcmeBicycleShop.prototype.__proto__ = BicycleShop.prototype;
+AcmeBicycleShop.prototype = Object.create(BicycleShop.prototype);
 AcmeBicycleShop.prototype.createBicycle = function (model, options) {
     // Instantiate the bicycle object.
     var bicycle = new AcmeBicycleShop.models[model]();

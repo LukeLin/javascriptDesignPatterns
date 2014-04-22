@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>工厂方法模式</title>
+    <meta charset="UTF-8">
+    <title>工厂方法模式</title>
 </head>
 <body>
 
@@ -35,25 +35,25 @@
 var BicycleShop = function () {
 };
 BicycleShop.prototype = {
-  sellBicycle: function (model) {
-    var bicycle;
+    sellBicycle: function (model) {
+        var bicycle;
 
-    switch (model) {
-      case 'The Speedster':
-        bicycle = new Speedster();
-        break;
-      case 'The Lowrider':
-        bicycle = new Lowrider();
-        break;
-      case 'The Comfort Cruiser':
-      default:
-        bicycle = new ComfortCruiser();
+        switch (model) {
+            case 'The Speedster':
+                bicycle = new Speedster();
+                break;
+            case 'The Lowrider':
+                bicycle = new Lowrider();
+                break;
+            case 'The Comfort Cruiser':
+            default:
+                bicycle = new ComfortCruiser();
+        }
+        bicycle.assemble();
+        bicycle.wash();
+
+        return bicycle;
     }
-    bicycle.assemble();
-    bicycle.wash();
-
-    return bicycle;
-  }
 };
 /*
  sellBicycle方法根据所要求的自行车型号用switch语句创建一个自行车的实例。各种型号的自行车实例可以互换使用，因为它们都实现了Bicycle接口.
@@ -62,18 +62,18 @@ BicycleShop.prototype = {
 
 /* Speedster class */
 var Speedster = function () {
-  // implements Bicycle
-  //..
+    // implements Bicycle
+    //..
 };
 Speedster.prototype = {
-  assemble: function () {
-  },
-  wash: function () {
-  },
-  ride: function () {
-  },
-  repair: function () {
-  }
+    assemble: function () {
+    },
+    wash: function () {
+    },
+    ride: function () {
+    },
+    repair: function () {
+    }
 };
 
 /* 要出售某种型号的自行车，只要调用sellBycycle方法即可 */
@@ -85,29 +85,29 @@ var yourNewBike = californiaCruisers.sellBicycle('The Speedster');
  */
 /* BicycleFactory namespace */
 var BicycleFactory = {
-  createBicycle: function (model) {
-    var bicycle;
+    createBicycle: function (model) {
+        var bicycle;
 
-    switch (model) {
-      case 'The Speedster':
-        bicycle = new Speedster();
-        break;
-      case 'The Lowrider':
-        bicycle = new Lowrider();
-        break;
-      /*--------------------------------*/
-      //添加新车型
-      case 'The Flatlander':
-        biccle = new Flatlander();
-        break;
-      /*--------------------------------*/
-      case 'The Comfort Cruiser':
-      default:
-        bicycle = new AcmeComfortCruiser();
+        switch (model) {
+            case 'The Speedster':
+                bicycle = new Speedster();
+                break;
+            case 'The Lowrider':
+                bicycle = new Lowrider();
+                break;
+            /*--------------------------------*/
+            //添加新车型
+            case 'The Flatlander':
+                biccle = new Flatlander();
+                break;
+            /*--------------------------------*/
+            case 'The Comfort Cruiser':
+            default:
+                bicycle = new AcmeComfortCruiser();
+        }
+
+        return bicycle;
     }
-
-    return bicycle;
-  }
 };
 
 /*
@@ -117,14 +117,14 @@ var BicycleFactory = {
 var BicycleShop = function () {
 };
 BicycleShop.prototype = {
-  sellBicycle: function (model) {
-    var bicycle = BicycleFactory.createBicycle(model);
+    sellBicycle: function (model) {
+        var bicycle = BicycleFactory.createBicycle(model);
 
-    bicycle.assemble();
-    bicycle.wash();
+        bicycle.assemble();
+        bicycle.wash();
 
-    return bicycle;
-  }
+        return bicycle;
+    }
 };
 /*
  BicycleFactory就是简单工厂的一个很好的例子。这种模式把成员对象的创建工作转交给一个外部对象。这个外部对象可以像本例中一样是一个简单的命名空间，也可以是一个类的实例。如果负责创建实例的方法的逻辑不会发生变化，那么一般用单体或静态类方法创建这些成员实例是合乎情理的。但如果你要提供几种不同品牌的自行车，那么更恰当的做法是把这个创建方法实现在一个类中，并从该类派生出一些子类。
@@ -172,17 +172,17 @@ BicycleShop.prototype = {
 var BicycleShop = function () {
 };
 BicycleShop.prototype = {
-  sellBicycle: function (model) {
-    var bicycle = this.createBicycle(model);
+    sellBicycle: function (model) {
+        var bicycle = this.createBicycle(model);
 
-    bicycle.assemble();
-    bicycle.wash();
+        bicycle.assemble();
+        bicycle.wash();
 
-    return bicycle;
-  },
-  createBicycle: function (model) {
-    throw new Error('Unsupported operation on an abstract class.');
-  }
+        return bicycle;
+    },
+    createBicycle: function (model) {
+        throw new Error('Unsupported operation on an abstract class.');
+    }
 };
 
 /*
@@ -190,39 +190,39 @@ BicycleShop.prototype = {
  下面是两个子类的例子，其中一个子类代表的商店从Acme公司进货，而另一个则从General Products公司进货
  */
 function extend(subClass, superClass) {
-  function F() {
-  }
+    function F() {
+    }
 
-  F.prototype = superClass.prototype;
-  subClass.prototype = new F();
-  subClass.prototype.constructor = subClass;
+    F.prototype = superClass.prototype;
+    subClass.prototype = new F();
+    subClass.prototype.constructor = subClass;
 
-  subClass.superclass = superClass.prototype;
+    subClass.superclass = superClass.prototype;
 
-  if (superClass.prototype.constructor === Object.prototype.constructor) {
-    superClass.prototype.constructor = superClass;
-  }
+    if (superClass.prototype.constructor === Object.prototype.constructor) {
+        superClass.prototype.constructor = superClass;
+    }
 }
 /* AcmeBicycleShop class */
 var AcmeBicycleShop = function () {
 };
 extend(AcmeBicycleShop, BicycleShop);
 AcmeBicycleShop.prototype.createBicycle = function (model) {
-  var bicycle;
+    var bicycle;
 
-  switch (model) {
-    case 'The Speedster':
-      bicycle = new Speedster();
-      break;
-    case 'The Lowrider':
-      bicycle = new Lowrider();
-      break;
-    case 'The Comfort Cruiser':
-    default:
-      bicycle = new ComfortCruiser();
-  }
-  Interface.ensureImplements(bicycle, Bicycle);
-  return bicycle;
+    switch (model) {
+        case 'The Speedster':
+            bicycle = new Speedster();
+            break;
+        case 'The Lowrider':
+            bicycle = new Lowrider();
+            break;
+        case 'The Comfort Cruiser':
+        default:
+            bicycle = new ComfortCruiser();
+    }
+    Interface.ensureImplements(bicycle, Bicycle);
+    return bicycle;
 };
 
 /* GeneralProductsBicycleShop class */
@@ -230,21 +230,21 @@ var GeneralProductsBicycleShop = function () {
 };
 extend(GeneralProductsBicycleShop, BicycleShop);
 GeneralProductsBicycleShop.prototype.createBicycle = function (model) {
-  var bicycle;
+    var bicycle;
 
-  switch (model) {
-    case 'The Speedster':
-      bicycle = new Speedster();
-      break;
-    case 'The Lowrider':
-      bicycle = new Lowrider();
-      break;
-    case 'The Comfort Cruiser':
-    default:
-      bicycle = new ComfortCruiser();
-  }
+    switch (model) {
+        case 'The Speedster':
+            bicycle = new Speedster();
+            break;
+        case 'The Lowrider':
+            bicycle = new Lowrider();
+            break;
+        case 'The Comfort Cruiser':
+        default:
+            bicycle = new ComfortCruiser();
+    }
 
-  return bicycle;
+    return bicycle;
 };
 /*
  这些工厂方法生成的对象都实现了Bicycle接口，所以在其他代码眼里它们完全可以互换，自行车的销售工作还是与以前一样，只是现在所开的商店可以是Acme或General Products自行车专卖店。
@@ -285,52 +285,52 @@ var AjaxHandler = new Interface('AjaxHandler', ['request', 'createXhrObject']);
 var SimpleHandler = function () {
 };     // implements AjaxHandler
 SimpleHandler.prototype = {
-  request: function (method, url, callback, postVars) {
-    var xhr = this.createXhrObject();
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState !== 4) {
-        return;
-      }
-      ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304) ?
-        callback.success(xhr.responseText, xhr.responseXML) :
-        callback.failure(xhr.status);
-    };
-    xhr.open(method, url, true);
-    if (method !== 'POST') {
-      postVars = null;
-    }
-    xhr.send(postVars);
-  },
-  createXhrObject: function () {      // Factory method
-    var methods = [
-      function () {
-        return new XMLHttpRequest();
-      },
-      function () {
-        return new ActiveXObject('MSXML2.XMLHTTP.3.0');
-      },
-      function () {
-        return new ActiveXObject('MSXML.XMLHTTP');
-      },
-      function () {
-        return new ActiveXObject('Microsoft.XMLHTTP');
-      }
-    ];
+    request: function (method, url, callback, postVars) {
+        var xhr = this.createXhrObject();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) {
+                return;
+            }
+            ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304) ?
+                callback.success(xhr.responseText, xhr.responseXML) :
+                callback.failure(xhr.status);
+        };
+        xhr.open(method, url, true);
+        if (method !== 'POST') {
+            postVars = null;
+        }
+        xhr.send(postVars);
+    },
+    createXhrObject: function () {      // Factory method
+        var methods = [
+            function () {
+                return new XMLHttpRequest();
+            },
+            function () {
+                return new ActiveXObject('MSXML2.XMLHTTP.3.0');
+            },
+            function () {
+                return new ActiveXObject('MSXML.XMLHTTP');
+            },
+            function () {
+                return new ActiveXObject('Microsoft.XMLHTTP');
+            }
+        ];
 
-    for (var i = 0, len = methods.length; i < len; i++) {
-      try {
-        methods[i]();
-      } catch (e) {
-        continue;
-      }
-      // if we reach this point,method[i] worked
-      this.createXhrObject = methods[i];    // Memoize the method
-      return methods[i]();
-    }
+        for (var i = 0, len = methods.length; i < len; i++) {
+            try {
+                methods[i]();
+            } catch (e) {
+                continue;
+            }
+            // if we reach this point,method[i] worked
+            this.createXhrObject = methods[i];    // Memoize the method
+            return methods[i]();
+        }
 
-    // if we reach this point,none of the methods worked
-    throw new Error('SimpleHandler:Could not create an XHR object.');
-  }
+        // if we reach this point,none of the methods worked
+        throw new Error('SimpleHandler:Could not create an XHR object.');
+    }
 };
 
 /*
@@ -340,12 +340,12 @@ SimpleHandler.prototype = {
 // 用SimpleHandler类发起一部请求的过程
 var myHandler = new SimpleHandler();
 var callback = {
-  success: function (responseText) {
-    alert('Success:' + responseText);
-  },
-  failure: function (statusCode) {
-    alert('Failure:' + statusCode);
-  }
+    success: function (responseText) {
+        alert('Success:' + responseText);
+    },
+    failure: function (statusCode) {
+        alert('Failure:' + statusCode);
+    }
 };
 myHandler.request('GET', 'script.php', callback);
 
@@ -357,9 +357,9 @@ myHandler.request('GET', 'script.php', callback);
  */
 /* QueueHandler class */
 var QueuedHandler = function () {       // implements AjaxHandler
-  this.queue = [];        // 保存请求队列
-  this.requestInProgress = false;     // 请求进程，是否完成
-  this.retryDelay = 5;        // In seconds   延时（秒）
+    this.queue = [];        // 保存请求队列
+    this.requestInProgress = false;     // 请求进程，是否完成
+    this.retryDelay = 5;        // In seconds   延时（秒）
 };
 extend(QueuedHandler, SimpleHandler);
 /**
@@ -367,51 +367,51 @@ extend(QueuedHandler, SimpleHandler);
  * @param {Boolean} override 是否需要覆盖请求
  */
 QueuedHandler.prototype.request = function (method, url, callback, postVars, override) {
-  if (this.requestInProgress && !override) {
-    // 其它请求正在进行中且不覆盖请求
-    this.queue.push({
-      method: method,
-      url: url,
-      callback: callback,
-      postVars: postVars
-    });
-  } else {
-    // 当前没有请求进行，立刻执行该请求
-    // 执行成功后递归
-    this.requestInProgress = true;
-    var xhr = this.createXhrObject();
-    var that = this;
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState !== 4) {
-        return;
-      }
-      if ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304) {
-        // 该请求成功，执行对应队列的成功方法
-        callback.success(xhr.responseText, xhr.responseXML);
-        // 处理位于最前队列的请求
-        that.advanceQueue();
-      } else {
-        callback.failure(xhr.status);
-        setTimeout(function () {
-          that.request(method, url, callback, postVars, true);
-        }, that.retryDelay * 1000);
-      }
-    };
-    xhr.open(method, url, true);
-    if (method !== 'POST') {
-      postVars = null;
+    if (this.requestInProgress && !override) {
+        // 其它请求正在进行中且不覆盖请求
+        this.queue.push({
+            method: method,
+            url: url,
+            callback: callback,
+            postVars: postVars
+        });
+    } else {
+        // 当前没有请求进行，立刻执行该请求
+        // 执行成功后递归
+        this.requestInProgress = true;
+        var xhr = this.createXhrObject();
+        var that = this;
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) {
+                return;
+            }
+            if ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304) {
+                // 该请求成功，执行对应队列的成功方法
+                callback.success(xhr.responseText, xhr.responseXML);
+                // 处理位于最前队列的请求
+                that.advanceQueue();
+            } else {
+                callback.failure(xhr.status);
+                setTimeout(function () {
+                    that.request(method, url, callback, postVars, true);
+                }, that.retryDelay * 1000);
+            }
+        };
+        xhr.open(method, url, true);
+        if (method !== 'POST') {
+            postVars = null;
+        }
+        xhr.send(postVars);
     }
-    xhr.send(postVars);
-  }
 };
 
 QueuedHandler.prototype.advanceQueue = function () {
-  if (this.queue.length === 0) {
-    this.requestInProgress = false;
-    return;
-  }
-  var req = this.queue.shift();
-  this.request(req.method, req.url, req.callback, req.postVars, true);
+    if (this.queue.length === 0) {
+        this.requestInProgress = false;
+        return;
+    }
+    var req = this.queue.shift();
+    this.request(req.method, req.url, req.callback, req.postVars, true);
 };
 
 /*
@@ -420,29 +420,29 @@ QueuedHandler.prototype.advanceQueue = function () {
 
 /* OfflineHandler class */
 var OfflineHandler = function () {      // implements AjaxHandler
-  this.storedRequests = [];
+    this.storedRequests = [];
 };
 extend(OfflineHandler, SimpleHandler);
 OfflineHandler.prototype.request = function (method, url, callback, postVars) {
-  if (XhrManager.isOffline()) {
-    // Store the requests until we are online
-    this.storedRequests.push({
-      method: method,
-      url: url,
-      callback: callback,
-      postVars: postVars
-    });
-  } else {
-    // Call SimpleHandler's request method if we are online
-    this.flushStoredRequests();
-    OfflineHandler.superclass.request(method, url, callback, postVars);
-  }
+    if (XhrManager.isOffline()) {
+        // Store the requests until we are online
+        this.storedRequests.push({
+            method: method,
+            url: url,
+            callback: callback,
+            postVars: postVars
+        });
+    } else {
+        // Call SimpleHandler's request method if we are online
+        this.flushStoredRequests();
+        OfflineHandler.superclass.request(method, url, callback, postVars);
+    }
 };
 OfflineHandler.prototype.flushStoredRequests = function () {
-  for (var i = 0, len = this.storedRequests.length; i < len; i++) {
-    var req = this.storedRequests[i];
-    OfflineHandler.superclass.request(req.method, req.url, req.callback, req.postVars);
-  }
+    for (var i = 0, len = this.storedRequests.length; i < len; i++) {
+        var req = this.storedRequests[i];
+        OfflineHandler.superclass.request(req.method, req.url, req.callback, req.postVars);
+    }
 };
 /*
  XhrManager.isOffline方法的作用在于判断用户时都处于在线状态。OfflineHandler只有在用户处于在线状态时才会使用SimpleHandler的request方法实际发起请求。而且一旦探测到用户处于在线状态，它还会立即执行所有缓存中的请求。
@@ -450,58 +450,58 @@ OfflineHandler.prototype.flushStoredRequests = function () {
 
 /* XhrManager singleton */
 var XhrManager = {
-  createXhrHandler: function () {
-    var xhr;
-    if (this.isOffline()) {
-      xhr = new OfflineHandler();
-    } else if (this.isHighLatency()) {
-      xhr = new QueuedHandler();
-    } else {
-      xhr = new SimpleHandler();
+    createXhrHandler: function () {
+        var xhr;
+        if (this.isOffline()) {
+            xhr = new OfflineHandler();
+        } else if (this.isHighLatency()) {
+            xhr = new QueuedHandler();
+        } else {
+            xhr = new SimpleHandler();
+        }
+
+        Interface.ensureImplements(xhr, AjaxHandler);
+        return xhr;
+    },
+    test: function () {
+        this.timer = {};
+        this.timeout = 8000;
+        var that = this;
+        var myHandler = new SimpleHandler();
+        var callback = {
+            success: function (responseText) {
+                window.clearTimeout(that.timer);
+                alert('Success:' + responseText);
+            },
+            failure: function (statusCode) {
+                alert('Failure:' + statusCode);
+            }
+        };
+
+        this.timer = window.setTimeout(that.test, that.timeout);
+        myHandler.request('GET', 'script.php', callback);
+    },
+    isOffline: function () {
+        // Do a quick request with SimpleHandler and
+        // see if it succeeds
+
+
+    },
+    isHighLatency: function () {
+        // Do a series of requests with SimpleHandler and
+        // time the responses.Best done once, as a
+        // branching function.
     }
-
-    Interface.ensureImplements(xhr, AjaxHandler);
-    return xhr;
-  },
-  test: function () {
-    this.timer = {};
-    this.timeout = 8000;
-    var that = this;
-    var myHandler = new SimpleHandler();
-    var callback = {
-      success: function (responseText) {
-        window.clearTimeout(that.timer);
-        alert('Success:' + responseText);
-      },
-      failure: function (statusCode) {
-        alert('Failure:' + statusCode);
-      }
-    };
-
-    this.timer = window.setTimeout(that.test, that.timeout);
-    myHandler.request('GET', 'script.php', callback);
-  },
-  isOffline: function () {
-    // Do a quick request with SimpleHandler and
-    // see if it succeeds
-
-
-  },
-  isHighLatency: function () {
-    // Do a series of requests with SimpleHandler and
-    // time the responses.Best done once, as a
-    // branching function.
-  }
 };
 
 var myHandler = XhrManager.createXhrHandler();
 var callback = {
-  success: function (responseText) {
-    alert('Success: ' + responseText);
-  },
-  failure: function (statusCode) {
-    alert('Failure: ' + statusCode);
-  }
+    success: function (responseText) {
+        alert('Success: ' + responseText);
+    },
+    failure: function (statusCode) {
+        alert('Failure: ' + statusCode);
+    }
 };
 myHandler.request('GET', 'script.php', callback);
 
@@ -552,64 +552,64 @@ var AjaxHandler = new Interface('AjaxHandler', ['request', 'createXhrObject']);
 var SimpleHandler = function () {
 };     // implements AjaxHandler
 SimpleHandler.prototype = {
-  request: function (method, url, callback, postVars) {
-    var xhr = this.createXhrObject();
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState !== 4) {
-        return;
-      }
-      ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304) ?
-        callback.success(xhr.responseText, xhr.responseXML) :
-        callback.failure(xhr.status);
-    };
-    xhr.open(method, url, true);
-    if (method !== 'POST') {
-      postVars = null;
-    }
-    xhr.send(postVars);
-  },
-  createXhrObject: function () {      // Factory method
-    var methods = [
-      function () {
-        return new XMLHttpRequest();
-      },
-      function () {
-        return new ActiveXObject('Msxml2.XMLHTTP');
-      },
-      function () {
-        return new ActiveXObject('Microsoft.XMLHTTP');
-      }
-    ];
+    request: function (method, url, callback, postVars) {
+        var xhr = this.createXhrObject();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 4) {
+                return;
+            }
+            ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304) ?
+                callback.success(xhr.responseText, xhr.responseXML) :
+                callback.failure(xhr.status);
+        };
+        xhr.open(method, url, true);
+        if (method !== 'POST') {
+            postVars = null;
+        }
+        xhr.send(postVars);
+    },
+    createXhrObject: function () {      // Factory method
+        var methods = [
+            function () {
+                return new XMLHttpRequest();
+            },
+            function () {
+                return new ActiveXObject('Msxml2.XMLHTTP');
+            },
+            function () {
+                return new ActiveXObject('Microsoft.XMLHTTP');
+            }
+        ];
 
-    for (var i = 0, len = methods.length; i < len; i++) {
-      try {
-        methods[i]();
-      } catch (e) {
-        continue;
-      }
-      // if we reach this point,method[i] worked
-      this.createXhrObject = methods[i];    // Memoize the method
-      return methods[i]();
-    }
+        for (var i = 0, len = methods.length; i < len; i++) {
+            try {
+                methods[i]();
+            } catch (e) {
+                continue;
+            }
+            // if we reach this point,method[i] worked
+            this.createXhrObject = methods[i];    // Memoize the method
+            return methods[i]();
+        }
 
-    // if we reach this point,none of the methods worked
-    throw new Error('SimpleHandler:Could not create an XHR object.');
-  }
+        // if we reach this point,none of the methods worked
+        throw new Error('SimpleHandler:Could not create an XHR object.');
+    }
 };
 
 function $() {
-  var elements = [];
-  for (var i = 0; i < arguments.length; i++) {
-    var element = arguments[i];
-    if (typeof element == 'string') {
-      element = document.getElementById(element);
+    var elements = [];
+    for (var i = 0; i < arguments.length; i++) {
+        var element = arguments[i];
+        if (typeof element == 'string') {
+            element = document.getElementById(element);
+        }
+        if (arguments.length === 1) {
+            return element;
+        }
+        elements.push(element);
     }
-    if (arguments.length === 1) {
-      return element;
-    }
-    elements.push(element);
-  }
-  return elements;
+    return elements;
 }
 
 /*------------------
@@ -620,93 +620,93 @@ var DisplayModule = new Interface('DisplayModule', ['append', 'remove', 'clear']
 
 /* ListDisplay class. */
 var ListDisplay = function (id, parent) {
-  // implements Display
-  this.list = document.createElement('ul');
-  this.list.id = id;
-  parent.appendChild(this.list);
+    // implements Display
+    this.list = document.createElement('ul');
+    this.list.id = id;
+    parent.appendChild(this.list);
 };
 ListDisplay.prototype = {
-  append: function (text) {
-    var newEl = document.createElement('li');
-    this.list.appendChild(newEl);
-    newEl.innerHTML = text;
-    return newEl;
-  },
-  remove: function (el) {
-    this.list.removeChild(el);
-  },
-  clear: function () {
-    this.list.innerHTML = '';
-  }
+    append: function (text) {
+        var newEl = document.createElement('li');
+        this.list.appendChild(newEl);
+        newEl.innerHTML = text;
+        return newEl;
+    },
+    remove: function (el) {
+        this.list.removeChild(el);
+    },
+    clear: function () {
+        this.list.innerHTML = '';
+    }
 };
 
 /* 配置对象，它包含着一些供阅读器类及其成员对象使用的设置 */
 /* Configuration */
 var conf = {
-  id: 'cnn-top-stories',
-  feedUrl: 'http://rss.cnn.com/rss/cnn_topstories.rss',
-  updateInterval: 60, // In seconds
-  parent: $('feed-readers')
+    id: 'cnn-top-stories',
+    feedUrl: 'http://rss.cnn.com/rss/cnn_topstories.rss',
+    updateInterval: 60, // In seconds
+    parent: $('feed-readers')
 };
 
 /* FeedReader类用XHR处理器从RSS源获取XML格式的数据并用一个内部方法对其进行解析，然后用显示模块将解析出来的信息输出到网页上 */
 /* FeedReader class. */
 var FeedReader = function (display, xhrHandler, conf) {
-  this.display = display;
-  this.xhrHandler = xhrHandler;
-  this.conf = conf;
+    this.display = display;
+    this.xhrHandler = xhrHandler;
+    this.conf = conf;
 
-  this.startUpdates();
+    this.startUpdates();
 };
 FeedReader.prototype = {
-  fetchFeed: function () {
-    var that = this;
-    var callback = {
-      success: function (text, xml) {
-        that.parseFeed(text, xml);
-      },
-      failure: function (status) {
-        that.showError(status);
-      }
-    };
-    this.xhrHandler.request('GET', 'feedProxy.php?feed=' + this.conf.feedUrl, callback);
+    fetchFeed: function () {
+        var that = this;
+        var callback = {
+            success: function (text, xml) {
+                that.parseFeed(text, xml);
+            },
+            failure: function (status) {
+                that.showError(status);
+            }
+        };
+        this.xhrHandler.request('GET', 'feedProxy.php?feed=' + this.conf.feedUrl, callback);
 
-  },
-  parseFeed: function (responseText, responseXML) {
-    this.display.clear();
-    var items = responseXML.getElementsByTagName('item');
-    for (var i = 0, len = items.length; i < len; i++) {
-      var title = items[i].getElementsByTagName('title')[0];
-      var link = items[i].getElementsByTagName('link')[0];
-      this.display.append('<a href="' + link.firstChild.data + '">' + title.firstChild.data + '"</a>');
+    },
+    parseFeed: function (responseText, responseXML) {
+        this.display.clear();
+        var items = responseXML.getElementsByTagName('item');
+        for (var i = 0, len = items.length; i < len; i++) {
+            var title = items[i].getElementsByTagName('title')[0];
+            var link = items[i].getElementsByTagName('link')[0];
+            this.display.append('<a href="' + link.firstChild.data + '">' + title.firstChild.data + '"</a>');
+        }
+    },
+    showError: function (statusCode) {
+        this.display.clear();
+        this.display.append('Error fetching feed.');
+    },
+    stopUpdates: function () {
+        clearInterval(this.interval);
+    },
+    startUpdates: function () {
+        this.fetchFeed();
+        var that = this;
+        this.interval = setInterval(function () {
+            that.fetchFeed();
+        }, this.conf.updateInterval * 1000);
     }
-  },
-  showError: function (statusCode) {
-    this.display.clear();
-    this.display.append('Error fetching feed.');
-  },
-  stopUpdates: function () {
-    clearInterval(this.interval);
-  },
-  startUpdates: function () {
-    this.fetchFeed();
-    var that = this;
-    this.interval = setInterval(function () {
-      that.fetchFeed();
-    }, this.conf.updateInterval * 1000);
-  }
 };
 
 /* 把所有类和对象拼装恰来的工厂方法 */
 /* FeedManager namespace */
 var FeedManager = {
-  createFeedReader: function (conf) {
-    var displayModule = new ListDisplay(conf.id + '-display', conf.parent);
-    var simpleHandler = new SimpleHandler();
-    var xhrHandler = simpleHandler.createXhrObject();
+    createFeedReader: function (conf) {
+        var displayModule = new ListDisplay(conf.id + '-display', conf.parent);
+        var simpleHandler = new SimpleHandler();
+        var xhrHandler = simpleHandler.createXhrObject();
 
-    return new FeedReader(displayModule, xhrHandler, conf);
-  }
+        return new FeedReader(displayModule, xhrHandler, conf);
+    }
 };
 
 
@@ -716,28 +716,28 @@ var FeedManager = {
 var jsp = {};
 jsp.dom = {};
 jsp.dom.Text = function () {
-  this.insert = function (where) {
-    var txt = document.createTextNode(this.url);
-    where.appendChild(txt);
-  };
+    this.insert = function (where) {
+        var txt = document.createTextNode(this.url);
+        where.appendChild(txt);
+    };
 };
 jsp.dom.Link = function () {
-  this.insert = function (where) {
-    var link = document.createElement('a');
-    link.href = this.url;
-    link.appendChild(document.createTextNode(this.url));
-    where.appendChild(link);
-  };
+    this.insert = function (where) {
+        var link = document.createElement('a');
+        link.href = this.url;
+        link.appendChild(document.createTextNode(this.url));
+        where.appendChild(link);
+    };
 };
 jsp.dom.Image = function () {
-  this.insert = function (where) {
-    var im = document.createElement('img');
-    im.src = this.url;
-    where.appendChild(im);
-  };
+    this.insert = function (where) {
+        var im = document.createElement('img');
+        im.src = this.url;
+        where.appendChild(im);
+    };
 };
 jsp.dom.factory = function (type) {
-  return new jsp.dom[type];
+    return new jsp.dom[type];
 }
 
 var o = jsp.dom.factory('Link');
@@ -778,113 +778,120 @@ o.insert(document.body);
  */
 
 // 用setter注入，使用Ioc/DI的示例
-var A = function(){
-  this.c = null;
+var A = function () {
+    this.c = null;
 };
 A.prototype = {
-  setC: function(c){
-    // 注入
-    this.c = c;
-  },
-  t1: function(){
-    // 等待注入
-    this.c.tc();
-  }
+    setC: function (c) {
+        // 注入
+        this.c = c;
+    },
+    t1: function () {
+        // 等待注入
+        this.c.tc();
+    }
 };
 
-var C = function(){};
-C.prototype.tc = function(){
-  console.log('instance C method');
+var C = function () {
+};
+C.prototype.tc = function () {
+    console.log('instance C method');
 };
 
 (new A()).setC(new C()).t1();
 
 // 工厂方法实现Ioc/DI
-var A = function(){};
+var A = function () {
+};
 A.prototype = {
-  createC1: function(){},
-  t1: function(){
-    this.createC1().tc();
-  }
+    createC1: function () {
+    },
+    t1: function () {
+        this.createC1().tc();
+    }
 };
 // 子类实现注入
-var A2 = function(){
-  this.superclass.constructor.apply(this, arguments);
+var A2 = function () {
+    this.superclass.constructor.apply(this, arguments);
 };
 extend(A, A2);
-A2.prototype.createC1 = function(){
-  return new C();
+A2.prototype.createC1 = function () {
+    return new C();
 };
 
 
 // http://www.dofactory.com/javascript-factory-method-pattern.aspx
 
-(function(){
-  function Factory() {
-    this.createEmployee = function (type) {
-      var employee;
+(function () {
+    function Factory() {
+        this.createEmployee = function (type) {
+            var employee;
 
-      if (type === "fulltime") {
-        employee = new FullTime();
-      } else if (type === "parttime") {
-        employee = new PartTime();
-      } else if (type === "temporary") {
-        employee = new Temporary();
-      } else if (type === "contractor") {
-        employee = new Contractor();
-      }
+            if (type === "fulltime") {
+                employee = new FullTime();
+            } else if (type === "parttime") {
+                employee = new PartTime();
+            } else if (type === "temporary") {
+                employee = new Temporary();
+            } else if (type === "contractor") {
+                employee = new Contractor();
+            }
 
-      employee.type = type;
-      employee.say = function () {
-        log.add(this.type + ": rate " + this.hourly + "/hour");
-      }
-      return employee;
+            employee.type = type;
+            employee.say = function () {
+                log.add(this.type + ": rate " + this.hourly + "/hour");
+            }
+            return employee;
+        }
+
     }
 
-  }
-
-  var FullTime = function () {
-    this.hourly = "$12";
-  };
-  var PartTime = function () {
-    this.hourly = "$11";
-  };
-  var Temporary = function () {
-    this.hourly = "$10";
-  };
-  var Contractor = function () {
-    this.hourly = "$15";
-  };
+    var FullTime = function () {
+        this.hourly = "$12";
+    };
+    var PartTime = function () {
+        this.hourly = "$11";
+    };
+    var Temporary = function () {
+        this.hourly = "$10";
+    };
+    var Contractor = function () {
+        this.hourly = "$15";
+    };
 
 // log helper
-  var log = (function () {
-    var log = "";
-    return {
-      add: function (msg) { log += msg + "\n"; },
-      show: function () { alert(log); log = ""; }
+    var log = (function () {
+        var log = "";
+        return {
+            add: function (msg) {
+                log += msg + "\n";
+            },
+            show: function () {
+                alert(log);
+                log = "";
+            }
+        }
+    })();
+
+
+    function run() {
+
+        var employees = [];
+
+        var factory = new Factory();
+
+        employees.push(factory.createEmployee("fulltime"));
+        employees.push(factory.createEmployee("parttime"));
+        employees.push(factory.createEmployee("temporary"));
+        employees.push(factory.createEmployee("contractor"));
+
+        for (var i = 0, len = employees.length; i < len; i++) {
+            employees[i].say();
+        }
+
+        log.show();
     }
-  })();
-
-
-  function run() {
-
-    var employees = [];
-
-    var factory = new Factory();
-
-    employees.push(factory.createEmployee("fulltime"));
-    employees.push(factory.createEmployee("parttime"));
-    employees.push(factory.createEmployee("temporary"));
-    employees.push(factory.createEmployee("contractor"));
-
-    for (var i = 0, len = employees.length; i < len; i++) {
-      employees[i].say();
-    }
-
-    log.show();
-  }
 }());
-
 
 
 </script>
