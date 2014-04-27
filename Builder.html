@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<title>生成器模式</title>
+    <meta charset="UTF-8">
+    <title>生成器模式</title>
 </head>
 <body>
-	
-	<script>
+
+<script>
 /**
  * 生成器模式
  *
@@ -36,240 +36,248 @@
  * 何时使用：
  * 1.如果创建对象的算法，应该独立于该对象的组成部分以及它们的装配方式时。
  * 2.如果同时一个构建过程有着不同的表示时。
- * 
+ *
  */
 
 // 示例代码
 
 // 生成器对象，创建一个产品对象所需的各个部件的操作
-var Builder = function(){
-	// 生成器最终构建的产品对象
-	var resultProduct;
+var Builder = function () {
+    // 生成器最终构建的产品对象
+    var resultProduct;
 
 // 获取生成器最终构建的产品对象
-	this.getResult = function(){
-		return resultProduct;
-	};
+    this.getResult = function () {
+        return resultProduct;
+    };
 
-	this.buildPart = function(){
-		// 构建某个部件的功能处理
-	};
+    this.buildPart = function () {
+        // 构建某个部件的功能处理
+    };
 }
 
 // 指导者，指导使用生成器的接口来构建产品的对象
 // 传入生成器对象
-var Director = function(builder){
-	this.builder = builder;
+var Director = function (builder) {
+    this.builder = builder;
 };
 Director.prototype = {
-	// 通过使用生成器接口来构建最终的产品对象
-	construct: function(){
-		this.builder.buildPart();
-	}
+    // 通过使用生成器接口来构建最终的产品对象
+    construct: function () {
+        this.builder.buildPart();
+    }
 };
 
-(function(){
+(function () {
 
-	// 生成器接口，定义创建一个输出文件对象所需的各个部件的操作
-	var Builder = function(){};
-	Builder.prototype = {
-		// 构建输出文件的Header部分
-		buildHeader: function(ehm){},
-		// 构建输出文件的Body部分
-		buildBody: function(mapData){},
-		// 构建输出文件的Footer部分
-		buildFooter: function(efm){}
-	};
-
-	// 实现到处数据到文本文件的生成器对象	
-	var TxtBuilder = function(){
-		this.stringBuffer = '';
-	};
-  TxtBuilder.prototype = {
-    __proto__: Builder.prototype,
-
-    buildBody: function(mapData){
-      var tblName, edm;
-      for(tblName in mapData) {
-        this.stringBuffer += tblName + "\n";
-
-        for(edm in mapData[tblName]) {
-          this.stringBuffer += edm.getProductId() + ',' +
-            edm.getPrice() + ',' + edm.getAmount() + '\n';
+    // 生成器接口，定义创建一个输出文件对象所需的各个部件的操作
+    var Builder = function () {
+    };
+    Builder.prototype = {
+        // 构建输出文件的Header部分
+        buildHeader: function (ehm) {
+        },
+        // 构建输出文件的Body部分
+        buildBody: function (mapData) {
+        },
+        // 构建输出文件的Footer部分
+        buildFooter: function (efm) {
         }
-      }
-    },
-    buildFooter: function(efm){
-      this.stringBuffer += efm.getExportUser();
-    },
-    buildHeader: function(ehm){
-      this.stringBuffer += ehm.getDepId() + ',' +
-        ehm.getExportDate() | '\n';
-    },
-    getResult: function(){
-      return new Buffer(this.stringBuffer);
-    }
-  };
+    };
 
-	// 实现导出数据到XML文件的生成器对象
-	var XmlBuilder = function(){
-		this.stringBuffer = '';
-	};
-  XmlBuilder.prototype = {
-    __proto__: Builder,
-    buildBody: function(){},
-    buildFooter: function(){},
-    buildHeader: function(){},
-    getResult: function(){}
-  };
+    // 实现到处数据到文本文件的生成器对象
+    var TxtBuilder = function () {
+        this.stringBuffer = '';
+    };
+    TxtBuilder.prototype = {
+        __proto__: Builder.prototype,
 
-	// 指导者，指导使用生成器的接口来构建输出的文件的对象
-	var Director = function(builder){
-		// 传入生成器对象
-		this.builder = builder;
-	};
-	Director.prototype = {
-		// 指导生成器构建最终的输出的文件的对象
-		construct: function(ehm, mapData, efm){
-			this.builder.buildHeader(ehm);
-			this.builder.buildBody(mapData);
-			this.builder.buildFooter(efm);
-		}
-	};
+        buildBody: function (mapData) {
+            var tblName, edm;
+            for (tblName in mapData) {
+                this.stringBuffer += tblName + "\n";
 
-	var textBuilder = new TxtBuilder();
-	var director = new Director(textBuilder);
-	director.construct(ehm, mapData, efm);
+                for (edm in mapData[tblName]) {
+                    this.stringBuffer += edm.getProductId() + ',' +
+                        edm.getPrice() + ',' + edm.getAmount() + '\n';
+                }
+            }
+        },
+        buildFooter: function (efm) {
+            this.stringBuffer += efm.getExportUser();
+        },
+        buildHeader: function (ehm) {
+            this.stringBuffer += ehm.getDepId() + ',' +
+                ehm.getExportDate() | '\n';
+        },
+        getResult: function () {
+            return new Buffer(this.stringBuffer);
+        }
+    };
 
-	var xmlBuilder = new XmlBuilder();
-	var director2 = new Director(director);
-	director2.construct(ehm, mapData, efm);
+    // 实现导出数据到XML文件的生成器对象
+    var XmlBuilder = function () {
+        this.stringBuffer = '';
+    };
+    XmlBuilder.prototype = {
+        __proto__: Builder,
+        buildBody: function () {
+        },
+        buildFooter: function () {
+        },
+        buildHeader: function () {
+        },
+        getResult: function () {
+        }
+    };
+
+    // 指导者，指导使用生成器的接口来构建输出的文件的对象
+    var Director = function (builder) {
+        // 传入生成器对象
+        this.builder = builder;
+    };
+    Director.prototype = {
+        // 指导生成器构建最终的输出的文件的对象
+        construct: function (ehm, mapData, efm) {
+            this.builder.buildHeader(ehm);
+            this.builder.buildBody(mapData);
+            this.builder.buildFooter(efm);
+        }
+    };
+
+    var textBuilder = new TxtBuilder();
+    var director = new Director(textBuilder);
+    director.construct(ehm, mapData, efm);
+
+    var xmlBuilder = new XmlBuilder();
+    var director2 = new Director(director);
+    director2.construct(ehm, mapData, efm);
 
 }());
 
 /*
-生成器模式的实现
+ 生成器模式的实现
 
-1。生成器的实现
-实际上在Builder接口的实现中，每个部件构建的方法里面，除了部件装配外，也可以实现如何具体地创建各个部件对象。也就是说每个方法都可以由两部分功能，一部分是创建部件对象，另一部分是组装部件。
-在构建部件的方法里面可以实现选择并创建具体的部件对象，然后再把这个部件对象组装到产品对象中去。这样一来，Builder就可以和工厂方法配合使用了。
-再进一步，如果在实现Builder的时候，只有创建对象的功能，而没有组装的功能。那么这个时候的Builder实现跟抽象工厂的实现是类似的。
-这种情况下，Builder接口就类似抽象工厂的接口，Builder的具体实现就类似于具体的工厂，而且Builder接口里面定义的创建各个部件的方法也是有关联的，这些方法是构建一个复杂对象所需要的部件对象。
+ 1。生成器的实现
+ 实际上在Builder接口的实现中，每个部件构建的方法里面，除了部件装配外，也可以实现如何具体地创建各个部件对象。也就是说每个方法都可以由两部分功能，一部分是创建部件对象，另一部分是组装部件。
+ 在构建部件的方法里面可以实现选择并创建具体的部件对象，然后再把这个部件对象组装到产品对象中去。这样一来，Builder就可以和工厂方法配合使用了。
+ 再进一步，如果在实现Builder的时候，只有创建对象的功能，而没有组装的功能。那么这个时候的Builder实现跟抽象工厂的实现是类似的。
+ 这种情况下，Builder接口就类似抽象工厂的接口，Builder的具体实现就类似于具体的工厂，而且Builder接口里面定义的创建各个部件的方法也是有关联的，这些方法是构建一个复杂对象所需要的部件对象。
 
-2.指导者的实现
-在生成器模式里面，指导者承担的是整体构建算法部分，是相对不变的部分。因此在实现指导者的时候，把变化的部分分离出去很重要。
-其实指导者分离出去的变化部分，就到了生成器那里，指导者知道整体的构建算法，却不知道如何具体的创建和装配部件对象。
-因此真正的指导者实现，并不仅仅是简单地按照一定的顺序调用生成器的方法来生成对象。应该是有较为复杂的算法和运算过程，在运算过程中根据需要，才会调用生成器的方法来生成部件对象。
+ 2.指导者的实现
+ 在生成器模式里面，指导者承担的是整体构建算法部分，是相对不变的部分。因此在实现指导者的时候，把变化的部分分离出去很重要。
+ 其实指导者分离出去的变化部分，就到了生成器那里，指导者知道整体的构建算法，却不知道如何具体的创建和装配部件对象。
+ 因此真正的指导者实现，并不仅仅是简单地按照一定的顺序调用生成器的方法来生成对象。应该是有较为复杂的算法和运算过程，在运算过程中根据需要，才会调用生成器的方法来生成部件对象。
 
-3.指导者和生成器的交互
-在生成器模式里面，指导者和生成器的交互是通过生成器的buildPart方法来完成的。
-指导者通常会实现比较复杂的算法或者是运算过程，在实际开发中很可能会有以下的情况：
-1） 在运行指导者的时候，会按照整体构建算法的步骤进行运算，可能先运行前几步运算，到了某一步骤，需要具体创建某个部件对象了，然后就调用Builder中创建相应部件的方法来创建具体的部件。同时，把前面运算得到的数据传递给Builder，因为在Builder内部实现创建和组装部件的时候，可能会需要这些数据。
-2） Builder创建完具体的部件对象后，会把创建好的部件对象返回给指导者，指导者继续后续的算法运算，可能会用到已经创建好的对象。
-3）如此反复下去，知道整个构建算法运行完成，那么最终的产品对象也就创建好了。
+ 3.指导者和生成器的交互
+ 在生成器模式里面，指导者和生成器的交互是通过生成器的buildPart方法来完成的。
+ 指导者通常会实现比较复杂的算法或者是运算过程，在实际开发中很可能会有以下的情况：
+ 1） 在运行指导者的时候，会按照整体构建算法的步骤进行运算，可能先运行前几步运算，到了某一步骤，需要具体创建某个部件对象了，然后就调用Builder中创建相应部件的方法来创建具体的部件。同时，把前面运算得到的数据传递给Builder，因为在Builder内部实现创建和组装部件的时候，可能会需要这些数据。
+ 2） Builder创建完具体的部件对象后，会把创建好的部件对象返回给指导者，指导者继续后续的算法运算，可能会用到已经创建好的对象。
+ 3）如此反复下去，知道整个构建算法运行完成，那么最终的产品对象也就创建好了。
 
-可以看出指导者和生成器是需要交互的，方式就是用过生成器方法的参数和返回值，来回地传递数据。事实上，指导者使用过委托的方式把功能交给生成器去完成。
+ 可以看出指导者和生成器是需要交互的，方式就是用过生成器方法的参数和返回值，来回地传递数据。事实上，指导者使用过委托的方式把功能交给生成器去完成。
 
-4.返回装配好的产品的方法
-标准的生成器模式中，在Builder实现里面会提供一个返回装配好的产品的方法，在Builder接口上是没有的。它考虑的是最终的对象一定要通过部件构建和装配，才算真正创建了，而具体干活的就是Builder实现，虽然指导者也参与了，但是指导者是不负责具体的部件创建和组装的，因此客户端是从Builder实现里面获取最终装配好的产品。
+ 4.返回装配好的产品的方法
+ 标准的生成器模式中，在Builder实现里面会提供一个返回装配好的产品的方法，在Builder接口上是没有的。它考虑的是最终的对象一定要通过部件构建和装配，才算真正创建了，而具体干活的就是Builder实现，虽然指导者也参与了，但是指导者是不负责具体的部件创建和组装的，因此客户端是从Builder实现里面获取最终装配好的产品。
 
-5.关于被构建的产品的接口
-在使用生成器模式的时候，大多数情况下是不知道最终构建出来的产品是什么，所以一般不需要对产品定义抽象接口，因为最终构建的产品千差万别，给这些产品定义公共接口几乎是没有意义的。
+ 5.关于被构建的产品的接口
+ 在使用生成器模式的时候，大多数情况下是不知道最终构建出来的产品是什么，所以一般不需要对产品定义抽象接口，因为最终构建的产品千差万别，给这些产品定义公共接口几乎是没有意义的。
  */
 
 // 使用生成器模式构建复杂对象
 
-var InsuranceContract = (function(){
-	// 保险合同对象
-var InsuranceContract = function(builder){
-	this.contractId = builder.getContractId();
-	this.personName = builder.getPersonName();
-	this.companyName = builder.getCompanyName();
-	this.beginDate = builder.getBeginDate();
-	this.endDate = builder.getEndDate();
-	this.otherDate = builder.getOtherDate();
-};
-InsuranceContract.prototype = {
-	someOperation: function(){
-		console.log('Now in Insurance Contract someOperation = ' + this.contractId);
-	}
-};
+var InsuranceContract = (function () {
+    // 保险合同对象
+    var InsuranceContract = function (builder) {
+        this.contractId = builder.getContractId();
+        this.personName = builder.getPersonName();
+        this.companyName = builder.getCompanyName();
+        this.beginDate = builder.getBeginDate();
+        this.endDate = builder.getEndDate();
+        this.otherDate = builder.getOtherDate();
+    };
+    InsuranceContract.prototype = {
+        someOperation: function () {
+            console.log('Now in Insurance Contract someOperation = ' + this.contractId);
+        }
+    };
 
 // 构造保险合同对象的构造器
-var ConcreteBuilder = function(contractId, beginDate, endDate){
-	this.contractId = contractId;
-	this.beginDate = beginDate;
-	this.endDate = endDate;
-};
-ConcreteBuilder.prototype = {
-	setPersonName: function(personName){
-		this.personName = personName;
-		return this;
-	},
-	setCompanyName: function(companyName){
-		this.companyName = companyName;
-		return this;
-	},
-	setOtherDate: function(otherData){
-		this.otherData = otherData;
-		return this;
-	},
-	getContractId: function(){
-		return this.contractId;
-	},
-	getPersonName: function(){
-		return this.personName;
-	},
-	getCompanyName: function(){
-		return this.companyName;
-	},
-	getBiginDate: function(){
-		return this.beginDate;
-	},
-	getEndDate: function(){
-		return this.endDate;
-	},
-	getOtherData: function(){
-		return this.otherData;
-	},
+    var ConcreteBuilder = function (contractId, beginDate, endDate) {
+        this.contractId = contractId;
+        this.beginDate = beginDate;
+        this.endDate = endDate;
+    };
+    ConcreteBuilder.prototype = {
+        setPersonName: function (personName) {
+            this.personName = personName;
+            return this;
+        },
+        setCompanyName: function (companyName) {
+            this.companyName = companyName;
+            return this;
+        },
+        setOtherDate: function (otherData) {
+            this.otherData = otherData;
+            return this;
+        },
+        getContractId: function () {
+            return this.contractId;
+        },
+        getPersonName: function () {
+            return this.personName;
+        },
+        getCompanyName: function () {
+            return this.companyName;
+        },
+        getBiginDate: function () {
+            return this.beginDate;
+        },
+        getEndDate: function () {
+            return this.endDate;
+        },
+        getOtherData: function () {
+            return this.otherData;
+        },
 
-	// 构建真正的对象并返回
-	// 添加一些约束规则
-	build: function(){
-		if(!this.contractId || this.contractId.trim().length === 0) {
-			throw new Error('合同编号不能为空');
-		}
-		var signPerson = this.personName && this.personName.trim().length > 0;
-		var signCompany = this.companyName && this.companyName.trim().length > 0;
+        // 构建真正的对象并返回
+        // 添加一些约束规则
+        build: function () {
+            if (!this.contractId || this.contractId.trim().length === 0) {
+                throw new Error('合同编号不能为空');
+            }
+            var signPerson = this.personName && this.personName.trim().length > 0;
+            var signCompany = this.companyName && this.companyName.trim().length > 0;
 
-		if(signPerson && signCompany) {
-			throw new Error('一份合同不能同时与人和公司签订');
-		}
+            if (signPerson && signCompany) {
+                throw new Error('一份合同不能同时与人和公司签订');
+            }
 
-		if(!signPerson && !signCompany) {
-			throw new Error('一份合同不能没有签订对象');
-		}
+            if (!signPerson && !signCompany) {
+                throw new Error('一份合同不能没有签订对象');
+            }
 
-		if(this.beginDate <= 0) {
-			throw new Error('合同必须有保险开始生效的日期');
-		}
+            if (this.beginDate <= 0) {
+                throw new Error('合同必须有保险开始生效的日期');
+            }
 
-		if(this.endDate <= 0) {
-			throw new Error('合同必须有保险失效的日期');
-		}
+            if (this.endDate <= 0) {
+                throw new Error('合同必须有保险失效的日期');
+            }
 
-		if(this.endDate <= this.beginDate) {
-			throw new Error('保险失效的日期必须大于生效日期');
-		}
+            if (this.endDate <= this.beginDate) {
+                throw new Error('保险失效的日期必须大于生效日期');
+            }
 
-		return new InsuranceContract(this);
-	}
-};
+            return new InsuranceContract(this);
+        }
+    };
 
 // 把构建对象和被构建对象合并
-InsuranceContract.ConcreteBuilder = ConcreteBuilder;
+    InsuranceContract.ConcreteBuilder = ConcreteBuilder;
 
-return InsuranceContract;
+    return InsuranceContract;
 }());
 
 
@@ -279,40 +287,40 @@ contract.someOperation();
 
 
 /*
-相关模式
+ 相关模式
 
-1.生成器模式与工厂方法模式
+ 1.生成器模式与工厂方法模式
 
-这两个模式可以组合使用。
-生成器模式的Builder实现中，通常需要选择具体的部件实现。一个可行的方案就是实现成为工厂方法，通过工厂方法来获取具体的部件对象，然后再进行部件的装配。
+ 这两个模式可以组合使用。
+ 生成器模式的Builder实现中，通常需要选择具体的部件实现。一个可行的方案就是实现成为工厂方法，通过工厂方法来获取具体的部件对象，然后再进行部件的装配。
 
-2.生成器模式与抽象工厂模式
+ 2.生成器模式与抽象工厂模式
 
-这两个模式既相似又有区别，也可以组合使用。
-区别：抽象工厂模式的主要目的是创建产品簇，这个产品簇里面的单个产品就相当于是构成一个复杂对象的部件对象，抽象工厂对象创建完成后就立即返回整个产品簇；而生成器模式的主要目的是按照构造算法，一步一步来构建一个复杂的产品对象，桐城要等到整个构建过程结束以后没才会得到最终的产品对象。
-组合使用：在生成器模式的Builder实现中，需要创建各个部件对象，而这些部件对象是有关联的，通常是构成一个复杂对象的部件对象。也就是说，Builder实现中，需要获取构成一个复杂对象的产品簇，就可以使用抽象工厂模式来实现。有抽象工厂模式负责部件对象创建，Builder实现里面则主要负责产品对象整体的构建了。
+ 这两个模式既相似又有区别，也可以组合使用。
+ 区别：抽象工厂模式的主要目的是创建产品簇，这个产品簇里面的单个产品就相当于是构成一个复杂对象的部件对象，抽象工厂对象创建完成后就立即返回整个产品簇；而生成器模式的主要目的是按照构造算法，一步一步来构建一个复杂的产品对象，桐城要等到整个构建过程结束以后没才会得到最终的产品对象。
+ 组合使用：在生成器模式的Builder实现中，需要创建各个部件对象，而这些部件对象是有关联的，通常是构成一个复杂对象的部件对象。也就是说，Builder实现中，需要获取构成一个复杂对象的产品簇，就可以使用抽象工厂模式来实现。有抽象工厂模式负责部件对象创建，Builder实现里面则主要负责产品对象整体的构建了。
 
-3.生成器模式和模板方法模式
+ 3.生成器模式和模板方法模式
 
-这也是两个非常相似的模式。
-模板方法模式主要是用来定义算法的骨架，把算法中某些步骤延迟到子类中实现。生成器模式Director用来定义整体的构建算法，把算法中某些涉及到具体部件对象的创建和装配功能，委托给具体的Builder来实现。
-从实质上看，都是定义一个固定的算法骨架，然后把算法中的某些具体步骤交给其他类来实现，都能实现整体算法步骤和某些具体步骤实现的分离。
-区别：
-1）.目的：生成器模式用来构建复杂对象。模板模式用来定义算法骨架，尤其是一些复杂的业务功能的处理算法的骨架；
-2）。实现：生成器模式采用委托的方法，模板模式采用继承的方法。
-3）。复杂度：生成器模式需要组合Director和Builder对象，然后才能开始构建，要等构建后才能获得最终的对象，而模板方法就没这么麻烦，直接使用子类对象即可。
+ 这也是两个非常相似的模式。
+ 模板方法模式主要是用来定义算法的骨架，把算法中某些步骤延迟到子类中实现。生成器模式Director用来定义整体的构建算法，把算法中某些涉及到具体部件对象的创建和装配功能，委托给具体的Builder来实现。
+ 从实质上看，都是定义一个固定的算法骨架，然后把算法中的某些具体步骤交给其他类来实现，都能实现整体算法步骤和某些具体步骤实现的分离。
+ 区别：
+ 1）.目的：生成器模式用来构建复杂对象。模板模式用来定义算法骨架，尤其是一些复杂的业务功能的处理算法的骨架；
+ 2）。实现：生成器模式采用委托的方法，模板模式采用继承的方法。
+ 3）。复杂度：生成器模式需要组合Director和Builder对象，然后才能开始构建，要等构建后才能获得最终的对象，而模板方法就没这么麻烦，直接使用子类对象即可。
 
-4.生成器模式和组合模式
+ 4.生成器模式和组合模式
 
-可以组合使用。
-对于复杂的组合结构，可以使用生成器模式来一步一步构建。
+ 可以组合使用。
+ 对于复杂的组合结构，可以使用生成器模式来一步一步构建。
  */
 
 
 // http://www.dofactory.com/javascript-builder-pattern.aspx
 
 function Shop() {
-    this.construct = function(builder) {
+    this.construct = function (builder) {
         builder.step1();
         builder.step2();
         return builder.get();
@@ -321,46 +329,46 @@ function Shop() {
 
 function CarBuilder() {
     this.car = null;
-    this.step1 = function() {
+    this.step1 = function () {
         this.car = new Car();
     };
-    this.step2 = function() {
+    this.step2 = function () {
         this.car.addParts();
     };
-    this.get = function() {
+    this.get = function () {
         return this.car;
     };
 }
 
 function TruckBuilder() {
     this.truck = null;
-    this.step1 = function() {
+    this.step1 = function () {
         this.truck = new Truck();
     };
-    this.step2 = function() {
+    this.step2 = function () {
         this.truck.addParts();
     };
-    this.get = function() {
+    this.get = function () {
         return this.truck;
     };
 }
 
 function Car() {
     this.doors = 0;
-    this.addParts = function() {
+    this.addParts = function () {
         this.doors = 4;
     };
-    this.say = function() {
+    this.say = function () {
         log.add("I am a " + this.doors + "-door car");
     };
 }
 
 function Truck() {
     this.doors = 0;
-    this.addParts = function() {
+    this.addParts = function () {
         this.doors = 2;
     };
-    this.say = function() {
+    this.say = function () {
         log.add("I am a " + this.doors + "-door truck");
     };
 }
@@ -369,8 +377,13 @@ function Truck() {
 var log = (function () {
     var log = "";
     return {
-        add: function (msg) { log += msg + "\n"; },
-        show: function () { alert(log); log = ""; }
+        add: function (msg) {
+            log += msg + "\n";
+        },
+        show: function () {
+            alert(log);
+            log = "";
+        }
     }
 })();
 
@@ -388,6 +401,6 @@ function run() {
 
     log.show();
 }
-	</script>
+</script>
 </body>
 </html>
