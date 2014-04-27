@@ -26,178 +26,204 @@
  * 如果被缓存的对象的属性值经常变动，那就不适合缓存了。
  * 因此，需要分离出被缓存对象实例中，哪些数据是不变且重复出现的，哪些数据是经常变化的，真正应该被缓存的数据是那些不变且重复出现的数据，把它们称为对象的内部状态，而那些变化的数据就不缓存了，把它们称为对象的外部状态。
  * 这样在实现的时候，把内部状态分离出来共享，称之为享元，通过共享享元对象来减少对内存的占用。把外部状态分离出来，放到外部，让应用在使用的时候进行维护，并在需要的时候传递给享元对象使用。为了控制对内部状态的共享，并且让外部能简单地使用共享数据，提供一个工厂来管理享元，把它称为享元工厂。
+ *
+ * 1.变与不变
+ * 享元模式的重点就在于分离变与不变。把一个对象的状态分成内部状态和外部状态，内部状态是不变的，外部状态是可变的。然后通过共享不变的部分，达到减少对象数量并节约内存的目的。在享元对象需要的时候，可以从外部传入外部状态给共享的对象，共享对象会在功能处理的时候，使用自己内部的状态和这些外部的状态。
+ *
+ * 2.共享与不共享
+ * 在享元模式中，享元对象又有共享与不共享之分，这种情况通常出现在和组合模式合用的情况，通常共享的是叶子对象，一般不共享的部分是由共享部分组合而成的，由于所有细粒度的叶子对象已经缓存了，那么缓存组合对象就没有什么意义了。
+ *
+ * 3.内部状态和外部状态
+ * 享元模式的内部状态，通常指的是包含享元对象内部的，对象本身的状态，是独立于使用享元的场景的信息，一般创建后就不再变化的状态，因此可以共享。
+ * 外部状态指的是享元对象之外的状态，取决于使用享元的场景，会根据使用场景而变化，因此不可共享。如果享元对象需要这些外部状态的话，可以从外部传递到享元对象中，比如通过方法的参数来传递。
+ * 也就是说享元模式真正缓存和共享的数据是享元的内部状态，而外部状态是不应该被缓存共享的。
+ * 内部状态和外部状态是独立的。外部状态的变化不应该影响到内部状态。
+ *
+ * 4.实例池
+ * 在享元模式中，为了创建和管理共享的享元部分，引入了享元工厂，享元工厂中一般都包含有享元对象的实例池，享元对象就是缓存在这个实例池中的。
+ * 所谓实例池，指的是缓存和管理对象实例的程序，通常实例池会提供对象实例的运行环境，并控制对象实例的生存周期。
+ * 工业级的实例池在实现上有两个最基本的难点，一个是动态控制实例数量，另一个是动态分配实例来提供给外部使用。这些都是需要算法来做保证的。
+ * 在享元模式中，享元工厂中的实例池并没有那么复杂，因为共享的享元对象基本上都是一个实例，一般不会出现同一个享元对象有多个实例的情况。这样就不用去考虑动态创建和销毁享元对象实例的功能，也不存在动态调度的麻烦。
+ *
+ * 5.享元模式的调用顺序
+ * 1）通过享元工厂来获取共享的享元对象
+ * 2）创建相应的享元对象
+ * 3）调用共享的享元对象的方法，传入外部状态
+ *
+ * 6.谁来初始化共享对象
+ * 通常是第一次向享元工厂请求获取共享对象的时候，进行共享对象的初始化，而且多半都是在享元工厂内部实现，不会从外部传入共享对象。当然可以从外部传入一些创建共享对象需要的值，享元工厂可以按照这些值去初始化需要共享的对象，然后把创建好的共享对象的实例放入享元工厂内部的缓存中，以后再请求这个共享对象的时候就不用再创建了。
  */
 
-(function(){
-  // 示例代码
+(function () {
+    // 示例代码
 
-  /**
-   * 享元对象。封装Flyweight的内部状态，提供功能方法。
-   * @param state 享元对象的内部状态的数据
-   */
-  function ConcreteFlyweight(state){
-    var intrinsicState = state;
+    /**
+     * 享元对象。封装Flyweight的内部状态，提供功能方法。
+     * @param state 享元对象的内部状态的数据
+     */
+    function ConcreteFlyweight(state) {
+        var intrinsicState = state;
 
-    this.operation = function(extrinsicState){
-      // 具体的功能处理，可能会用到享元内部，外部的状态
+        this.operation = function (extrinsicState) {
+            // 具体的功能处理，可能会用到享元内部，外部的状态
+        };
+    }
+
+    /**
+     * 不需要共享的flyweight对象
+     * 通常是将被共享的享元对象作为子结点组合出来的对象
+     */
+    function UnsharedConcreteFlyweight() {
+        // 描述对象的状态
+        var allState;
+
+        this.operation = function (extrinsicState) {
+            // 具体的功能处理
+        };
+    }
+
+    // 享元工厂
+    // 客户端不能直接创建共享享元对象实例，必须通过享元工厂来创建。
+    function FlyweightFactory() {
+        // 缓存多个Flyweight对象
+        var fsMap = {};
+
+        this.getFlyweight = function (key) {
+            var f = fsMap[key];
+
+            if (f == null) {
+                f = new ConcreteFlyweight(key);
+                fsMap[key] = f;
+            }
+
+            return f;
+        };
+    }
+
+    new function () {
+        // Client
+        // 通常会维持一个对flyweight的引用
+        // 计算或存储一个或多个flyweight的外部状态
     };
-  }
-
-  /**
-   * 不需要共享的flyweight对象
-   * 通常是将被共享的享元对象作为子结点组合出来的对象
-   */
-  function UnsharedConcreteFlyweight(){
-    // 描述对象的状态
-    var allState;
-
-    this.operation = function(extrinsicState){
-      // 具体的功能处理
-    };
-  }
-
-  // 享元工厂
-  // 客户端不能直接创建共享享元对象实例，必须通过享元工厂来创建。
-  function FlyweightFactory(){
-    // 缓存多个Flyweight对象
-    var fsMap = {};
-
-    this.getFlyweight = function(key){
-      var f = fsMap[key];
-
-      if(f == null){
-        f = new ConcreteFlyweight(key);
-        fsMap[key] = f;
-      }
-
-      return f;
-    };
-  }
-
-  new function(){
-    // Client
-    // 通常会维持一个对flyweight的引用
-    // 计算或存储一个或多个flyweight的外部状态
-  };
 
 })();
 
-(function(){
-  // 权限控制
+(function () {
+    // 权限控制
 
-  // 封装授权数据中重复出现部分的享元对象
-  function AuthorizationFlyweight(state){
-    var parts = state.split(',');
-    // 内部状态， 安全实体
-    var securityEntity = parts[0];
-    // 内部状态，权限
-    var permit = parts[1];
+    // 封装授权数据中重复出现部分的享元对象
+    function AuthorizationFlyweight(state) {
+        var parts = state.split(',');
+        // 内部状态， 安全实体
+        var securityEntity = parts[0];
+        // 内部状态，权限
+        var permit = parts[1];
 
-    this.getSecurityEntity = function(){
-      return securityEntity;
-    };
-    this.getPermit = function(){
-      return permit;
-    };
-    this.match = function(security, perm){
-      return securityEntity === security &&
-        permit === perm;
-    };
-    this.toString = function(){
-      return securityEntity + ',' + permit;
-    };
-  }
-
-  // 享元工厂，通常实现称为单例
-  var FlyweightFactory = {
-    fsMap: {},
-    getFlyweight: function(key){
-      var f = this.fsMap[key];
-
-      if(f == null){
-        f = new AuthorizationFlyweight(key);
-        this.fsMap[key] = f;
-      }
-      return f;
+        this.getSecurityEntity = function () {
+            return securityEntity;
+        };
+        this.getPermit = function () {
+            return permit;
+        };
+        this.match = function (security, perm) {
+            return securityEntity === security &&
+                permit === perm;
+        };
+        this.toString = function () {
+            return securityEntity + ',' + permit;
+        };
     }
-  };
 
-  function isEmptyObj(obj){
-    for(var i in obj) return false;
-    return true;
-  }
+    // 享元工厂，通常实现称为单例
+    var FlyweightFactory = {
+        fsMap: {},
+        getFlyweight: function (key) {
+            var f = this.fsMap[key];
 
-  // 安全管理
-  var SecurityMgr = {
-    map: {},
-    // 模拟登录
-    login: function(user){
-      this.map[user] = this.queryByUser(user);
-    },
-    // 判断用户对某个安全实体是否拥有权限
-    hasPermit: function(user, securityEntity, permit){
-      var col = this.map[user];
-
-      if(col == null || isEmptyObj(col)){
-        console.log(user + '没有登录或是没有被分配任何权限');
-        return false;
-      }
-
-      for(var i in col){
-        if(!col.hasOwnProperty(i)) continue;
-
-        var flyweight = col[i];
-        console.log('flyweight == ' + flyweight);
-
-        if(flyweight.match(securityEntity, permit)) return true;
-      }
-
-      return false;
-    },
-    // 从数据库中获取某人所拥有的权限
-    queryByUser: function(user){
-      var col = [];
-
-      for(var i in DataBase){
-        var s = DataBase[i];
-        var ss = s.split(',');
-
-        if(ss[0] === user){
-          var fm = FlyweightFactory.getFlyweight(ss[1] + ',' + ss[2]);
-          col.push(fm);
+            if (f == null) {
+                f = new AuthorizationFlyweight(key);
+                this.fsMap[key] = f;
+            }
+            return f;
         }
-      }
+    };
 
-      return col;
+    function isEmptyObj(obj) {
+        for (var i in obj) return false;
+        return true;
     }
-  };
 
-  // mock data
-  var DataBase = [
-    '张三,人员列表,查看',
-    '李四,人员列表,查看',
-    '李四,资薪数据,查看',
-    '李四,资薪数据,修改'
-  ];
+    // 安全管理
+    var SecurityMgr = {
+        map: {},
+        // 模拟登录
+        login: function (user) {
+            this.map[user] = this.queryByUser(user);
+        },
+        // 判断用户对某个安全实体是否拥有权限
+        hasPermit: function (user, securityEntity, permit) {
+            var col = this.map[user];
 
-  for(var i = 0; i < 3; i++){
-    DataBase.push('张三' + i + ',人员列表,查看');
-  }
+            if (col == null || isEmptyObj(col)) {
+                console.log(user + '没有登录或是没有被分配任何权限');
+                return false;
+            }
 
-  new function(){
-    SecurityMgr.login('张三');
-    SecurityMgr.login('李四');
-    var f1 = SecurityMgr.hasPermit('张三', '资薪数据', '查看');
-    var f2 = SecurityMgr.hasPermit('李四', '资薪数据', '查看');
+            for (var i in col) {
+                if (!col.hasOwnProperty(i)) continue;
 
-    console.log('f1 == ' + f1);
-    console.log('f2 == ' + f2);
+                var flyweight = col[i];
+                console.log('flyweight == ' + flyweight);
 
-    for(var i = 0; i < 3; i++){
-      SecurityMgr.login('张三' + i);
-      SecurityMgr.hasPermit('张三' + i, '资薪数据', '查看');
+                if (flyweight.match(securityEntity, permit)) return true;
+            }
+
+            return false;
+        },
+        // 从数据库中获取某人所拥有的权限
+        queryByUser: function (user) {
+            var col = [];
+
+            for (var i in DataBase) {
+                var s = DataBase[i];
+                var ss = s.split(',');
+
+                if (ss[0] === user) {
+                    var fm = FlyweightFactory.getFlyweight(ss[1] + ',' + ss[2]);
+                    col.push(fm);
+                }
+            }
+
+            return col;
+        }
+    };
+
+    // mock data
+    var DataBase = [
+        '张三,人员列表,查看',
+        '李四,人员列表,查看',
+        '李四,资薪数据,查看',
+        '李四,资薪数据,修改'
+    ];
+
+    for (var i = 0; i < 3; i++) {
+        DataBase.push('张三' + i + ',人员列表,查看');
     }
-  };
+
+    new function () {
+        SecurityMgr.login('张三');
+        SecurityMgr.login('李四');
+        var f1 = SecurityMgr.hasPermit('张三', '资薪数据', '查看');
+        var f2 = SecurityMgr.hasPermit('李四', '资薪数据', '查看');
+
+        console.log('f1 == ' + f1);
+        console.log('f2 == ' + f2);
+
+        for (var i = 0; i < 3; i++) {
+            SecurityMgr.login('张三' + i);
+            SecurityMgr.hasPermit('张三' + i, '资薪数据', '查看');
+        }
+    };
 
 })();
 
@@ -569,56 +595,56 @@ var CarRecordManager = (function () {
 
 // 未经优化的Tooltip类
 // Tooltip class, un-optimized
-function test(){
-  var Tooltip = function (targetElement, text) {
-    this.target = targetElement;
-    this.text = text;
-    this.delayTimeout = null;
-    this.delay = 500;
+function test() {
+    var Tooltip = function (targetElement, text) {
+        this.target = targetElement;
+        this.text = text;
+        this.delayTimeout = null;
+        this.delay = 500;
 
-    this.element = document.createElement('div');
-    this.element.style.display = 'none';
-    this.element.style.position = 'absolute';
-    this.element.className = 'tooltip';
-    document.body.appendChild(this.element);
-    this.element.innerHTML = this.text;
+        this.element = document.createElement('div');
+        this.element.style.display = 'none';
+        this.element.style.position = 'absolute';
+        this.element.className = 'tooltip';
+        document.body.appendChild(this.element);
+        this.element.innerHTML = this.text;
 
-    var that = this;
-    addEvent(this.target, 'mouseover', function (e) {
-      that.startDelay(e);
-    });
-    addEvent(this.target, 'mouseout', function (e) {
-      that.hide();
-    });
-  };
-  Tooltip.prototype = {
-    startDelay: function (e) {
-      if (this.delayTimeout === null) {
-        var that = this,
-          x = e.clientX,
-          y = e.clientY;
-        this.delayTimeout = setTimeout(function () {
-          that.show(x, y);
-        }, this.delay);
-      }
-    },
-    show: function (x, y) {
-      clearTimeout(this.delayTimeout);
-      this.delayTimeout = null;
-      this.element.style.left = x + 'px';
-      this.element.style.top = (y + 20) + 'px';
-      this.element.style.display = 'block';
-    },
-    hide: function () {
-      clearTimeout(this.delayTimeout);
-      this.delayTimeout = null;
-      this.element.style.display = 'none';
-    }
-  };
+        var that = this;
+        this.target.addEventListener('mouoseover', function (e) {
+            that.startDelay(e);
+        }, false);
+        this.target.addEventListener('mouseout', function (e) {
+            that.hide();
+        }, false);
+    };
+    Tooltip.prototype = {
+        startDelay: function (e) {
+            if (this.delayTimeout === null) {
+                var that = this,
+                    x = e.clientX,
+                    y = e.clientY;
+                this.delayTimeout = setTimeout(function () {
+                    that.show(x, y);
+                }, this.delay);
+            }
+        },
+        show: function (x, y) {
+            clearTimeout(this.delayTimeout);
+            this.delayTimeout = null;
+            this.element.style.left = x + 'px';
+            this.element.style.top = (y + 20) + 'px';
+            this.element.style.display = 'block';
+        },
+        hide: function () {
+            clearTimeout(this.delayTimeout);
+            this.delayTimeout = null;
+            this.element.style.display = 'none';
+        }
+    };
 
-  var link1 = $('link-id1'),
-    link2 = $('link-id2');
-  var tt = new Tooltip(link1, 'Lorem ipsum....');
+    var link1 = $('link-id1'),
+        link2 = $('link-id2');
+    var tt = new Tooltip(link1, 'Lorem ipsum....');
 }
 
 // 作为享元的Tooltip
@@ -626,71 +652,71 @@ function test(){
  把Tooltip类转化为享元需要做三件事：把外在数据从Tooltip对象中删除；创建一个用来实例化Tooltip的工厂；创建一个用来保存外在数据的管理器。在这个例子，我们可以用一个单体同时扮演工厂和管理器的角色。此外，由于外在数据可以作为事件侦听器一部分保存，因此没有必要使用一个中心数据库。
  */
 
-function test(){
-  // TooltipManager singleton, a flyweight factory and manager
-  var TooltipManager = (function () {
-    var storedInstance = null;
+function test() {
+    // TooltipManager singleton, a flyweight factory and manager
+    var TooltipManager = (function () {
+        var storedInstance = null;
 
-    // Tooltip class, as aflyweight
-    var Tooltip = function () {
-      this.delayTimeout = null;
-      this.delay = 500;
+        // Tooltip class, as aflyweight
+        var Tooltip = function () {
+            this.delayTimeout = null;
+            this.delay = 500;
 
-      this.element = document.createElement('div');
-      this.element.style.display = 'none';
-      this.element.style.position = 'absolute';
-      this.element.className = 'tooltip';
-      document.body.appendChild(this.element);
-    };
-    Tooltip.prototype = {
-      startDelay: function (e, text) {
-        if (this.delayTimeout === null) {
-          var that = this,
-            x = e.clientX,
-            y = e.clientY;
-          this.delayTimeout = setTimeout(function () {
-            that.show(x, y, text);
-          }, this.delay);
-        }
-      },
-      show: function (x, y, text) {
-        clearTimeout(this.delayTimeout);
-        this.delayTimeout = null;
-        this.element.innerHTML = text;
-        this.element.style.left = x + 'px';
-        this.element.style.top = (y + 20) + 'px';
-        this.element.style.display = 'block';
-      },
-      hide: function () {
-        clearTimeout(this.delayTimeout);
-        this.delayTimeout = null;
-        this.element.style.display = 'none';
-      }
-    };
+            this.element = document.createElement('div');
+            this.element.style.display = 'none';
+            this.element.style.position = 'absolute';
+            this.element.className = 'tooltip';
+            document.body.appendChild(this.element);
+        };
+        Tooltip.prototype = {
+            startDelay: function (e, text) {
+                if (this.delayTimeout === null) {
+                    var that = this,
+                        x = e.clientX,
+                        y = e.clientY;
+                    this.delayTimeout = setTimeout(function () {
+                        that.show(x, y, text);
+                    }, this.delay);
+                }
+            },
+            show: function (x, y, text) {
+                clearTimeout(this.delayTimeout);
+                this.delayTimeout = null;
+                this.element.innerHTML = text;
+                this.element.style.left = x + 'px';
+                this.element.style.top = (y + 20) + 'px';
+                this.element.style.display = 'block';
+            },
+            hide: function () {
+                clearTimeout(this.delayTimeout);
+                this.delayTimeout = null;
+                this.element.style.display = 'none';
+            }
+        };
 
-    return {
-      addTooltip: function (targetElement, text) {
-        // Get the tooltip object
-        var tt = this.getTooltip();
-        // Attach the events
-        addEvent(targetElement, 'mouseover', function (e) {
-          tt.startDelay(e, text);
-        });
-        addEvent(targetElement, 'mouseout', function (e) {
-          tt.hide();
-        });
-      },
-      getTooltip: function () {
-        if (storedInstance === null) {
-          storedInstance = new Tooltip();
-        }
-        return storedInstance;
-      }
-    };
-  })();
+        return {
+            addTooltip: function (targetElement, text) {
+                // Get the tooltip object
+                var tt = this.getTooltip();
+                // Attach the events
+                targetElement.addEventListener('mouseover', function(e){
+                    tt.startDelay(e, text);
+                }, false);
+                targetElement.addEventListener('mouseover', function(e){
+                    tt.hide();
+                }, false);
+            },
+            getTooltip: function () {
+                if (storedInstance === null) {
+                    storedInstance = new Tooltip();
+                }
+                return storedInstance;
+            }
+        };
+    })();
 
 // Tooltip usage
-  TooltipManager.addTooltip($('link-id2'), 'hello world');
+    TooltipManager.addTooltip($('link-id2'), 'hello world');
 }
 /*
  上面的Tooltip类删除了原来的构造函数的所有参数以及注册事件处理器的代码。而startDelay和show方法则各增加了一个新的参数，这样一来，要显示的文字就可以作为外在数据传给他们。
