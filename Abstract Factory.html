@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>抽线工厂</title>
+    <meta charset="UTF-8">
+    <title>抽线工厂</title>
 </head>
 <body>
 
@@ -46,62 +46,62 @@
 /**
  * 抽象工厂的接口，声明创建抽象产品对象的操作
  */
-var AbstractFactory = function(){};
+var AbstractFactory = function () {};
 AbstractFactory.prototype = {
-  /**
-   * 示例方法，创建抽象产品A的对象
-   * @return {[type]} 抽象产品A的对象
-   */
-  createProductA: function(){},
-  // 创建抽象产品B
-  createProductB: function(){}
+    /**
+     * 示例方法，创建抽象产品A的对象
+     * @return {[type]} 抽象产品A的对象
+     */
+    createProductA: function () {},
+    // 创建抽象产品B
+    createProductB: function () {}
 };
 
 /**
  * 抽象产品A,B的接口
  */
-var AbstractProductA = function(){};
+var AbstractProductA = function () {};
 // ...
-var AbstractProductB = function(){};
+var AbstractProductB = function () {};
 // ...
 
 // 产品A的实现
-var ProductA1 = function(){};
+var ProductA1 = function () {};
 ProductA1.prototype = Object.create(AbstractProductA.prototype);
 // ...
 
-var ProductA2 = function(){};
+var ProductA2 = function () {};
 ProductA2.prototype = Object.create(AbstractProductA.prototype);
 // ...
 
 // 产品B的实现
-var ProductB1 = function(){};
+var ProductB1 = function () {};
 ProductB1.prototype = Object.create(AbstractProductB.prototype);
 // ...
 
-var ProductB2 = function(){};
+var ProductB2 = function () {};
 ProductB2.prototype = Object.create(AbstractProductB.prototype);
 // ...
 
 /**
  * 具体的工厂实现对象，实现创建具体的产品对象的操作
  */
-var ConcretFactory1 = function(){};
+var ConcretFactory1 = function () {};
 ConcretFactory1.prototype = Object.create(AbstractFactory.prototype);
-ConcretFactory1.prototype.createProductA = function(){
-  return new ProductA1();
+ConcretFactory1.prototype.createProductA = function () {
+    return new ProductA1();
 };
-ConcretFactory1.prototype.createProductB = function(){
-  return new ProductB1();
+ConcretFactory1.prototype.createProductB = function () {
+    return new ProductB1();
 };
 
-var ConcretFactory2 = function(){};
+var ConcretFactory2 = function () {};
 ConcretFactory2.prototype = Object.create(AbstractFactory.prototype);
-ConcretFactory2.prototype.createProductA = function(){
-  return new ProductA2();
+ConcretFactory2.prototype.createProductA = function () {
+    return new ProductA2();
 };
-ConcretFactory2.prototype.createProductB = function(){
-  return new ProductB2();
+ConcretFactory2.prototype.createProductB = function () {
+    return new ProductB2();
 };
 
 // 客户端
@@ -111,54 +111,54 @@ af.createProductB();
 
 
 // 示例2
-var AMDCPU = function(id){
-  this.id = id;
+var AMDCPU = function (id) {
+    this.id = id;
 };
-var MSIMainboard = function(id){
-  this.id = id;
+var MSIMainboard = function (id) {
+    this.id = id;
 };
 
-var Schema1 = function(){};
+var Schema1 = function () {};
 Schema1.prototype = {
-  createCPUApi: function(){
-    return new AMDCPU(939);
-  },
-  createMainboardApi: function(){
-    return new MSIMainboard(939);
-  }
-};
-
-var Schema2 = function(){};
-Schema2 = {
-  createCPUApi: function(){
-    return new AMDCPU(1000);
-  },
-  createMainboardApi: function(){
-    return new MSIMainboard(1000);
-  }
-};
-
-var ComputerEngineer = (function(){
-  var cpu;
-  var mainboard;
-
-  function prepareHardWare(schema){
-    cpu = schema.createCPUApi();
-    mainboard = schema.createMainboardApi();
-    console.log('prepared');
-  }
-
-  var ComputerEngineer = function(){
-    cpu = null;
-    mainboard = null;
-  };
-  ComputerEngineer.prototype = {
-    makeComputer: function(schema){
-      prepareHardWare(schema);
+    createCPUApi: function () {
+        return new AMDCPU(939);
+    },
+    createMainboardApi: function () {
+        return new MSIMainboard(939);
     }
-  };
+};
 
-  return ComputerEngineer;
+var Schema2 = function () {};
+Schema2 = {
+    createCPUApi: function () {
+        return new AMDCPU(1000);
+    },
+    createMainboardApi: function () {
+        return new MSIMainboard(1000);
+    }
+};
+
+var ComputerEngineer = (function () {
+    var cpu;
+    var mainboard;
+
+    function prepareHardWare(schema) {
+        cpu = schema.createCPUApi();
+        mainboard = schema.createMainboardApi();
+        console.log('prepared');
+    }
+
+    var ComputerEngineer = function () {
+        cpu = null;
+        mainboard = null;
+    };
+    ComputerEngineer.prototype = {
+        makeComputer: function (schema) {
+            prepareHardWare(schema);
+        }
+    };
+
+    return ComputerEngineer;
 }());
 
 var engineer = new ComputerEngineer();
@@ -170,59 +170,62 @@ engineer = schema = null;
 // http://www.dofactory.com/javascript-abstract-factory-pattern.aspx
 
 function Employee(name) {
-  this.name = name;
-  this.say = function () {
-    log.add("I am employee " + name);
-  };
+    this.name = name;
+    this.say = function () {
+        log.add("I am employee " + name);
+    };
 }
 
 function EmployeeFactory() {
-  this.create = function(name) {
-    return new Employee(name);
-  };
+    this.create = function (name) {
+        return new Employee(name);
+    };
 }
 
 function Vendor(name) {
-  this.name = name;
-  this.say = function () {
-    log.add("I am vendor " + name);
-  };
+    this.name = name;
+    this.say = function () {
+        log.add("I am vendor " + name);
+    };
 }
 
 function VendorFactory() {
-  this.create = function(name) {
-    return new Vendor(name);
-  };
+    this.create = function (name) {
+        return new Vendor(name);
+    };
 }
 
 // log helper
 var log = (function () {
-  var log = "";
-  return {
-    add: function (msg) { log += msg + "\n"; },
-    show: function () { alert(log); log = ""; }
-  }
+    var log = "";
+    return {
+        add: function (msg) { log += msg + "\n"; },
+        show: function () {
+            alert(log);
+            log = "";
+        }
+    }
 })();
 
 
 function run() {
 
-  var persons = [];
+    var persons = [];
 
-  var employeeFactory = new EmployeeFactory();
-  var vendorFactory = new VendorFactory();
+    var employeeFactory = new EmployeeFactory();
+    var vendorFactory = new VendorFactory();
 
-  persons.push(employeeFactory.create("Joan DiSilva"));
-  persons.push(employeeFactory.create("Tim O'Neill"));
+    persons.push(employeeFactory.create("Joan DiSilva"));
+    persons.push(employeeFactory.create("Tim O'Neill"));
 
-  persons.push(vendorFactory.create("Gerald Watson"));
-  persons.push(vendorFactory.create("Nicole McNight"));
+    persons.push(vendorFactory.create("Gerald Watson"));
+    persons.push(vendorFactory.create("Nicole McNight"));
 
-  for (var i = 0, len = persons.length; i < len; i++) {
-    persons[i].say();
-  }
+    for (var i = 0, len = persons.length; i < len; i++) {
+        persons[i].say();
+    }
 
-  log.show();
+    log.show();
 }
 </script>
 </body>

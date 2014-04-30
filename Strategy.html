@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title></title>
-  <meta charset="UTF-8"/>
+    <title></title>
+    <meta charset="UTF-8"/>
 </head>
 <body>
 <img src="1.jpg" alt=""/>
@@ -85,63 +85,67 @@
  * 如果这个时候发现一系列算法的实现步骤都是一样的，只是在某些局部步骤上有所不用的情况，那就可以在这个抽象类里面定义算法实现的骨架，然后让具体的策略算法去实现变化的部分。这样的一个结构自然就变成策略模式结合模板方法模式了。那个抽象类就成了模板方法模式的模板类。
  */
 
-(function(){
-  // 示例代码
+(function () {
+    // 示例代码
 
-  // 具体算法
-  function ConcreteStrategyA(){}
-  ConcreteStrategyA.prototype.algorithmInterface = function(){/*具体算法的实现*/};
+    // 具体算法
+    function ConcreteStrategyA() {}
 
-  function ConcreteStrategyB(){}
-  ConcreteStrategyB.prototype.algorithmInterface = function(){};
+    ConcreteStrategyA.prototype.algorithmInterface = function () {/*具体算法的实现*/};
 
-  function ConcreteStrategyC(){}
-  ConcreteStrategyC.prototype.algorithmInterface = function(){};
+    function ConcreteStrategyB() {}
 
-  // 上下文对象，通常会持有一个具体的策略对象
-  function Context(strategy){
-    this.strategy = strategy;
-  }
-  //上下文对客户端提供的操作接口，可以有参数和返回值
-  Context.prototype.contextInterface = function(){
-    // 转调具体的策略对象进行算法运算
-    this.strategy.algorithmInterface();
-  };
+    ConcreteStrategyB.prototype.algorithmInterface = function () {};
+
+    function ConcreteStrategyC() {}
+
+    ConcreteStrategyC.prototype.algorithmInterface = function () {};
+
+    // 上下文对象，通常会持有一个具体的策略对象
+    function Context(strategy) {
+        this.strategy = strategy;
+    }
+
+    //上下文对客户端提供的操作接口，可以有参数和返回值
+    Context.prototype.contextInterface = function () {
+        // 转调具体的策略对象进行算法运算
+        this.strategy.algorithmInterface();
+    };
 
 }());
 
-(function(){
-  // 容错恢复机制
-  function DbLog(){
-    this.log = function(msg){
-      if(msg && msg.trim().length > 5) {
-        fds;  // make mistake
-      }
-      console.log('现在把' + msg + '记录到数据库中');
-    };
-  }
+(function () {
+    // 容错恢复机制
+    function DbLog() {
+        this.log = function (msg) {
+            if (msg && msg.trim().length > 5) {
+                fds;  // make mistake
+            }
+            console.log('现在把' + msg + '记录到数据库中');
+        };
+    }
 
-  function FileLog(){
-    this.log = function(msg){
-      console.log('现在把' + msg + '记录到文件中');
-    };
-  }
+    function FileLog() {
+        this.log = function (msg) {
+            console.log('现在把' + msg + '记录到文件中');
+        };
+    }
 
-  function LogContext(){
-    this.log = function(msg){
-      var strategy = new DbLog();
-      try {
-        strategy.log(msg);
-      } catch(e){
-        strategy = new FileLog();
-        strategy.log(msg);
-      }
-    };
-  }
+    function LogContext() {
+        this.log = function (msg) {
+            var strategy = new DbLog();
+            try {
+                strategy.log(msg);
+            } catch (e) {
+                strategy = new FileLog();
+                strategy.log(msg);
+            }
+        };
+    }
 
-  var log = new LogContext();
-  log.log('"记录日志"');
-  log.log('"再次记录日志"');
+    var log = new LogContext();
+    log.log('"记录日志"');
+    log.log('"再次记录日志"');
 
 }());
 
@@ -186,509 +190,509 @@
  */
 
 
-(function(){
-  // 抽象上下文类
-  var Duck = function (quackBehavior) {
-    this.quackBehavior = quackBehavior;
-  };
-  Duck.prototype = {
-    display: function () {
-      throw new Error('This is abstract method');
-    },
-    performQuack: function () {
-      this.quackBehavior.quack();
-    },
-    swim: function () {
-      console.log('All ducks float, even decoys');
-    }
-  };
+(function () {
+    // 抽象上下文类
+    var Duck = function (quackBehavior) {
+        this.quackBehavior = quackBehavior;
+    };
+    Duck.prototype = {
+        display: function () {
+            throw new Error('This is abstract method');
+        },
+        performQuack: function () {
+            this.quackBehavior.quack();
+        },
+        swim: function () {
+            console.log('All ducks float, even decoys');
+        }
+    };
 
-// 具体上下文类
-  var MallardDuck = function () {
-    Duck.apply(this, arguments);
-  };
-  MallardDuck.prototype.__proto__ = Duck.prototype;
-  MallardDuck.prototype.display = function () {
-    console.log('I\'m a real Mallard duck.');
-  };
+    // 具体上下文类
+    var MallardDuck = function () {
+        Duck.apply(this, arguments);
+    };
+    MallardDuck.prototype.__proto__ = Duck.prototype;
+    MallardDuck.prototype.display = function () {
+        console.log('I\'m a real Mallard duck.');
+    };
 
-// 抽象算法类
-  var QuackBehavior = function () {
-  };
-  QuackBehavior.prototype.quack = function () {
-    throw new Error('this is an interface');
-  };
+    // 抽象算法类
+    var QuackBehavior = function () {
+    };
+    QuackBehavior.prototype.quack = function () {
+        throw new Error('this is an interface');
+    };
 
-// 具体算法类
-  var MuteQuack = function () {
-  };
-  MuteQuack.prototype.__proto__ = QuackBehavior.prototype;
-  MuteQuack.prototype.quack = function () {
-    console.log('slience');
-  };
+    // 具体算法类
+    var MuteQuack = function () {
+    };
+    MuteQuack.prototype.__proto__ = QuackBehavior.prototype;
+    MuteQuack.prototype.quack = function () {
+        console.log('slience');
+    };
 
-// 客户端
-  var MiniDucksSimulator = function () {
-    this.main();
-  };
-  MiniDucksSimulator.prototype = {
-    main: function () {
-      var mallard = new MallardDuck(new MuteQuack());
-      mallard.performQuack();
-    }
-  };
-  new MiniDucksSimulator();
+    // 客户端
+    var MiniDucksSimulator = function () {
+        this.main();
+    };
+    MiniDucksSimulator.prototype = {
+        main: function () {
+            var mallard = new MallardDuck(new MuteQuack());
+            mallard.performQuack();
+        }
+    };
+    new MiniDucksSimulator();
 
-// 动态设定行为
-  Duck.prototype.setQuackBehavior = function (qb) {
-    this.quackBehavior = qb;
-  };
+    // 动态设定行为
+    Duck.prototype.setQuackBehavior = function (qb) {
+        this.quackBehavior = qb;
+    };
 
-  var ModelDuck = function () {
-    Duck.apply(this, arguments);
-  };
-  ModelDuck.prototype.__proto__ = Duck.prototype;
-  ModelDuck.prototype.display = function () {
-    console.log('T\'m a model duck.');
-  };
+    var ModelDuck = function () {
+        Duck.apply(this, arguments);
+    };
+    ModelDuck.prototype.__proto__ = Duck.prototype;
+    ModelDuck.prototype.display = function () {
+        console.log('T\'m a model duck.');
+    };
 
-  var QuackSpeakerPowered = function () {
-  };
-  QuackSpeakerPowered.prototype.quack = function () {
-    console.log('I\'m quacking with a speaker');
-  };
+    var QuackSpeakerPowered = function () {
+    };
+    QuackSpeakerPowered.prototype.quack = function () {
+        console.log('I\'m quacking with a speaker');
+    };
 
-  MiniDucksSimulator.prototype.main = function () {
-    var model = new ModelDuck(new MuteQuack());
-    model.performQuack();
-    model.setQuackBehavior(new QuackSpeakerPowered());
-    model.performQuack();
-  };
-  new MiniDucksSimulator();
+    MiniDucksSimulator.prototype.main = function () {
+        var model = new ModelDuck(new MuteQuack());
+        model.performQuack();
+        model.setQuackBehavior(new QuackSpeakerPowered());
+        model.performQuack();
+    };
+    new MiniDucksSimulator();
 
 
-// 策略，定义计算报价算法的接口
-  var Strategy = function () {
-  };
-  Strategy.prototype.calcPrice = function (goodsPrice) {
-    throw new Error('This is an abstract interface');
-  };
+    // 策略，定义计算报价算法的接口
+    var Strategy = function () {
+    };
+    Strategy.prototype.calcPrice = function (goodsPrice) {
+        throw new Error('This is an abstract interface');
+    };
 
-  var NormalCustomerStrategy = function () {
-  };
-  NormalCustomerStrategy.prototype.__proto__ = Strategy.prototype;
-  NormalCustomerStrategy.prototype.calcPrice = function (goodsPrice) {
-    console.log('对于新客户或者普通客户，没有折扣');
-    return goodsPrice;
-  };
+    var NormalCustomerStrategy = function () {
+    };
+    NormalCustomerStrategy.prototype.__proto__ = Strategy.prototype;
+    NormalCustomerStrategy.prototype.calcPrice = function (goodsPrice) {
+        console.log('对于新客户或者普通客户，没有折扣');
+        return goodsPrice;
+    };
 
-// 具体算法实现
-  var OldCustomerStrategy = function () {
-  };
-  OldCustomerStrategy.prototype.__proto__ = Strategy.prototype;
-  OldCustomerStrategy.prototype.calcPrice = function (goodsPrice) {
-    console.log('对于老客户，统一折扣5%');
-    return goodsPrice * (1 - 0.05);
-  };
+    // 具体算法实现
+    var OldCustomerStrategy = function () {
+    };
+    OldCustomerStrategy.prototype.__proto__ = Strategy.prototype;
+    OldCustomerStrategy.prototype.calcPrice = function (goodsPrice) {
+        console.log('对于老客户，统一折扣5%');
+        return goodsPrice * (1 - 0.05);
+    };
 
-// 价格管理，主要完成计算向客户所报价格的功能
-  var Price = function (strategy) {
-    this.strategy = strategy;
-  };
-  Price.prototype.quote = function (goodsPrice) {
-    return this.strategy.calcPrice(goodsPrice);
-  };
+    // 价格管理，主要完成计算向客户所报价格的功能
+    var Price = function (strategy) {
+        this.strategy = strategy;
+    };
+    Price.prototype.quote = function (goodsPrice) {
+        return this.strategy.calcPrice(goodsPrice);
+    };
 
-// 选择并创建需要使用的策略对象
-  var strategy = new OldCustomerStrategy();
-// 创建上下文
-  var ctx = new Price(strategy);
-// 计算报价
-  var quote = ctx.quote(1000);
-  console.log('向客户报价：' + quote);
+    // 选择并创建需要使用的策略对象
+    var strategy = new OldCustomerStrategy();
+    // 创建上下文
+    var ctx = new Price(strategy);
+    // 计算报价
+    var quote = ctx.quote(1000);
+    console.log('向客户报价：' + quote);
 }());
 
 
-(function(){
-  // 表单验证
-  var r_space = /\s+/;
+(function () {
+    // 表单验证
+    var r_space = /\s+/;
 
-  // HTML转义
-  var ENCODECHAR = {
-    '<': '&lt;',
-    '>': '&gt;',
-    '&': '&amp;',
-    '"': '&quot;'
-  };
-
-  // 验证策略
-  var VALIDTYPES = {
-    'nonEmpty': {
-      validate: function (value) {
-        return value !== '';
-      },
-      msg: '此项不能为空'
-    },
-    'email': {
-      validate: function (value) {
-        return (/^[\w\-]+@[\w\-]+(?:\.[\w\-]+)+$/.test(value));
-      },
-      msg: function(value){
-        return (value ? '请输入正确格式的邮箱' : '请输入你的邮箱');
-      }
-    },
-    'phone': {
-      validate: function (value) {
-        return (/^1[3458]\d{9}$/.test(value));
-      },
-      msg: function(value){
-        return (value ? '请输入正确格式的手机号码' : '请输入你的手机号码');
-      }
-    }
-  };
-
-  var formHooks = {
-    'radio': 'checked',
-    'checkbox': 'checked'
-  };
-
-  var formEventsHooks = {
-    'text': formEventsGetter('blur'),
-    'textarea': formEventsGetter('blur'),
-    'checkbox': formEventsGetter('click'),
-    'select': formEventsGetter('change'),
-    'radio': formEventsGetter('click')
-  };
-
-  function formEventsGetter(type) {
-    return function (el, context, item) {
-      $(el).on(type, function(){
-        context.errHandler = [];
-        parseEachEleCfg(item);
-
-        validating(item, context.errHandler);
-
-        context.handleError();
-      });
+    // HTML转义
+    var ENCODECHAR = {
+        '<': '&lt;',
+        '>': '&gt;',
+        '&': '&amp;',
+        '"': '&quot;'
     };
-  }
 
-  /**
-   * 验证器构造器
-   * @param {Object} formInstance 用户自定义规则
-   * @constructor
-   */
-  function Validator(formInstance) {
-    var form = formInstance.form;
-    if (!form) return;
+    // 验证策略
+    var VALIDTYPES = {
+        'nonEmpty': {
+            validate: function (value) {
+                return value !== '';
+            },
+            msg: '此项不能为空'
+        },
+        'email': {
+            validate: function (value) {
+                return (/^[\w\-]+@[\w\-]+(?:\.[\w\-]+)+$/.test(value));
+            },
+            msg: function (value) {
+                return (value ? '请输入正确格式的邮箱' : '请输入你的邮箱');
+            }
+        },
+        'phone': {
+            validate: function (value) {
+                return (/^1[3458]\d{9}$/.test(value));
+            },
+            msg: function (value) {
+                return (value ? '请输入正确格式的手机号码' : '请输入你的手机号码');
+            }
+        }
+    };
 
-    this.form = form;
+    var formHooks = {
+        'radio': 'checked',
+        'checkbox': 'checked'
+    };
+
+    var formEventsHooks = {
+        'text': formEventsGetter('blur'),
+        'textarea': formEventsGetter('blur'),
+        'checkbox': formEventsGetter('click'),
+        'select': formEventsGetter('change'),
+        'radio': formEventsGetter('click')
+    };
+
+    function formEventsGetter(type) {
+        return function (el, context, item) {
+            $(el).on(type, function () {
+                context.errHandler = [];
+                parseEachEleCfg(item);
+
+                validating(item, context.errHandler);
+
+                context.handleError();
+            });
+        };
+    }
 
     /**
-     [{
+     * 验证器构造器
+     * @param {Object} formInstance 用户自定义规则
+     * @constructor
+     */
+    function Validator(formInstance) {
+        var form = formInstance.form;
+        if (!form) return;
+
+        this.form = form;
+
+        /**
+         [{
             elem:elem,
             value: '',
             type: ''
             [optional] ,checker: {checker: func, description: ''}
          }, ..]
-     */
-    this.config = [];
+         */
+        this.config = [];
 
-    this.callbackLists = {
-      success: [],
-      failure: []
-    };
-
-    /*
-     this.errHandler;
-     */
-
-    if (formInstance.types) $.extend(VALIDTYPES, formInstance.types);
-
-    this.parsed = false;
-    this.isDefaultPrevented = false;
-    this.ajax = typeof formInstance.ajax === 'boolean' ?
-      formInstance.ajax : true;
-
-    if(formInstance.success) this.on('success', formInstance.success);
-    if(formInstance.failure) this.on('failure', formInstance.failure);
-    if(formInstance.beforeSend) this.beforeSend = formInstance.beforeSend;
-
-    if (formInstance.formElementsEvented) {
-      this.parseConfig();
-      this.parsed = true;
-      this.addFormEvents(this.config);
-    }
-
-    var removeClassFn = function(e){
-      $(e.target).removeClass('processing');
-    };
-    this.on('success', removeClassFn);
-    this.on('failure', removeClassFn);
-
-    this.submit();
-  }
-
-  // 防止XSS
-  Validator.encodeValue = function (value) {
-    for (var i in ENCODECHAR) {
-      if (ENCODECHAR.hasOwnProperty(i))
-        value = value.replace(new RegExp(i, 'g'), ENCODECHAR[i]);
-    }
-
-    return value;
-  };
-
-  Validator.prototype = {
-    // 为每个表单元素添加事件侦听
-    addFormEvents: function (cfg) {
-      var me = this;
-      var elem, formType, item;
-      for (var i = 0, len = cfg.length; i < len; i++) {
-        item = cfg[i];
-        elem = item.elem;
-        formType = elem.type;
-
-        formEventsHooks[formType](elem, me, item);
-      }
-    },
-    hasErrors: function () {
-      return !!this.errHandler.length;
-    },
-    on: function(type, cb){
-      if(!this.callbackLists[type]) {
-        throw new Error('no matched event type');
-      }
-
-      this.callbackLists[type] = this.callbackLists[type].concat(
-          Object.prototype.toString.call(cb) === '[object Array]' ?
-          cb : [cb]
-      );
-    },
-    off: function(type){
-      if(!this.callbackLists[type]) return;
-
-      delete this.callbackLists[type];
-    },
-    emit: function(type, args){
-      if(!this.callbackLists[type]) {
-        throw new Error('no matched event type');
-      }
-
-      var list = this.callbackLists[type];
-
-      if(type === 'failure' && args && args[0] && args[0].preventDefault) {
-        args[0].preventDefault();
-      }
-
-      for(var i = 0, len = list.length; i < len; i++) {
-        if(typeof list[i] === 'function' && list[i].apply(this.form, args) === false)
-          break;
-      }
-    },
-    submit: function () {
-      var me = this;
-
-      if (!this.form) return;
-
-      $(this.form).on('submit', function (e) {
-        var $this = $(this);
-
-        if($this.hasClass('processing')) return;
-
-        $this.addClass('processing');
-
-        me.isDefaultPrevented = false;
-        e._preventDefault = e.preventDefault;
-        e.preventDefault = function(){
-          e._preventDefault();
-          me.isDefaultPrevented = true;
+        this.callbackLists = {
+            success: [],
+            failure: []
         };
 
-        // 解析配置，parsed为false时，可再次解析
-        if (!me.parsed) {
-          me.parseConfig();
-          me.parsed = true;
-        }
-
-        // 验证
-        me.validate();
-
-        // 验证有错误
-        if (me.hasErrors()) {
-          me.handleError();
-
-          me.emit('failure', [e]);
-          return;
-        }
-
-        // ajax提交默认阻止表单提交
-        if (me.ajax) {
-          e._preventDefault();
-        }
-
-        var def;
-        var form = this;
-
         /*
-         执行me.beforeSend方法，在成功，提交之前执行，
-         如果返回false就触发失败回调
-         可以返回deferred对象，进行异步操作
+         this.errHandler;
          */
-        if (me.beforeSend && (def = me.beforeSend()) === false) {
-          K.handyWarn({
-            msg: me.beforeSend.errorMsg
-          });
 
-          me.emit('failure', [e]);
-          return;
+        if (formInstance.types) $.extend(VALIDTYPES, formInstance.types);
+
+        this.parsed = false;
+        this.isDefaultPrevented = false;
+        this.ajax = typeof formInstance.ajax === 'boolean' ?
+            formInstance.ajax : true;
+
+        if (formInstance.success) this.on('success', formInstance.success);
+        if (formInstance.failure) this.on('failure', formInstance.failure);
+        if (formInstance.beforeSend) this.beforeSend = formInstance.beforeSend;
+
+        if (formInstance.formElementsEvented) {
+            this.parseConfig();
+            this.parsed = true;
+            this.addFormEvents(this.config);
         }
 
-        // 如果是deferred对象，序列执行回调
-        if(def && (typeof def.pipe === 'function' || typeof def.then === 'function')) {
-          def = def.pipe || def.then;
-          // 因为是异步操作，必须阻止默认表单提交，与异步提交表单不同
-          if(!e.isDefaultPrevented()) e._preventDefault();
+        var removeClassFn = function (e) {
+            $(e.target).removeClass('processing');
+        };
+        this.on('success', removeClassFn);
+        this.on('failure', removeClassFn);
 
-          return def(function () {
-            me.isDefaultPrevented = false;
-            me.emit('success', [e]);
-            // 提交表单
-            if(!me.isDefaultPrevented && !me.ajax) form.submit();
-          }, function(){
-            me.emit('failure', [e]);
-          });
-        } else {
-          me.emit('success', [e]);
+        this.submit();
+    }
+
+    // 防止XSS
+    Validator.encodeValue = function (value) {
+        for (var i in ENCODECHAR) {
+            if (ENCODECHAR.hasOwnProperty(i))
+                value = value.replace(new RegExp(i, 'g'), ENCODECHAR[i]);
         }
-      });
-    },
-    validate: function () {
-      /**
-       [{
+
+        return value;
+    };
+
+    Validator.prototype = {
+        // 为每个表单元素添加事件侦听
+        addFormEvents: function (cfg) {
+            var me = this;
+            var elem, formType, item;
+            for (var i = 0, len = cfg.length; i < len; i++) {
+                item = cfg[i];
+                elem = item.elem;
+                formType = elem.type;
+
+                formEventsHooks[formType](elem, me, item);
+            }
+        },
+        hasErrors: function () {
+            return !!this.errHandler.length;
+        },
+        on: function (type, cb) {
+            if (!this.callbackLists[type]) {
+                throw new Error('no matched event type');
+            }
+
+            this.callbackLists[type] = this.callbackLists[type].concat(
+                    Object.prototype.toString.call(cb) === '[object Array]' ?
+                    cb : [cb]
+            );
+        },
+        off: function (type) {
+            if (!this.callbackLists[type]) return;
+
+            delete this.callbackLists[type];
+        },
+        emit: function (type, args) {
+            if (!this.callbackLists[type]) {
+                throw new Error('no matched event type');
+            }
+
+            var list = this.callbackLists[type];
+
+            if (type === 'failure' && args && args[0] && args[0].preventDefault) {
+                args[0].preventDefault();
+            }
+
+            for (var i = 0, len = list.length; i < len; i++) {
+                if (typeof list[i] === 'function' && list[i].apply(this.form, args) === false)
+                    break;
+            }
+        },
+        submit: function () {
+            var me = this;
+
+            if (!this.form) return;
+
+            $(this.form).on('submit', function (e) {
+                var $this = $(this);
+
+                if ($this.hasClass('processing')) return;
+
+                $this.addClass('processing');
+
+                me.isDefaultPrevented = false;
+                e._preventDefault = e.preventDefault;
+                e.preventDefault = function () {
+                    e._preventDefault();
+                    me.isDefaultPrevented = true;
+                };
+
+                // 解析配置，parsed为false时，可再次解析
+                if (!me.parsed) {
+                    me.parseConfig();
+                    me.parsed = true;
+                }
+
+                // 验证
+                me.validate();
+
+                // 验证有错误
+                if (me.hasErrors()) {
+                    me.handleError();
+
+                    me.emit('failure', [e]);
+                    return;
+                }
+
+                // ajax提交默认阻止表单提交
+                if (me.ajax) {
+                    e._preventDefault();
+                }
+
+                var def;
+                var form = this;
+
+                /*
+                 执行me.beforeSend方法，在成功，提交之前执行，
+                 如果返回false就触发失败回调
+                 可以返回deferred对象，进行异步操作
+                 */
+                if (me.beforeSend && (def = me.beforeSend()) === false) {
+                    K.handyWarn({
+                        msg: me.beforeSend.errorMsg
+                    });
+
+                    me.emit('failure', [e]);
+                    return;
+                }
+
+                // 如果是deferred对象，序列执行回调
+                if (def && (typeof def.pipe === 'function' || typeof def.then === 'function')) {
+                    def = def.pipe || def.then;
+                    // 因为是异步操作，必须阻止默认表单提交，与异步提交表单不同
+                    if (!e.isDefaultPrevented()) e._preventDefault();
+
+                    return def(function () {
+                        me.isDefaultPrevented = false;
+                        me.emit('success', [e]);
+                        // 提交表单
+                        if (!me.isDefaultPrevented && !me.ajax) form.submit();
+                    }, function () {
+                        me.emit('failure', [e]);
+                    });
+                } else {
+                    me.emit('success', [e]);
+                }
+            });
+        },
+        validate: function () {
+            /**
+             [{
                 elem: elem,
                 msg: ''
              }, ...]
-       */
-      this.errHandler = [];
+             */
+            this.errHandler = [];
 
-      var item;
+            var item;
 
-      // 遍历配置项
-      for (var i = 0, len = this.config.length; i < len; i++) {
-        item = this.config[i];
+            // 遍历配置项
+            for (var i = 0, len = this.config.length; i < len; i++) {
+                item = this.config[i];
 
-        if(parseEachEleCfg(item) === false) continue;
+                if (parseEachEleCfg(item) === false) continue;
 
-        validating(item, this.errHandler);
-      }
-    },
-    // 解析HTML标签中的“data-valid”属性，将有的保存
-    parseConfig: function () {
-      var elems = $('*[data-valid]:not([disabled]):not([readonly])', this.form);
-      var elem, ruler;
+                validating(item, this.errHandler);
+            }
+        },
+        // 解析HTML标签中的“data-valid”属性，将有的保存
+        parseConfig: function () {
+            var elems = $('*[data-valid]:not([disabled]):not([readonly])', this.form);
+            var elem, ruler;
 
-      for (var i = 0, len = elems.length; i < len; i++) {
-        elem = elems[i];
-        ruler = elem.getAttribute('data-valid');
+            for (var i = 0, len = elems.length; i < len; i++) {
+                elem = elems[i];
+                ruler = elem.getAttribute('data-valid');
 
-        if (ruler)
-          this.config.push({
-            elem: elem,
-            type: ruler
-          });
-      }
-    },
-    // 处理错误
-    handleError: function () {
-      var errs = this.errHandler;
+                if (ruler)
+                    this.config.push({
+                        elem: elem,
+                        type: ruler
+                    });
+            }
+        },
+        // 处理错误
+        handleError: function () {
+            var errs = this.errHandler;
 
-      if (errs.length) {
-        var head = errs.shift();
-        var elem = head.elem;
+            if (errs.length) {
+                var head = errs.shift();
+                var elem = head.elem;
 
-        K.handyWarn({
-          msg: head.msg,
-          rel: elem,
-          relPos: 'right'
-        });
+                K.handyWarn({
+                    msg: head.msg,
+                    rel: elem,
+                    relPos: 'right'
+                });
 
-        if (elem.value) {
-          elem.select();
-        } else {
-          elem.focus();
+                if (elem.value) {
+                    elem.select();
+                } else {
+                    elem.focus();
+                }
+            }
         }
-      }
-    }
-  };
+    };
 
-  // 验证值，如果不符则保存到错误队列中
-  function validating(item, errHandler) {
-    var checkers = item.checker;
-    var description, checker, value, args, elem;
+    // 验证值，如果不符则保存到错误队列中
+    function validating(item, errHandler) {
+        var checkers = item.checker;
+        var description, checker, value, args, elem;
 
-    for(var i = 0, len = checkers.length; i < len; i++) {
-      checker = checkers[i].checker;
-      description = checkers[i].description;
-      elem = item.elem;
+        for (var i = 0, len = checkers.length; i < len; i++) {
+            checker = checkers[i].checker;
+            description = checkers[i].description;
+            elem = item.elem;
 
-      value = elem[formHooks[elem.type.toLowerCase()] || 'value'];
+            value = elem[formHooks[elem.type.toLowerCase()] || 'value'];
 
-      // fix IE用value兼容HTML5的placeholder
-      if(elem.getAttribute('placeholder') === value) {
-        value = '';
-      }
+            // fix IE用value兼容HTML5的placeholder
+            if (elem.getAttribute('placeholder') === value) {
+                value = '';
+            }
 
-      if (value && typeof value === 'string') {
-        value = Validator.encodeValue(value);
-      }
+            if (value && typeof value === 'string') {
+                value = Validator.encodeValue(value);
+            }
 
-      args = [value].concat(description);
+            args = [value].concat(description);
 
-      if (!checker.validate.apply(elem, args)) {
-        errHandler.push({
-          elem: elem,
-          msg: typeof checker.msg === 'function' ? checker.msg.apply(elem, args) : checker.msg
-        });
-      }
-    }
-
-    elem = null;
-  }
-
-  var r_brackets = /^([\w-]+)(?:\(([^)]+)\)|)$/;
-
-  function parseEachEleCfg(item){
-    if (!(item.checker && item.checker.length)) {
-      var type, description, checker;
-      var types = item.type && item.type.split(r_space) || [];
-
-      if (!types.length) return false;
-
-      // 单个元素可以有多个checker，以空格分隔，且单个checker可有相应的描述语
-      // “charLen(24)”， 括号里面是描述语，
-      // 描述语用在错误信息中
-      item.checker = [];
-      for (var i = 0, len = types.length; i < len; i++) {
-        type = types[i].match(r_brackets);
-        if(!type) continue;
-        checker = VALIDTYPES[type[1]];
-        description = type[2] && type[2].split(',') || [];
-
-        if (!checker) {
-          __console.error('没有相应的验证规则:' + type);
-          continue;
+            if (!checker.validate.apply(elem, args)) {
+                errHandler.push({
+                    elem: elem,
+                    msg: typeof checker.msg === 'function' ? checker.msg.apply(elem, args) : checker.msg
+                });
+            }
         }
 
-        item.checker.push({
-          checker: checker,
-          description: description
-        });
-      }
+        elem = null;
     }
 
-    return true;
-  }
+    var r_brackets = /^([\w-]+)(?:\(([^)]+)\)|)$/;
+
+    function parseEachEleCfg(item) {
+        if (!(item.checker && item.checker.length)) {
+            var type, description, checker;
+            var types = item.type && item.type.split(r_space) || [];
+
+            if (!types.length) return false;
+
+            // 单个元素可以有多个checker，以空格分隔，且单个checker可有相应的描述语
+            // “charLen(24)”， 括号里面是描述语，
+            // 描述语用在错误信息中
+            item.checker = [];
+            for (var i = 0, len = types.length; i < len; i++) {
+                type = types[i].match(r_brackets);
+                if (!type) continue;
+                checker = VALIDTYPES[type[1]];
+                description = type[2] && type[2].split(',') || [];
+
+                if (!checker) {
+                    __console.error('没有相应的验证规则:' + type);
+                    continue;
+                }
+
+                item.checker.push({
+                    checker: checker,
+                    description: description
+                });
+            }
+        }
+
+        return true;
+    }
 }());
 </script>
 </body>
