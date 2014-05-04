@@ -285,66 +285,6 @@
         vm.vote('u1', 'A');
     }
 
-    // another way
-
-    function VoteManager2() {
-        var mapState = {};
-        var mapVote = {};
-        var mapVoteCount = {};
-
-        this.vote = function (user, voteItem) {
-            var oldVoteCount = mapVoteCount[user];
-
-            if (oldVoteCount == null) {
-                oldVoteCount = 0;
-            }
-            mapVoteCount[user] = ++oldVoteCount;
-
-            var state = mapState[user];
-            if (state == null) {
-                state = voteNormal;
-            }
-
-            state(user, voteItem);
-        };
-
-        function voteNormal(user, voteItem) {
-            mapVote[user] = voteItem;
-            console.log('恭喜你投票成功');
-            // 正常投票完毕，维护下一个状态，同一个人再投票就重复了
-            return mapState[user] = voteRepeat;
-        }
-
-        function voteRepeat(user, voteItem) {
-            console.log('请不要重复投票');
-            if (mapVoteCount[user] >= 4) {
-                return mapState[user] = voteSplite;
-            }
-        }
-
-        function voteSplite(user, voteItem) {
-            var s = mapVote[user];
-
-            if (s != null) {
-                delete mapVote[user];
-            }
-
-            console.log('你有恶意刷票行为，取消投票资格');
-
-            if (mapVoteCount[user] >= 7) {
-                return mapState[user] = voteBlack;
-            }
-        }
-
-        function voteBlack(user, voteItem) {
-            console.log('进入黑名单，将禁止登录和使用本系统');
-        }
-    }
-
-    var vm = new VoteManager2();
-    for (var i = 0; i < 8; i++) {
-        vm.vote('u1', 'A');
-    }
 }());
 
 (function () {
