@@ -20,7 +20,7 @@
  * 本质：
  * 分离与共享
  *
- * 享元模式（flyweight），它最适合于解决因创建大量类似对象而累积性能的问题。这种模式在js中尤其有用，因为复杂的js代码可能很快就会用光浏览器的所有可用内存，通过把大量独立对象转化为少量共享对象，可以降低运行web应用程式所需的资源数量。这种技术带来的好处可大可小。对于那些可能一连用上几天也不会重新加载的大型应用系统，任何减少内存用量的技术都有非常显著的效果。而对于那些不会再浏览器中打开那么长时间的小型网页，内存的节约就没那么重要。
+ * 分离的是对象状态中的变与不变的部分，共享的是对象中不变的部分。享元模式的关键之处在于分离变与不变，把不变部分作为享元对象的内部状态，而变化部分则作为外部状态，由外部来维护，这样享元对象就能够被共享。
  *
  * 如果能够有效地减少对象的数量，减少重复的数据，那么就能够节省不少内存。一个基本的思路就是缓存这些包含着重复数据的对象，让这些对象只出现一次，也就只耗费一份内存。
  * 如果被缓存的对象的属性值经常变动，那就不适合缓存了。
@@ -226,6 +226,13 @@
     };
 
 })();
+
+/*
+不需要共享的享元
+
+对于使用已经缓存的享元组合出来的对象，就没有必要再缓存了。也就是把已经缓存的享元当作叶子节点，组合出来的组合对象就不需要
+再被缓存了，也把这种享元成为复合享元。
+*/
 
 /*
  享元的结构
@@ -880,38 +887,230 @@ DialogBoxManager.displayDialogBox({
  这个示例比工具提示那个要复杂一点。总结起来就是：通过把外在数据从资源密集型对象剥离以实现对这种对象的重用；用一个管理器控制对象的个数并保存外在数据，所生成的实例的个数应该刚好够用，并且在实例化开销较大的情况下，这些实例应被保存起来供以后重用。这种技术类似于服务端语言中的SQL连接池。在后一种技术中，仅当现有连接都在使用当中时才会创建新连接。
  */
 
+
+(function(){
+
+    /**
+     * 利用享元实现简单的引用计数和垃圾回收
+     *
+     * 实现引用计数的基本思路
+     * 要实现引用计数，就在享元工厂中定义一个Map，它的key值与缓存享元对象的key是一样的，而value就是被引用的次数，这样当外部每次获取该享元的时候，就把对应的引用计数取出来加上1，然后再记录回去。
+     *
+     * 实现垃圾回收的基本思路
+     * 1）为了确定哪些是垃圾，一个简单的方案，定义一个缓存对象的配置对象，在这个对象中描述了缓存的开始时间和最长不被使用的时间，这个时候判断是否垃圾的计算公式如下：当前的时间 - 缓存的开始时间 >= 最长不被使用的时间。当然，每次这个对象被使用的时候，就把那个缓存开始时间更新为使用时的当前时间，也就是说如果一直有人用的话，这个对象是不会被判断为垃圾。
+     * 2）何时回收的问题，当然是判断出来是垃圾了就可以回收了。
+     * 3)怎么回收？直接从缓存的Map对象中删除相应的对象，让这些对象没有引用的地方，那么这些对象就可以等着被回收了。
+     */
+
+    // 描述享元对象缓存的配置对象
+    function CacheConfModel(){
+        // 缓存开始计时的开始时间
+        this.beginTime = null;
+        this.durableTime = null;
+        // 缓存对象需要被永久存储，也就是不需要从缓存中删除
+        this.forever = false;
+    }
+
+    var flyweightFactory = {
+        fsMap: {},
+        cacheConfMap: {},
+        countMap: {},
+        DURABLE_TIME: 6 * 1000,
+        init: function(){
+            clearCache();
+        },
+        getUserTimes: function(key){
+            var count = this.countMap[key];
+            return count || 0;
+        },
+        getFlyweight: function(key){
+            var f = this.fsMap[key], cm;
+
+            if(f == null){
+                f = new AuthorizationFlyweight(key);
+                this.fsMap[key] = f;
+                this.countMap[key] = 1;
+
+                cm = new CacheConfModel();
+                cm.beginTime = Date.now();
+                cm.forever = false;
+                cm.durableTime = this.DURABLE_TIME;
+
+                this.cacheConfMap[key] = cm;
+            } else {
+                cm = this.cacheConfMap[key];
+                cm.beginTime = Date.now();
+                this.cacheConfMap[key] = cm;
+                this.countMap[key]++;
+            }
+
+            return f;
+        },
+        removeFlyweight: function(key){
+            delete this.fsMap[key];
+            delete this.cacheConfMap[key];
+            delete this.countMap[key];
+        }
+    };
+
+    function UnsharedConcreteFlyweight(){
+        this.list = [];
+    }
+    UnsharedConcreteFlyweight.prototype = {
+        add: function(flyweight){
+            this.list.push(flyweight);
+        },
+        match: function(securityEntity, permit){
+            for(var i = 0; i < this.list.length; i++){
+                var f = this.list[i];
+                if(f.match(securityEntity, permit))
+                    return true;
+            }
+
+            return false;
+        }
+    };
+
+    function clearCache(){
+        setInterval(function(){
+            var tempSet = [];
+            var set = Object.keys(flyweightFactory.cacheConfMap);
+
+            for(var i = 0; i < set.length; i++){
+                var key = set[i];
+                var ccm = flyweightFactory.cacheConfMap[key];
+
+                if(Date.now() - ccm.beginTime >= ccm.durableTime){
+                    tempSet.push(key);
+                }
+            }
+
+            for(i = 0; i < tempSet.length; i++){
+                flyweightFactory.removeFlyweight(key);
+            }
+
+            console.log('now thread = ' + Object.keys(flyweightFactory.fsMap).length + ', fsMap = ' + Object.keys(flyweightFactory.fsMap));
+        }, 1000);
+    }
+
+    var SecurityMgr = {
+        hasPermit: function(user, securityEntity,
+             permit){
+            var col = this.queryByUser(user);
+
+            if(!col || col.length === 0){
+                console.log(user + '没有登录或是没有被分配任何权限');
+                return false;
+            }
+
+            for(var i = 0; i < col.length; i++){
+                var fm = col[i];
+                if(fm.match(securityEntity, permit)){
+                    return true;
+                }
+            }
+            return false;
+        },
+        queryByUser: function(user){
+            var col = [];
+
+            for(var i = 0; i < DataBase.length; i++){
+                var s = DataBase[i];
+                var ss = s.split(',');
+
+                if(ss[0] === user){
+                    var fm;
+
+                    if(ss[3] == 2){
+                        fm = new UnsharedConcreteFlyweight();
+                        var tempSs = DataBase[ss[1]];
+
+                        for(var prop in tempSs){
+                            var tempS = tempSs[prop];
+                            fm.add(flyweightFactory.getFlyweight(tempS));
+                        }
+                    } else {
+                        fm = flyweightFactory.getFlyweight(ss[1] + ',' + ss[2])
+                    }
+
+                    col.push(fm);
+                }
+            }
+
+            return col;
+        }
+    };
+
+    // mock data
+    var DataBase = {
+        colDB: [
+            '张三,人员列表,查看,1',
+            '李四,人员列表,查看,1',
+            '李四,操作薪资数据,,2'
+        ],
+        mapDB: {
+            '操作薪资数据': ''
+        }
+    };
+
+    for (var i = 0; i < 3; i++) {
+        DataBase.push('张三' + i + ',人员列表,查看');
+    }
+
+
+    new function(){
+        var f1 = SecurityMgr.hasPermit('张三', '薪资数据', '查看');
+        var f2 = SecurityMgr.hasPermit('李四', '薪资数据', '查看');
+        var f3 = SecurityMgr.hasPermit('李四', '薪资数据', '修改');
+
+        for(var i =0; i < 3; i++){
+            SecurityMgr.hasPermit('张三' + i, '薪资数据', '查看');
+        }
+
+        console.log('薪资数据，查看 被引用了' + flyweightFactory.getUserTimes('薪资数据,查看' + '次'));
+        console.log('薪资数据，修改 被引用了' + flyweightFactory.getUserTimes('薪资数据,修改' + '次'));
+        console.log('人员列表，查看 被引用了' + flyweightFactory.getUserTimes('人员列表,查看' + '次'));
+    };
+}());
+
 /**
  * 享元模式的适用场合
  *
- * 要想把对象转化为享元需要满足一些前提条件。最重要的一个条件就是，网页中必须使用了大量资源密集型对象。如果只会用到少许这类对象，那么这种优化并不划算。
- *
- * 第二个条件是这些对象中所保存的数据至少有一部分能被转化为外在数据。这就是说必须能够把存储在对象内部的部分数据分离出来，然后将其作为参数提供给各个方法。此外，将这些数据存储在对象外部所占用的资源应该相对较少，否则这种做法对于性能的提升实际上毫无意义。那些包含着大量基础性代码和HTML内容的对象可能比较适合这种优化。
- *
- * 最后一个条件是，将外在数据分离出去之后，独一无二的对象的数目相对较少。最理想的情况是只存在一个独一无二的对象，比如日立和工具提示。尽管并非什么时候都能把实例数目削减到一个，但是应该尽量减少独一无二的对象的个数。在每个这种独一无二的对象都需要有多个副本的情况下（比如对话框），这尤其重要。
- */
-
-/**
- * 实现享元模式的一般步骤
- *
- * （1）将所有外在数据从目标类剥离。具体做法是尽可能地删除该类的属性，所删除的应该是那种因实例而异的属性。构造函数的参数也要这样处理。这些参数应该被添加到该类的各个方法。这些外在数据现在不再保存在类的内部，而是由管理器提供给类的方法。经过这样的处理后，目标类应该依然具有与之前一样的功能，唯一的区别在于数据的来源发生了变化。
- *
- * （2）创建一个用来控制该类的实例化工厂。这个工厂应该掌握该类所有以创建出来的独一无二的实例。其具体做法之一是用一个对象来保存每一个这类对象的引用，并以用来生成这些对象的参数的唯一性组合作为它们的索引。这样一来，每次要求工厂提供一个对象时，它会先检查那个对象，看看以前是否请求过这个对象。如果是，那么只要返回那个现有对象的引用就行。否则它会创建一个新对象并将其引用保存在那个对象中，然后返回这个对象。另一种做法称为对象池（pooling），这种技术用数组保存所创建的对象的引用。它适用于注重可用对象的数量而不是那些单独配置的实例的场合。这种技术可用来将所实例化的对象的数目维持在最低值。工厂会处理根据内在数据创建对象的所有事宜。
- *
- * （3）创建一个用来保存外在数据的管理器。该管理器对象负责控制处理外在数据的种种事宜。在实施优化之前，要是需要一个目标类的实例，你会把所有数据传给构造函数以创建其新实例。而现在要是需要一个实例，你会调用管理器的某个方法，把所有数据都提供给它。这个方法会分辨内在数据和外在数据。它把外在数据提供给工厂对象以创建一个对象（或者，如果已经存在这样一个对象的话，则重用该对象）。外在数据则被保存在管理器内的一个数据结构中。管理器随后会根据需要将这些数据提供给共享对象的方法，其效果就如同该类有许多实例一样。
+ * 1.如果一个应用程序使用了大量的细粒度对象，可以使用享元模式来减少对象数量。
+ * 2.如果由于使用大量的对象，造成很大的存储开销，可以使用享元模式来减少对象水昂，并节约内存。
+ * 3.如果对象的大多数状态都可以转变为外部状态，比如通过计算得到，或是从外部传入等，可以使用享元模式来实现内部状态和外部状态的分离。
+ * 4.如果不考虑对象的外部状态，可以用相对较少的共享对象取代很多组合对象，可以使用享元模式来共享对象，然后组合对象来使用这些共享对象。
  */
 
 /**
  * 享元模式之利
  *
- * 享元模式可以把网页的资源负荷降低几个数量级。实现这种节省并不需要大量修改原有代码。在创建了管理器，工厂和享元之后，你需要对代码进行的修改只不过是从直接实例化目标类改为调用管理器对象的某个方法。如果你创建的享元是其他程序员使用的API，那么他们只要稍稍改变自己调用API的方式就能享受到享元带来的好处。这正是享元模式出色的地方。
+ * 减少对象数量，节省内存空间。
  *
  * 享元模式之弊
  *
- * 享元模式只不过是一种优化模式。其作用是在满足一系列严格条件的前提下提高代码的运行效率。它不是什么地方都能用，也不应该被到处乱用。如果把它用在不必要的地方，其结果反而有损代码的运行效率。这种模式在优化代码的同时，也提高了其复杂程度，这会给调试和维护造成困难。
- * 它之所以会妨碍调试，是因为现在可能出错的地方变成了3个：管理器，工厂和享元。
- * 这种优化也会使维护变得更加困难。现在你面对的不是由封装着数据的对象构成的清晰的架构，而是一堆又碎又乱的东西，其中的数据至少分两处保存。你最好对一份数据是内在数据或外在数据的原因加以注明，因为以后负责维护代码的人对此可能并不清楚。
+ * 维护共享对象，需要额外开销。
  *
  * 你必须在运行效率和可维护性之间进行权衡，然而这种权衡正是工程学的精髓所在。享元模式适合的是系统资源已经用的差不多而且明显需要进行某种优化这样一类场合。这正是其利大于弊的时候。
+ *
+ *
+ * 相关模式
+ *
+ * 享元模式与单例模式
+ * 可以组合使用
+ * 通常情况下，享元模式中的工厂可以实现成为单例。另外，享元工厂中缓存的享元对象，都是单例的，可以看成是单例模式的一种变形控制。
+ * 
+ * 享元模式与组合模式
+ * 可以组合使用
+ * 在享元模式中，存在不需要共享的享元实现，这些不需要共享的享元通常是对共享的享元对象的组合对象。也就是说，享元模式通常会和组合模式组合使用，来实现更复杂的对象层次结构。
+ *
+ * 享元模式与状态模式
+ * 可以组合使用
+ * 可以使用享元模式来共享状态模式中的状态对象。通常在状态模式中，会存在数量很大的，细粒度的状态对象，而且它们基本上都是可以重复使用的，都是用来处理某一个固定的状态的，它们需要的数据通常都是由上下文传入，也就是变化部分都分离出去了，所以可以用享元模式来实现这些状态对象。
+ *
+ * 享元模式与策略模式
+ * 可以组合使用
+ * 同状态模式。
  */
 </script>
 </body>
