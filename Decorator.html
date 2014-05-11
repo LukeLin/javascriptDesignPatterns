@@ -18,6 +18,55 @@
  *
  * 装饰着模式是一种为对象增添特性的技术，它并不使用创建新子类这种手段。装饰者模式（decorator pattern）可用来透明地把对象包装在具有同样接口的另一对象之中。这样一来，你可以给一个方法添加一些行为，然后将方法调用传递给原始对象。相对于创建子类来说，使用装饰者对象是一种更灵活的选择。这种模式特别适合js，因为通常js代码并不怎么依赖对象的类型。
  */
+
+(function(){
+    // 组件对象接口，可以给这些对象动态地添加职责
+    function Component(){}
+    Component.prototype = {
+        operation: function(){}
+    };
+
+    // 具体实现组件对象接口的对象
+    function ConcreteComponent(){}
+    ConcreteComponent.prototype.__proto__ = Component.prototype;
+
+    // 装饰器接口，维持一个指向组件对象的接口对象，并定义一个与组件接口一致的接口
+    function Decorator(component){
+        this.component = component;
+    }
+    Decorator.prototype.__proto__ = Component.prototype;
+    Decorator.prototype.operation = function(){
+        // 转发请求给组件对象，可以在转发前后执行一些附加动作
+        this.component.operation();
+    };
+
+    // 装饰者的具体实现对象，向组件对象添加职责
+    function ConcreteDecoratorA(){
+        Decorator.apply(this, arguments);
+        this.addState = '';
+    }
+    ConcreteDecoratorA.prototype.__proto__ = Decorator.prototype;
+    ConcreteDecoratorA.prototype.operation = function(){
+        this.__proto__.__proto__.operation();
+    };
+
+    function ConcreteDecoratorB(){
+        Decorator.apply(this, arguments);
+        this.addState = '';
+    }
+
+    ConcreteDecoratorB.prototype = {
+        __proto__: Decorator.prototype,
+        addedBehavior: function () {
+        },
+        operation: function () {
+            this.__proto__.__proto__.operation();
+            this.addedBehavior();
+        }
+    };
+
+})();
+
 /*
  装饰者结构
 
