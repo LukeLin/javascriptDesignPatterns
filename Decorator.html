@@ -47,7 +47,7 @@
     }
     ConcreteDecoratorA.prototype.__proto__ = Decorator.prototype;
     ConcreteDecoratorA.prototype.operation = function(){
-        this.__proto__.__proto__.operation();
+        Decorator.prototype.operation.call(this);
     };
 
     function ConcreteDecoratorB(){
@@ -60,7 +60,7 @@
         addedBehavior: function () {
         },
         operation: function () {
-            this.__proto__.__proto__.operation();
+            Decorator.prototype.operation.call(this);
             this.addedBehavior();
         }
     };
